@@ -35,8 +35,6 @@ The ROADMAP does not duplicate full project rules:
 - local development and integration instructions belong in `docs/DEV_GUIDE.md`;
 - repository-level AI/development instructions belong in `AGENTS.md`.
 
----
-
 ## Vision
 
 | Block                          | Statement                                                                                                                                                                 |
@@ -59,8 +57,6 @@ The ROADMAP does not duplicate full project rules:
 | **Evidence principle**         | Evidence may justify a verdict; evidence never grants execution authority.                                                                                                |
 | **KISS principle**             | Implement only the minimum architecture needed to prove the end-to-end product thesis.                                                                                    |
 | **Product principle**          | BeeDrill is not primarily a vulnerability scanner, generic pentester, incident-response chatbot or blockchain simulator.                                                  |
-
----
 
 ## Product thesis
 
@@ -114,8 +110,6 @@ PagerDuty
 ```
 
 are outside the automated MVP unless they expose a deterministic machine-verifiable interface.
-
----
 
 ## Architecture boundary
 
@@ -171,8 +165,6 @@ BeeDrill may request or describe bounded execution intent through approved host 
 
 BeeDrill must not independently create an uncontrolled execution path around BeeAgent.
 
----
-
 ## Cross-repository ownership rule
 
 BeeDrill development may expose integration gaps in BeeAgent or BeeSDK.
@@ -208,8 +200,6 @@ scenario semantics
 ```
 
 BeeDrill roadmap iterations may require cross-repository integration evidence, but BeeDrill must not copy BeeAgent runtime implementation into this repository.
-
----
 
 ## Security invariants
 
@@ -267,8 +257,6 @@ Production credentials, private keys and unrelated secrets must not appear in:
 - test artifacts;
 - demo artifacts.
 
----
-
 ## Development principles
 
 BeeDrill uses small product-sized iterations.
@@ -314,8 +302,6 @@ evidence
 authority
 ```
 
----
-
 ## KISS roadmap rule
 
 BeeDrill has a short hackathon implementation window.
@@ -356,8 +342,6 @@ Insufficient reasons include:
 "we should make it generic now"
 "we may support another chain later"
 ```
-
----
 
 ## SDLC workflow for roadmap items
 
@@ -424,8 +408,6 @@ A significant BeeDrill iteration follows this flow:
 
 Tiny low-risk documentation or test maintenance may use the shorter path defined in `docs/SDLC.md`.
 
----
-
 ## Status values
 
 Allowed roadmap iteration statuses:
@@ -440,8 +422,6 @@ For post-hackathon directions:
 - **FUTURE / orientation** — known direction, not approved implementation scope.
 
 `FUTURE / orientation` does not pre-authorize architecture or implementation.
-
----
 
 ## Roadmap item format
 
@@ -465,8 +445,6 @@ implementation handoff
 tests
 PR
 ```
-
----
 
 ## Global Definition of Done
 
@@ -493,8 +471,6 @@ A significant BeeDrill iteration is complete only when:
 - docs are updated when architecture, contract, behavior or security boundary changes;
 - significant delivery is recorded in PR;
 - no unrelated architecture or cleanup is mixed into the iteration.
-
----
 
 ## Change levels for verification
 
@@ -573,8 +549,6 @@ Usually required:
 
 DAST, IAST and fuzzing are used only when the actual change creates a meaningful corresponding surface.
 
----
-
 ## Versioning and release rule
 
 BeeDrill uses SemVer for package/product milestones.
@@ -633,9 +607,7 @@ Recommended release impact:
 
 Release automation may be introduced during repository bootstrap, but release mechanics must not become a blocker for the product MVP.
 
----
-
-# Delivery window
+## Delivery window
 
 Hackathon dates used for planning:
 
@@ -676,9 +648,7 @@ Allowed buffer work:
 
 New architecture or broad product scope during the buffer requires an explicit GO/NO-GO decision.
 
----
-
-# Product phases
+## Product phases
 
 | Phase                                            | Status      | What it means                                                                                                                   |
 | ------------------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
@@ -688,20 +658,16 @@ New architecture or broad product scope during the buffer requires an explicit G
 | **Phase D — Hardening and external validation**  | PLANNED     | Secure the execution boundary, obtain non-toy validation and freeze the judge-ready MVP.                                        |
 | **Submission buffer**                            | PLANNED     | Stabilization, testing, external feedback, demo and submission only; no planned major scope.                                    |
 
----
-
-## Stages
+### Stages
 
 - **Stage 1 — Repository and module foundation:** package, governance, BeeSDK contract use and BeeAgent compatibility.
 - **Stage 2 — End-to-end falsification prototype:** isolated Solana runtime, target, real attack, detector and containment.
 - **Stage 3 — Metrics and regression product:** deterministic verdict engine, additional scenarios and CI-style replay.
 - **Stage 4 — Hardening and product validation:** fail-closed execution security, external evidence and submission freeze.
 
----
+## Stage 1 — Repository and module foundation
 
-# Stage 1 — Repository and module foundation
-
-## Purpose of stage
+### Purpose of stage
 
 Stage 1 establishes BeeDrill as a small standalone product module before security-sensitive Solana execution is introduced.
 
@@ -722,18 +688,15 @@ custom execution framework
 Solana execution inside the module
 ```
 
----
+### Iteration 1 — Repository architecture and governance
 
-## Iteration BD-1 — Repository architecture and governance
+**Status:** DONE
 
-**Status:** IN PROGRESS
-**Window:** Day 1 — 2026-09-15
-
-### Goal
+#### Goal
 
 Bootstrap BeeDrill as an independent BeeAgent cybersecurity module with explicit repository, architecture, security, development and ownership boundaries.
 
-### Scope
+#### Scope
 
 Included:
 
@@ -754,8 +717,6 @@ Included:
 
 - standard `src` layout;
 
-- BeeSDK as shared contract dependency;
-
 - minimal module entrypoint:
   - `BeeDrillModule`;
 
@@ -766,7 +727,7 @@ Included:
   - `read_only`;
 
 - repository documentation:
-  - `README.md` or approved repository README;
+  - `README.md`;
   - `docs/ROADMAP.md`;
   - `docs/SPEC.md`;
   - `docs/ARCHITECTURE.md`;
@@ -786,15 +747,22 @@ Included:
 - GitHub Issue template;
 - GitHub PR template;
 
+- release/package metadata baseline;
+
 - minimal package/import tests;
-- module structural-contract tests;
+- module identity and initial-authority tests;
 - build configuration;
 - repository hygiene baseline.
 
-### Excluded
+#### Excluded
 
 BD-1 does not include:
 
+- BeeSDK dependency integration;
+- BeeSDK `ModuleContract` implementation;
+- BeeAgent module-registry integration;
+- BeeAgent invocation smoke;
+- host artifact-port integration;
 - Surfpool execution;
 - Solana RPC execution;
 - Solana transactions;
@@ -811,9 +779,9 @@ BD-1 does not include:
 - production credentials;
 - mainnet mutation.
 
-### Deliverable
+#### Deliverable
 
-A standalone BeeDrill repository/package that is ready for feature development without unresolved ownership or workflow ambiguity.
+A standalone BeeDrill repository/package that is ready for BeeSDK contract integration and feature development without unresolved ownership or workflow ambiguity.
 
 Expected minimal structure:
 
@@ -827,20 +795,21 @@ beedrill/
 ├── tests/
 ├── AGENTS.md
 ├── README.md
+├── CHANGELOG.md
 ├── pyproject.toml
 └── uv.lock
 ```
 
 Additional implementation directories must not be created speculatively.
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - repository is an independent Git repository;
 - package/import identity is `beedrill`;
 - Python requirement is `>=3.14`;
 - project uses `uv`;
 - source uses standard `src` layout;
-- BeeDrill depends on BeeSDK public contracts instead of copying BeeAgent platform contracts;
+- BeeDrill does not copy BeeAgent or BeeSDK platform contracts;
 - `BeeDrillModule` exposes stable `module_id = "beedrill"`;
 - initial module authority is `read_only`;
 - package imports without starting runtime services;
@@ -851,10 +820,11 @@ Additional implementation directories must not be created speculatively.
 - documentation is internally consistent;
 - prompts/skills are BeeDrill-local;
 - Issue/PR templates exist;
-- tests cover package import and module structural compatibility;
+- release/package metadata baseline exists;
+- tests cover package import, module identity and initial authority;
 - no production secrets or private keys are present.
 
-### Checks
+#### Checks
 
 Required:
 
@@ -871,7 +841,7 @@ Architecture review:
 ```text
 BeeDrill does not own host runtime
 BeeDrill does not own arbitrary execution
-BeeSDK contracts are consumed rather than copied
+BeeDrill does not copy BeeAgent or BeeSDK platform contracts
 module authority is read_only
 no production/mainnet execution surface exists
 ```
@@ -886,7 +856,7 @@ IAST not applicable
 fuzzing not required
 ```
 
-### DoD
+#### DoD
 
 - standalone package/repository exists;
 - architecture boundaries are explicit;
@@ -894,102 +864,110 @@ fuzzing not required
 - tests pass;
 - package builds;
 - import smoke passes;
-- module scaffold is contract-compatible;
+- module scaffold is ready for BeeSDK contract integration in Iteration 2;
 - no execution/egress path exists;
 - no shared platform contract duplication is introduced;
 - docs, AGENTS, prompts, skills and GitHub templates agree on the same architecture;
-- BD-1 delivery is ready for PR/merge.
+- BD-1 bootstrap baseline is complete.
 
----
-
-## Iteration BD-2 — BeeSDK module contract and BeeAgent load smoke
+### Iteration 2 — BeeSDK module contract and BeeAgent load smoke
 
 **Status:** PLANNED
-**Window:** Day 2 — 2026-09-16
 
-### Goal
+#### Goal
 
-Prove that BeeDrill can be loaded and invoked by the current BeeAgent module runtime through the BeeSDK-compatible structural contract.
+Prove that BeeDrill can consume the approved BeeSDK v0.1 module contracts and can be loaded and invoked by the current BeeAgent module runtime without duplicating platform contracts or requiring a broad BeeAgent migration.
 
-### Scope
+#### Scope
 
-Included:
+- declare BeeSDK `0.1.0` as an explicit BeeDrill runtime dependency through a verified available source;
+- import shared contracts from the explicit BeeSDK public contract modules:
+  - `beesdk.modules`;
+  - `beesdk.artifacts`;
 
-- `BeeDrillModule`;
-- stable `module_id`;
-- read-only authority;
-- explicit supported case types for the current scope;
-- bounded module results;
-- BeeSDK imports rather than copied platform contracts;
-- BeeAgent module-registry load smoke;
-- module invocation smoke;
-- host-provided artifact-port smoke;
-- explicit unsupported/degraded behavior;
-- compatibility evidence against current BeeAgent runtime.
+- implement `BeeDrillModule` against `ModuleContract`;
+- preserve `module_id = "beedrill"`;
+- use `AuthorityLevel.READ_ONLY`;
+- expose one explicit bounded integration case;
+- return a bounded `ModuleResult`;
+- verify structural compatibility with the current BeeAgent `ModuleRegistry`;
+- invoke BeeDrill through the current BeeAgent `execute_module_case()` path;
+- verify BeeAgent authority normalization accepts BeeSDK authority;
+- verify the host-provided `ArtifactAPI` satisfies `ArtifactPort` structurally;
+- write one bounded module artifact through the BeeAgent-owned artifact lifecycle;
+- record compatibility evidence against the current BeeAgent runtime.
 
-If BeeAgent changes are proven necessary:
+#### Excluded
 
-```text
-separate BeeAgent Issue
-→ BeeAgent branch/PR
-```
+- broad BeeAgent migration to BeeSDK;
+- `beeagent-rop` migration to BeeSDK;
+- BeeSDK redesign or new shared contracts without proven need;
+- production BeeAgent registry configuration changes;
+- drill domain models or scenario semantics from BD-3;
+- Surfpool, Solana RPC, attack, detector or containment execution;
+- new execution authority;
+- BeeUI or BeeScan integration.
 
-### Excluded
+#### Deliverable
 
-- attack execution;
-- Surfpool lifecycle;
-- Solana RPC;
-- production capabilities;
-- capability-framework redesign;
-- UI;
-- broad BeeAgent migration to BeeSDK.
+BeeDrill is a real BeeSDK v0.1 contract consumer that the current BeeAgent registry/runtime can discover and invoke through the existing module boundary, including one host-owned artifact write, without changing BeeAgent or BeeSDK unless an actual compatibility gap is demonstrated.
 
-### Deliverable
+#### Acceptance criteria
 
-BeeAgent can discover and invoke BeeDrill through the normal module boundary without BeeDrill importing BeeAgent private runtime internals.
+- BeeDrill declares `beesdk==0.1.0` from a verified available source;
+- BeeDrill imports shared contracts from `beesdk.modules` and `beesdk.artifacts`;
+- `BeeDrillModule` satisfies BeeSDK `ModuleContract`;
+- `module_id == "beedrill"`;
+- authority is `AuthorityLevel.READ_ONLY`;
+- supported case types are explicit and bounded;
+- the current BeeAgent `ModuleRegistry` loads BeeDrill;
+- the current BeeAgent runtime invokes BeeDrill through `execute_module_case()`;
+- BeeSDK authority is accepted by current BeeAgent authority normalization;
+- a BeeSDK `ModuleResult` is accepted and normalized by the current BeeAgent runtime;
+- BeeAgent `ArtifactAPI` satisfies the required `ArtifactPort` shape;
+- one artifact write succeeds through the BeeAgent-owned artifact lifecycle;
+- unsupported case types are rejected explicitly;
+- BeeDrill imports no private BeeAgent contracts;
+- no BeeAgent or BeeSDK implementation change is introduced without demonstrated compatibility evidence.
 
-### Acceptance criteria
+#### Checks
 
-- BeeDrill satisfies BeeSDK `ModuleContract`;
-- module can be discovered by the BeeAgent registry;
-- module can receive a host-compatible module context;
-- module returns a bounded compatible result;
-- module authority remains read-only;
-- host-provided artifact API satisfies the required artifact port structurally;
-- one artifact smoke succeeds through the host;
-- unsupported case types return explicit bounded behavior;
-- BeeDrill does not import BeeAgent private module contracts;
-- no duplicate BeeSDK platform contracts are introduced;
-- no new execution authority is needed.
+- BeeDrill targeted module/contract tests;
+- `uv run pytest -q`;
+- `uv build`;
+- package import smoke;
+- BeeSDK `ModuleContract` structural compatibility check;
+- BeeSDK explicit contract-module import check;
+- current BeeAgent registry load smoke;
+- current BeeAgent `execute_module_case()` smoke;
+- authority normalization compatibility check;
+- `ArtifactAPI` / `ArtifactPort` structural compatibility and artifact-write smoke;
+- `git diff --check`;
+- SAST mindset review of the module/authority boundary;
+- SCA for the approved BeeSDK dependency change.
 
-### Checks
+#### DoD
 
-```text
-BeeDrill targeted tests
-BeeDrill full tests
-package build
-BeeAgent registry load smoke
-BeeAgent module invocation smoke
-artifact write smoke
-compatibility inspection
-```
+- BeeDrill consumes BeeSDK v0.1 contracts directly;
+- current BeeAgent loads and invokes BeeDrill without a broad BeeAgent migration;
+- host-owned artifact integration works through the shared structural boundary;
+- read-only authority remains host-owned and compatible;
+- no duplicated platform contract exists in BeeDrill;
+- no execution or egress capability is added;
+- BeeAgent and BeeSDK remain unchanged unless a concrete gap is proven;
+- dependency and contract documentation matches the implemented behavior;
+- BeeDrill is ready to proceed directly to BD-3.
 
-### DoD
-
-BeeDrill is a real BeeAgent-loadable module and no private BeeAgent contract dependency or duplicated shared contract is required.
-
----
-
-## Iteration BD-3 — Drill domain contracts and fixture baseline
+### Iteration 3 — Drill domain contracts and fixture baseline
 
 **Status:** PLANNED
 **Window:** Days 3–4 — 2026-09-17..2026-09-18
 
-### Goal
+#### Goal
 
 Define the smallest deterministic BeeDrill domain model needed to represent one complete security-control validation drill.
 
-### Scope
+#### Scope
 
 Define bounded domain contracts for:
 
@@ -1007,7 +985,7 @@ Define bounded domain contracts for:
 
 Add sanitized deterministic fixtures.
 
-### Excluded
+#### Excluded
 
 - generic scenario language;
 - extensible plugin system;
@@ -1017,11 +995,11 @@ Add sanitized deterministic fixtures.
 - Solana chain execution;
 - production protocol schema.
 
-### Deliverable
+#### Deliverable
 
 A fixture-driven domain baseline capable of expressing the first complete drill without invoking Solana.
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - one complete drill is representable using bounded models;
 - required fields are explicit;
@@ -1034,7 +1012,7 @@ A fixture-driven domain baseline capable of expressing the first complete drill 
 - fixtures contain no real secrets/private keys;
 - models remain BeeDrill-local and are not added to BeeSDK.
 
-### Checks
+#### Checks
 
 ```text
 schema/model tests
@@ -1044,15 +1022,15 @@ fixture tests
 negative executable-input tests
 ```
 
-### DoD
+#### DoD
 
 One security-control drill can be described completely as validated domain data before execution infrastructure exists.
 
 ---
 
-# Stage 2 — End-to-end falsification prototype
+## Stage 2 — End-to-end falsification prototype
 
-## Purpose of stage
+### Purpose of stage
 
 Stage 2 is the central product falsification stage.
 
@@ -1074,16 +1052,16 @@ If this stage requires fake alerts, fake attacks or manually invented verdict ev
 
 ---
 
-## Iteration BD-4 — Surfpool host-execution integration spike
+### Iteration BD-4 — Surfpool host-execution integration spike
 
 **Status:** PLANNED
 **Window:** Day 5 — 2026-09-19
 
-### Goal
+#### Goal
 
 Prove that BeeAgent can create and control an isolated Solana execution environment for BeeDrill while keeping execution authority host-owned.
 
-### Scope
+#### Scope
 
 Product milestone:
 
@@ -1109,7 +1087,7 @@ BeeDrill
 
 If current BeeAgent lacks the required bounded host execution path, implementation belongs in a separate BeeAgent Issue/branch/PR.
 
-### Excluded
+#### Excluded
 
 - arbitrary subprocess execution from BeeDrill;
 - arbitrary binary/path supplied by scenario input;
@@ -1119,7 +1097,7 @@ If current BeeAgent lacks the required bounded host execution path, implementati
 - generic process-execution framework;
 - broad capability redesign.
 
-### Deliverable
+#### Deliverable
 
 One reproducible approved sandbox lifecycle:
 
@@ -1133,7 +1111,7 @@ start
 
 with host-owned execution authority.
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - isolated environment starts reproducibly;
 - readiness can be verified;
@@ -1147,7 +1125,7 @@ with host-owned execution authority.
 - no mainnet mutation path is created;
 - host/module ownership remains explicit.
 
-### Checks
+#### Checks
 
 ```text
 successful startup
@@ -1161,22 +1139,22 @@ no orphan-process check
 security review
 ```
 
-### DoD
+#### DoD
 
 BeeAgent can safely provide the isolated Solana execution primitive needed by BeeDrill without moving runtime execution into the module.
 
 ---
 
-## Iteration BD-5 — Reference vulnerable protocol and reproducible state
+### Iteration BD-5 — Reference vulnerable protocol and reproducible state
 
 **Status:** PLANNED
 **Window:** Days 6–7 — 2026-09-20..2026-09-21
 
-### Goal
+#### Goal
 
 Create one deliberately vulnerable Solana reference target with measurable economic state and an explicit technical defensive control.
 
-### Scope
+#### Scope
 
 Included:
 
@@ -1188,7 +1166,7 @@ Included:
 - resettable environment;
 - reproducible initial state.
 
-### Excluded
+#### Excluded
 
 - production protocol integration;
 - large lending/DEX implementation;
@@ -1196,11 +1174,11 @@ Included:
 - arbitrary protocol SDK;
 - vulnerability discovery engine.
 
-### Deliverable
+#### Deliverable
 
 A minimal reference target where attack damage and defensive containment can be measured objectively.
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - initial state is reproducible;
 - normal operation succeeds;
@@ -1212,7 +1190,7 @@ A minimal reference target where attack damage and defensive containment can be 
 - reference target is clearly marked as intentionally vulnerable;
 - no production/private data is used.
 
-### Checks
+#### Checks
 
 ```text
 baseline state
@@ -1223,22 +1201,22 @@ state reset
 repeatability
 ```
 
-### DoD
+#### DoD
 
 Every drill run can begin from the same known target state with measurable capital and explicit defense controls.
 
 ---
 
-## Iteration BD-6 — First real attack scenario
+### Iteration BD-6 — First real attack scenario
 
 **Status:** PLANNED
 **Window:** Day 8 — 2026-09-22
 
-### Goal
+#### Goal
 
 Execute the first deterministic economic attack against the reference target.
 
-### Scope
+#### Scope
 
 First scenario:
 
@@ -1257,18 +1235,18 @@ Capture:
 - completion evidence;
 - gross economic loss.
 
-### Excluded
+#### Excluded
 
 - detector verdict;
 - containment verdict;
 - AI analysis;
 - additional attack classes.
 
-### Deliverable
+#### Deliverable
 
 A reproducible real attack trace with objectively measurable economic loss.
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - attack changes real isolated Solana state;
 - attack succeeds against the intentionally vulnerable baseline;
@@ -1278,7 +1256,7 @@ A reproducible real attack trace with objectively measurable economic loss.
 - attack does not depend on fake event injection;
 - scenario remains isolated from production/mainnet.
 
-### Checks
+#### Checks
 
 ```text
 attack success
@@ -1289,22 +1267,22 @@ serialization
 reset and replay
 ```
 
-### DoD
+#### DoD
 
 BeeDrill has executed a real isolated attack rather than a mocked security event.
 
 ---
 
-## Iteration BD-7 — Detection observation
+### Iteration BD-7 — Detection observation
 
 **Status:** PLANNED
 **Window:** Days 9–10 — 2026-09-23..2026-09-24
 
-### Goal
+#### Goal
 
 Measure whether an independent technical detector observes the attack and capture machine-verifiable detection timing.
 
-### Scope
+#### Scope
 
 Included:
 
@@ -1317,7 +1295,7 @@ Included:
 - timeout;
 - missing-alert handling.
 
-### Excluded
+#### Excluded
 
 - human PagerDuty response;
 - SOC workflow;
@@ -1325,11 +1303,11 @@ Included:
 - subjective AI detection score;
 - broad SIEM integrations.
 
-### Deliverable
+#### Deliverable
 
 Machine-verifiable detection evidence capable of producing deterministic detection PASS/FAIL.
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - detector receives/observes real attack-related state or events;
 - successful alert is captured as evidence;
@@ -1339,7 +1317,7 @@ Machine-verifiable detection evidence capable of producing deterministic detecti
 - attack start and detection event have comparable timing evidence;
 - AI is not used to decide whether detection occurred.
 
-### Checks
+#### Checks
 
 ```text
 alert produced
@@ -1351,22 +1329,22 @@ timeout
 replay consistency
 ```
 
-### DoD
+#### DoD
 
 Detection status is derived from actual bounded evidence rather than narrative or manual interpretation.
 
 ---
 
-## Iteration BD-8 — Containment and FAIL → PASS replay
+### Iteration BD-8 — Containment and FAIL → PASS replay
 
 **Status:** PLANNED
 **Window:** Day 11 — 2026-09-25
 
-### Goal
+#### Goal
 
 Prove the central BeeDrill thesis by showing one identical attack fail before a defensive fix and pass after the fix.
 
-### Scope
+#### Scope
 
 Included:
 
@@ -1378,14 +1356,14 @@ Included:
 - successful containment run;
 - resulting economic-state comparison.
 
-### Excluded
+#### Excluded
 
 - production autonomous response;
 - human multisig workflow;
 - broad incident-response automation;
 - new attack class.
 
-### Deliverable
+#### Deliverable
 
 Same scenario:
 
@@ -1403,7 +1381,7 @@ after fix
 → PASS
 ```
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - first run produces a real containment failure;
 - failure reason is evidenced;
@@ -1414,7 +1392,7 @@ after fix
 - resulting state/economic loss differs measurably;
 - no manual verdict override is required.
 
-### Checks
+#### Checks
 
 ```text
 broken defense run
@@ -1426,15 +1404,15 @@ economic comparison
 repeatability
 ```
 
-### DoD
+#### DoD
 
 BeeDrill demonstrates that a concrete security-control correction changes the real economic outcome of the same attack.
 
 ---
 
-# Stage 3 — Metrics and regression product
+## Stage 3 — Metrics and regression product
 
-## Purpose of stage
+### Purpose of stage
 
 Stage 3 converts the successful falsification prototype into a repeatable product.
 
@@ -1450,16 +1428,16 @@ bounded evidence
 
 ---
 
-## Iteration BD-9 — Deterministic security metrics and verdict engine
+### Iteration BD-9 — Deterministic security metrics and verdict engine
 
 **Status:** PLANNED
 **Window:** Day 12 — 2026-09-26
 
-### Goal
+#### Goal
 
 Convert execution evidence into objective security-control metrics and one stable drill verdict.
 
-### Scope
+#### Scope
 
 Calculate:
 
@@ -1473,7 +1451,7 @@ Calculate:
 - evidence completeness;
 - deterministic final verdict.
 
-### Excluded
+#### Excluded
 
 - proprietary risk score;
 - subjective LLM score;
@@ -1481,11 +1459,11 @@ Calculate:
 - benchmark percentile;
 - financial modeling outside observed drill scope.
 
-### Deliverable
+#### Deliverable
 
 Stable `DrillVerdict` semantics based only on validated evidence.
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - metric definitions are explicit;
 - units are explicit;
@@ -1496,7 +1474,7 @@ Stable `DrillVerdict` semantics based only on validated evidence.
 - LLM output has no verdict authority;
 - calculation assumptions are documented.
 
-### Checks
+#### Checks
 
 ```text
 known PASS
@@ -1509,22 +1487,22 @@ boundary timing
 deterministic replay
 ```
 
-### DoD
+#### DoD
 
 The same valid evidence always produces the same metrics and final security verdict.
 
 ---
 
-## Iteration BD-10 — Oracle manipulation scenario
+### Iteration BD-10 — Oracle manipulation scenario
 
 **Status:** PLANNED
 **Window:** Days 13–14 — 2026-09-27..2026-09-28
 
-### Goal
+#### Goal
 
 Add a second materially different economic attack class to prove the architecture is not hardcoded to one vault-drain path.
 
-### Scope
+#### Scope
 
 Included:
 
@@ -1535,18 +1513,18 @@ Included:
 - measurable economic outcome;
 - deterministic replay.
 
-### Excluded
+#### Excluded
 
 - generic oracle framework;
 - all Solana oracle providers;
 - production oracle manipulation;
 - arbitrary runtime scripting.
 
-### Deliverable
+#### Deliverable
 
 Second reproducible scenario exercising the same BeeDrill evidence/verdict architecture through a different economic failure class.
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - scenario uses the same core domain/evidence model;
 - no duplicated orchestration framework is introduced;
@@ -1556,7 +1534,7 @@ Second reproducible scenario exercising the same BeeDrill evidence/verdict archi
 - PASS/FAIL remains deterministic;
 - scenario resets and replays reproducibly.
 
-### Checks
+#### Checks
 
 ```text
 attack baseline
@@ -1568,22 +1546,22 @@ economic delta
 deterministic replay
 ```
 
-### DoD
+#### DoD
 
 BeeDrill supports at least two materially distinct security scenarios without scenario-specific orchestration duplication.
 
 ---
 
-## Iteration BD-11 — Broken authority / containment scenario
+### Iteration BD-11 — Broken authority / containment scenario
 
 **Status:** PLANNED
 **Window:** Day 15 — 2026-09-29
 
-### Goal
+#### Goal
 
 Validate a control-plane failure where attack detection succeeds but containment cannot execute because the defensive authority/configuration is incorrect.
 
-### Scope
+#### Scope
 
 Reference failure:
 
@@ -1602,18 +1580,18 @@ authority/config fixed
 → containment succeeds
 ```
 
-### Excluded
+#### Excluded
 
 - production multisig operations;
 - credential harvesting;
 - private-key testing;
 - generalized IAM platform.
 
-### Deliverable
+#### Deliverable
 
 Third scenario focused on operational defensive control failure rather than vulnerability discovery.
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - detection succeeds in both baseline and fixed runs;
 - containment failure is caused by deterministic control configuration;
@@ -1623,7 +1601,7 @@ Third scenario focused on operational defensive control failure rather than vuln
 - verdict reflects containment outcome;
 - scenario demonstrates that configured control presence is insufficient proof of operability.
 
-### Checks
+#### Checks
 
 ```text
 broken authority/config
@@ -1634,22 +1612,22 @@ successful replay
 economic outcome comparison
 ```
 
-### DoD
+#### DoD
 
 BeeDrill demonstrates that a configured defensive control may exist while remaining operationally unusable during an attack.
 
 ---
 
-## Iteration BD-12 — Reproducible regression suite and CI entry point
+### Iteration BD-12 — Reproducible regression suite and CI entry point
 
 **Status:** PLANNED
 **Window:** Day 16 — 2026-09-30
 
-### Goal
+#### Goal
 
 Turn individual drills into repeatable security regression tests suitable for release/CI workflows.
 
-### Scope
+#### Scope
 
 Included:
 
@@ -1662,7 +1640,7 @@ Included:
 - CI-friendly invocation;
 - regression tests for known defenses.
 
-### Excluded
+#### Excluded
 
 - SaaS scheduler;
 - hosted CI fleet;
@@ -1670,11 +1648,11 @@ Included:
 - marketplace;
 - generalized workflow engine.
 
-### Deliverable
+#### Deliverable
 
 A release/test pipeline can fail when a previously passing security-control scenario regresses.
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - stable local invocation exists;
 - scenario can be selected explicitly;
@@ -1687,7 +1665,7 @@ A release/test pipeline can fail when a previously passing security-control scen
 - intentional defense regression causes expected failure;
 - restored defense causes expected pass.
 
-### Checks
+#### Checks
 
 ```text
 all expected-pass scenarios
@@ -1699,15 +1677,15 @@ environment reset
 repeatability
 ```
 
-### DoD
+#### DoD
 
 BeeDrill behaves as a reproducible security regression product rather than a one-off demonstration script.
 
 ---
 
-# Stage 4 — Hardening and product validation
+## Stage 4 — Hardening and product validation
 
-## Purpose of stage
+### Purpose of stage
 
 Stage 4 makes the BeeDrill MVP safe enough to demonstrate publicly and credible enough to submit as a product rather than a toy.
 
@@ -1725,16 +1703,16 @@ No broad product expansion is allowed.
 
 ---
 
-## Iteration BD-13 — Execution safety and fail-closed hardening
+### Iteration BD-13 — Execution safety and fail-closed hardening
 
 **Status:** PLANNED
 **Window:** Days 17–18 — 2026-10-01..2026-10-02
 
-### Goal
+#### Goal
 
 Harden the highest-risk execution and input boundaries before public demo or external use.
 
-### Scope
+#### Scope
 
 Included:
 
@@ -1751,7 +1729,7 @@ Included:
 - deterministic refusals;
 - malformed/adversarial scenario tests.
 
-### Excluded
+#### Excluded
 
 - production autonomous response;
 - mainnet mutation;
@@ -1759,11 +1737,11 @@ Included:
 - arbitrary executable selection;
 - generalized sandbox product.
 
-### Deliverable
+#### Deliverable
 
 Security-sensitive BeeDrill execution fails closed and untrusted scenario input cannot escape the approved sandbox boundary.
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - arbitrary executable selection is impossible through scenario data;
 - arbitrary RPC target is refused;
@@ -1777,7 +1755,7 @@ Security-sensitive BeeDrill execution fails closed and untrusted scenario input 
 - incomplete critical evidence cannot produce PASS;
 - security assumptions are documented.
 
-### Checks
+#### Checks
 
 Required as applicable:
 
@@ -1796,22 +1774,22 @@ artifact-bound checks
 git diff --check
 ```
 
-### DoD
+#### DoD
 
 Untrusted or malformed input cannot grant arbitrary execution, reach a forbidden target or silently convert an unsafe/incomplete drill into success.
 
 ---
 
-## Iteration BD-14 — Real integration and product evidence
+### Iteration BD-14 — Real integration and product evidence
 
 **Status:** PLANNED
 **Window:** Day 19 — 2026-10-03
 
-### Goal
+#### Goal
 
 Prove that BeeDrill is useful beyond its own synthetic reference target.
 
-### Scope
+#### Scope
 
 Obtain at least one substantial external validation path:
 
@@ -1827,18 +1805,18 @@ Capture:
 - limitations;
 - product relevance.
 
-### Excluded
+#### Excluded
 
 - broad protocol compatibility;
 - production mutation;
 - unsupported claims of universal coverage;
 - custom work for many protocols.
 
-### Deliverable
+#### Deliverable
 
 At least one external/non-toy validation artifact showing that BeeDrill's security-control testing model applies outside the internal reference target.
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - validation target/integration is meaningfully external to the synthetic demo;
 - setup is reproducible enough for review;
@@ -1848,7 +1826,7 @@ At least one external/non-toy validation artifact showing that BeeDrill's securi
 - no production/mainnet mutation is performed;
 - result supports the product thesis rather than only demonstrating infrastructure.
 
-### Checks
+#### Checks
 
 ```text
 repeatable setup
@@ -1859,22 +1837,22 @@ limitation review
 security-boundary review
 ```
 
-### DoD
+#### DoD
 
 Hackathon submission includes evidence that BeeDrill is not merely a self-contained synthetic demonstration.
 
 ---
 
-## Iteration BD-15 — Hackathon demo and submission readiness
+### Iteration BD-15 — Hackathon demo and submission readiness
 
 **Status:** PLANNED
 **Window:** Day 20 — 2026-10-04
 
-### Goal
+#### Goal
 
 Freeze the hackathon MVP and make BeeDrill reproducible, understandable and judge-ready.
 
-### Scope
+#### Scope
 
 Included:
 
@@ -1903,7 +1881,7 @@ attack
 → PASS
 ```
 
-### Excluded
+#### Excluded
 
 - new scenario classes;
 - new architecture;
@@ -1913,11 +1891,11 @@ attack
 - multichain;
 - production autonomous response.
 
-### Deliverable
+#### Deliverable
 
 A judge can understand, run and evaluate the central BeeDrill thesis from the repository and demo.
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - clean environment setup works from documented instructions;
 - complete BeeDrill test suite passes;
@@ -1932,7 +1910,7 @@ A judge can understand, run and evaluate the central BeeDrill thesis from the re
 - evidence artifacts support claims made in the submission;
 - no known critical blocker remains.
 
-### Checks
+#### Checks
 
 ```text
 clean checkout/install
@@ -1947,21 +1925,21 @@ demo rehearsal
 documentation review
 ```
 
-### DoD
+#### DoD
 
 BeeDrill MVP is frozen, reproducible and ready for Colosseum submission.
 
 ---
 
-# Submission buffer — 2026-10-05..2026-10-12
+## Submission buffer — 2026-10-05..2026-10-12
 
-## Purpose
+### Purpose
 
 The buffer protects the submission from predictable integration, reliability, review and presentation failures.
 
 It is not a fifth feature-development stage.
 
-### Allowed
+#### Allowed
 
 - defects;
 - reliability fixes;
@@ -1976,7 +1954,7 @@ It is not a fifth feature-development stage.
 - submission corrections;
 - critical compatibility fixes.
 
-### Not allowed without explicit GO/NO-GO review
+#### Not allowed without explicit GO/NO-GO review
 
 - new major scenario category;
 - new runtime architecture;
@@ -1991,7 +1969,7 @@ It is not a fifth feature-development stage.
 - generalized pentesting platform;
 - autonomous production response.
 
-### Freeze rule
+#### Freeze rule
 
 By the start of the buffer, the expected product story is fixed:
 
@@ -2010,7 +1988,7 @@ attack
 
 ---
 
-# Post-hackathon orientation
+## Post-hackathon orientation
 
 Post-hackathon work is not pre-approved by this roadmap.
 
@@ -2042,9 +2020,9 @@ Do not create framework layers merely because future commercialization may need 
 
 ---
 
-# Related project boundaries
+## Related project boundaries
 
-## BeeAgent
+### BeeAgent
 
 BeeAgent is the primary host/runtime.
 
@@ -2073,7 +2051,7 @@ If BeeDrill exposes a missing host capability, the fix belongs in BeeAgent unles
 
 ---
 
-## BeeSDK
+### BeeSDK
 
 BeeSDK owns only reusable shared public contracts.
 
@@ -2105,7 +2083,7 @@ solely to support BeeDrill.
 
 ---
 
-## BeeROP
+### BeeROP
 
 BeeROP is a separate domain module.
 
@@ -2113,7 +2091,7 @@ BeeDrill may use its repository architecture as historical reference for module 
 
 ---
 
-## BeeScan
+### BeeScan
 
 BeeScan is not a dependency of the hackathon MVP.
 
@@ -2123,7 +2101,7 @@ Future integration requires separate evidence and scope.
 
 ---
 
-## BeeUI
+### BeeUI
 
 BeeUI is not required for the initial product proof.
 
@@ -2140,7 +2118,7 @@ Any future UI integration requires a separate product need.
 
 ---
 
-## Bee Dev MCP
+### Bee Dev MCP
 
 Bee Dev MCP remains a development/review tool.
 
@@ -2150,7 +2128,7 @@ Bee Dev MCP is not a BeeDrill runtime dependency.
 
 ---
 
-# Future roadmap rule
+## Future roadmap rule
 
 The 15 hackathon iterations are a fixed delivery plan, not permission for unlimited framework expansion.
 
@@ -2189,7 +2167,7 @@ if the current product surface is sufficient.
 
 ---
 
-# Related process documents
+## Related process documents
 
 BeeDrill development uses:
 

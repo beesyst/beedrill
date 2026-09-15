@@ -3,7 +3,6 @@
     ".": {
       "release-type": "simple",
       "package-name": "beedrill",
-      "release-as": "0.1.0",
       "extra-files": [
         {
           "type": "toml",
