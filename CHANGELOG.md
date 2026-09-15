@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.1.0...beedrill-v0.2.0) (2026-09-15)
+
+
+### Features
+
+* adopt beesdk module contract ([#3](https://github.com/beesyst/beedrill/issues/3)) ([c126f60](https://github.com/beesyst/beedrill/commit/c126f6043b5f36e4cc6843b91484735642ac904b))
+
 ## 0.1.0 (2026-09-15)
 
 
