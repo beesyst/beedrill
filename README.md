@@ -298,7 +298,8 @@ PASS.
 
 ## Current status
 
-The repository currently contains the initial BeeDrill bootstrap baseline.
+The repository currently contains the BeeDrill foundation plus the completed
+BeeSDK/BeeAgent module-integration baseline.
 
 Implemented:
 
@@ -307,10 +308,15 @@ Implemented:
 - `uv` development environment;
 - `src` package layout;
 - minimal `BeeDrillModule`;
+- BeeSDK `0.1.0` runtime dependency;
+- shared BeeSDK module contract integration;
 - stable module identity:
   - `module_id = "beedrill"`;
 - initial authority:
   - `read_only`;
+- bounded `integration_smoke` case;
+- host artifact writing through the shared artifact boundary;
+- verified compatibility with the current BeeAgent registry and runtime;
 - repository architecture and product documentation;
 - security and SDLC rules;
 - project-local planning/implementation/review workflows;
@@ -330,8 +336,9 @@ Current module foundation intentionally has no:
 - verdict engine;
 - production/mainnet access.
 
-The next integration milestone is to connect BeeDrill to the approved BeeSDK
-module contract and verify normal BeeAgent module loading/invocation.
+The next product milestone is Iteration 3: define the bounded drill domain
+contracts and deterministic fixture baseline without adding execution
+infrastructure.
 
 ## Roadmap
 

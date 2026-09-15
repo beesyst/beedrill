@@ -6,11 +6,25 @@ requires-python = ">=3.14"
 name = "beedrill"
 version = "0.1.0"
 source = { editable = "." }
+dependencies = [
+    { name = "beesdk" },
+]
 
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
 ]
+
+[package.metadata]
+requires-dist = [{ name = "beesdk", directory = "../beesdk" }]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = "==9.1.1" }]
+
+[[package]]
+name = "beesdk"
+version = "0.1.0"
+source = { directory = "../beesdk" }
 
 [package.metadata]
 
