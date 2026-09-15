@@ -268,6 +268,13 @@ ArtifactPort
 
 Do not duplicate those definitions locally.
 
+Use explicit public contract imports rather than top-level `beesdk` imports:
+
+```python
+from beesdk.artifacts import ArtifactPort
+from beesdk.modules import AuthorityLevel, ModuleContext, ModuleContract, ModuleResult
+```
+
 The exact package dependency must use an actually available and approved BeeSDK
 source.
 

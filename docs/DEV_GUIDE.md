@@ -186,6 +186,15 @@ BeeDrill should not implement generic:
 BeeDrill should use shared BeeSDK contracts when the approved BeeSDK dependency
 is available.
 
+Import those contracts only from their explicit public contract modules:
+
+```python
+from beesdk.artifacts import ArtifactPort
+from beesdk.modules import AuthorityLevel, ModuleContext, ModuleContract, ModuleResult
+```
+
+Do not import module or artifact contracts from the top-level `beesdk` package.
+
 Expected module properties include:
 
 ```text

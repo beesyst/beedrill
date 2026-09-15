@@ -872,7 +872,7 @@ fuzzing not required
 
 ### Iteration 2 — BeeSDK module contract and BeeAgent load smoke
 
-**Status:** PLANNED
+**Status:** DONE
 
 #### Goal
 
