@@ -1002,8 +1002,7 @@ If this stage requires fake alerts, fake attacks or manually invented verdict ev
 
 ### Iteration 4 — BeeAgent-owned isolated Solana execution capability
 
-**Status:** PLANNED
-**Window:** 2026-09-17..2026-09-18
+**Status:** DONE
 
 #### Goal
 
@@ -1113,72 +1112,93 @@ SCA only if dependencies change
 
 BeeDrill can reach a real isolated Solana environment only through a bounded BeeAgent-owned capability.
 
----
-
-### Iteration 5 — Reference vulnerable protocol and reproducible state
+## Iteration 5 — Reference vulnerable protocol and reproducible state
 
 **Status:** PLANNED
-**Window:** 2026-09-19..2026-09-20
 
-#### Goal
+### Goal
 
-Create one deliberately vulnerable Solana reference target with measurable economic state and explicit technical defensive controls.
+Create one deliberately vulnerable Solana reference target whose economic state and defensive-control state can be reproduced through the approved BeeAgent-owned isolated execution boundary.
 
-#### Scope
+### Scope
 
 Included:
 
-- minimal reference vault/protocol;
-- deterministic balances/state;
-- one intentionally attackable economic condition;
-- detector signal source;
-- pause/breaker path;
-- intentionally configurable containment failure;
-- resettable environment;
-- reproducible initial state.
+- one minimal BeeDrill-owned reference vault/protocol;
+- one stable logical target identity and canonical initial-state identity;
+- deterministic integer economic state and balances;
+- one intentionally reachable unsafe economic condition for the later attack iteration;
+- one machine-observable detector-relevant signal source;
+- one pause/breaker control path;
+- one containment configuration that can be deliberately valid or broken without changing the vulnerability;
+- source-owned reproducible target assets;
+- a bounded BeeDrill module intent for reference-target baseline validation;
+- bounded machine-readable baseline evidence;
+- host-owned preparation, state observation and reset through a dedicated BeeAgent capability;
+- repeatable fresh-state validation.
 
-#### Excluded
+### Excluded
 
+- the Iteration 6 attack trace and gross-loss evidence;
+- detector success/failure evaluation;
+- containment verdicts or FAIL → PASS replay;
+- deterministic final drill verdict computation;
 - production protocol integration;
+- production/mainnet mutation;
+- caller-selected executables, commands, program paths or RPC targets;
 - large lending/DEX implementation;
 - realistic frontend;
 - generic protocol SDK;
+- generic Solana execution framework;
 - vulnerability discovery engine.
 
-#### Deliverable
+### Deliverable
 
-A minimal real Solana target where attack damage, detector evidence and defensive containment can be measured objectively.
+A minimal real Solana reference target that BeeAgent can prepare in the approved isolated environment and BeeDrill can validate as the same known economic/control baseline across repeated runs.
 
-#### Acceptance criteria
+### Acceptance criteria
 
-- initial state is reproducible;
-- normal operation succeeds;
-- vulnerable path exists intentionally;
-- economic state is measurable;
-- detector-relevant signal exists;
-- pause/breaker control exists;
-- one containment configuration can be deliberately broken without changing the attack;
-- target resets between runs;
-- target is clearly marked intentionally vulnerable;
-- no production/private data is used.
+- target source and build inputs are reproducible and owned by BeeDrill;
+- canonical logical initial state is explicit;
+- two fresh preparations produce equivalent security-relevant starting state;
+- normal target operation succeeds;
+- the intentionally unsafe path is demonstrably reachable at target level;
+- economic state is measurable using deterministic integer units;
+- a detector-relevant machine signal exists;
+- a pause/breaker path exists;
+- containment configuration can be deliberately broken without changing the vulnerability;
+- reset or fresh preparation restores the canonical state;
+- BeeDrill reaches target execution only through the BeeAgent-owned bounded capability;
+- BeeDrill module authority remains `READ_ONLY`;
+- scenario/module input cannot select arbitrary execution or RPC;
+- no production credential, private data or mainnet fallback is used.
 
-#### Checks
+### Checks
 
 ```text
-baseline state
+reference-target build/test
+canonical baseline validation
 normal operation
-vulnerable operation
+unsafe-path target-level probe
 control availability
 broken-control configuration
-state reset
+fresh-state reset
 repeatability
+BeeDrill unit/contract tests
+full BeeDrill tests
+package build when package resources change
+BeeAgent cross-repository integration smoke
+malformed/forbidden intent tests
+artifact inspection
+secret-leak review
+SAST
+SCA only if dependency surface changes
+git diff --check
 ```
 
-#### DoD
+### DoD
 
-Every drill run can begin from the same known state with measurable capital and explicit defenses.
-
----
+BeeDrill has one real, intentionally vulnerable and reproducible Solana target that starts every later drill from the same measurable economic/control state without giving BeeDrill direct process, RPC or production execution authority.
 
 ### Iteration 6 — First real economic attack and attack evidence
 
