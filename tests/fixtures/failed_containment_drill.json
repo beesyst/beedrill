@@ -1,0 +1,79 @@
+{
+  "identity": {
+    "scenario_id": "pool_drain_control_failure",
+    "version": 1
+  },
+  "target": {
+    "target_id": "demo_pool",
+    "protocol": "solana_pool",
+    "state_ref": "pre_attack_snapshot"
+  },
+  "initial_state": {
+    "state_id": "pre_attack_snapshot",
+    "description": "Synthetic pool is active and the circuit breaker is configured."
+  },
+  "attack_steps": [
+    {
+      "attack_id": "liquidity_drain_attempt",
+      "attack_type": "liquidity_drain",
+      "expected_effect": "Pool balance decreases beyond the configured control threshold."
+    }
+  ],
+  "expected_controls": [
+    {
+      "control_id": "drain_detector",
+      "control_type": "detector",
+      "expectation": "observed"
+    },
+    {
+      "control_id": "pool_circuit_breaker",
+      "control_type": "containment",
+      "expectation": "succeeded"
+    }
+  ],
+  "observations": [
+    {
+      "observation_id": "attack_observed",
+      "subject_id": "liquidity_drain_attempt",
+      "subject": "attack",
+      "status": "observed",
+      "evidence_id": "attack_event"
+    },
+    {
+      "observation_id": "detection_observed",
+      "subject_id": "drain_detector",
+      "subject": "control",
+      "status": "observed",
+      "evidence_id": "detector_event"
+    }
+  ],
+  "containment": {
+    "control_id": "pool_circuit_breaker",
+    "status": "failed",
+    "evidence_id": "containment_event"
+  },
+  "economic_delta": {
+    "asset": "USDC",
+    "unit": "micro_usdc",
+    "before": 1000000000,
+    "after": 520000000
+  },
+  "evidence": {
+    "required": [
+      "attack_event",
+      "detector_event",
+      "containment_event",
+      "economic_delta"
+    ],
+    "present": [
+      "attack_event",
+      "detector_event",
+      "containment_event",
+      "economic_delta"
+    ],
+    "missing": []
+  },
+  "verdict": {
+    "status": "fail"
+  }
+}

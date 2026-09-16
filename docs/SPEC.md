@@ -258,22 +258,36 @@ capabilities.
 
 ## 11. Scenario contract
 
-A scenario represents one reproducible security-control validation case.
+A scenario represents one complete, reproducible security-control validation
+case. The BD-3 public domain contract is available from `beedrill` and is
+implemented in `beedrill.domain`.
 
-A scenario must define enough semantic information to determine:
+`Scenario` contains these required immutable values:
 
-- what security condition is being tested;
-- what attack behavior is expected;
-- what detector behavior is expected;
-- what containment behavior is expected;
-- what evidence is required;
-- what outcome constitutes success/failure.
+```text
+identity: ScenarioIdentity(scenario_id, version)
+target: Target(target_id, protocol, state_ref)
+initial_state: InitialState(state_id, description)
+attack_steps: tuple[AttackStep(attack_id, attack_type, expected_effect)]
+expected_controls: tuple[ExpectedControl(control_id, control_type, expectation)]
+observations: tuple[Observation(observation_id, subject_id, subject, status, evidence_id)]
+containment: ContainmentResult(control_id, status, evidence_id)
+economic_delta: EconomicDelta(asset, unit, before, after)
+evidence: EvidenceCompleteness(required, present, missing)
+verdict: DrillVerdict(status)
+```
 
-The concrete field schema is introduced by the roadmap iteration that creates
-the scenario contract.
+`scenario_id`, all contract identifiers and all references are stable lowercase
+identifiers. `version` is an explicit positive integer. No model derives an
+identifier, version, verdict or evidence state from a clock, UUID, process or
+environment value. Attack steps are semantic descriptions only: their bounded
+fields do not carry an executable, command, script, code, process arguments,
+RPC destination, filesystem path or credentials.
 
-The bootstrap specification intentionally does not invent a universal scenario
-DSL.
+Collections are immutable tuples in the model and are bounded to 32 values.
+
+This is a concrete contract for one Solana-first drill domain, not a generic
+scenario language or YAML DSL.
 
 ## 12. Scenario safety
 
@@ -299,112 +313,49 @@ execution.
 
 ## 13. Target contract
 
-A target represents the protocol/state under drill.
+`Target` and `InitialState` describe the logical protocol and its known starting
+state. They are not runtime target selection, an RPC endpoint, an authority
+grant or an instruction to create state. A future host must resolve any
+execution target through its own approved isolated-environment policy.
 
-For the MVP, execution targets must resolve to an explicitly approved isolated
-Solana environment.
-
-Production/mainnet mutation is outside the current contract.
-
-Target semantics should describe what is being tested without allowing the
-scenario to bypass host target policy.
+Production/mainnet mutation remains outside this data contract.
 
 ## 14. Attack contract
 
-An attack represents the adversarial condition used to exercise security
-controls.
-
-BeeDrill owns:
-
-- attack meaning;
-- attack expectations;
-- expected observable effects.
-
-BeeAgent owns:
-
-- execution mechanism;
-- process/RPC lifecycle;
-- timeout;
-- cleanup;
-- execution authority.
-
-An attack contract must not become a generic "run command" API.
+Each `AttackStep` carries an attack identifier, a bounded attack type and the
+expected observable effect. It represents the adversarial condition, not how to
+execute it. BeeAgent retains execution mechanism, process/RPC lifecycle,
+timeouts, cleanup and authority.
 
 ## 15. Detector contract
 
-A drill may require evidence that a detector observed the attack.
-
-The contract must distinguish:
-
-```text
-detector expected
-detector observed
-detector evidence valid
-detector timing
-```
-
-A missing detector observation must not be treated as successful detection.
-
-Detector-specific integration details belong to the iteration that introduces
-the integration.
+`ExpectedControl` has one of two types: `detector` or `containment`. A detector
+must explicitly expect `observed`; a containment control must explicitly expect
+`succeeded`. An `Observation` explicitly records `observed`, `not_observed` or
+`missing` for an attack or expected control. Detector integration details are
+not part of BD-3.
 
 ## 16. Containment contract
 
-A drill may require evidence that a containment mechanism acted.
-
-Containment may include a protocol-specific control such as a pause/circuit
-breaker path.
-
-The contract must distinguish:
-
-```text
-containment expected
-containment requested
-containment confirmed
-containment effect observed
-```
-
-A requested containment action is not automatically proof that the protocol was
-contained.
+`ContainmentResult` references a declared containment control and explicitly
+states `succeeded`, `failed` or `missing`; no request or prose is treated as
+proof of containment. Containment execution is outside BD-3.
 
 ## 17. Evidence contract
 
-Evidence is structured drill input used for evaluation.
-
-Evidence may include:
-
-- attack start observation;
-- attack execution result;
-- detector observation;
-- detector timestamp;
-- containment observation;
-- containment timestamp;
-- relevant protocol state;
-- economic state before/after;
-- controlled execution diagnostics.
-
-Evidence must be:
-
-- bounded;
-- structured;
-- deterministically interpretable;
-- separated from authority.
-
-Concrete evidence fields belong to their introducing iteration.
+`EvidenceCompleteness` explicitly lists required, present and missing evidence
+identifiers. Present and missing values must be unique, disjoint and together
+partition required values. `EconomicDelta` carries an uppercase asset symbol, a
+unit identifier and explicit integer `before` and `after` values. Integer units
+are authoritative; floats are rejected. BD-3 does not calculate a delta, MTTD,
+MTTC, residual loss or a verdict.
 
 ## 18. Evidence validity
 
-BeeDrill must distinguish:
-
-- valid evidence;
-- missing evidence;
-- malformed evidence;
-- incomplete evidence;
-- contradictory evidence.
-
-Critical invalid evidence must not silently result in PASS.
-
-Evaluation should fail closed according to the approved verdict contract.
+Critical invalid data is rejected, including unknown fields, missing required
+fields, invalid identifiers/enums/integers, duplicate identifiers and
+inconsistent evidence partitioning. A scenario with missing evidence cannot
+carry a `pass` verdict.
 
 ## 19. Evidence is not authority
 
@@ -419,6 +370,29 @@ evidence != authority
 result != approval
 scenario != runtime identity
 ```
+
+## 19.1 JSON conversion and verdict values
+
+`scenario_from_dict`, `scenario_from_json`, `scenario_to_dict` and
+`scenario_to_json` are the only BD-3 conversion functions. Input objects are
+strict: every object rejects unknown fields. This bounded schema therefore also
+rejects execution-shaped fields without attempting to interpret ordinary prose.
+
+Canonical JSON uses sorted keys, compact separators and UTF-8-compatible text;
+the same valid model always produces byte-identical JSON and conversion adds no
+timestamps, random values or environment state.
+
+`tests/fixtures/failed_containment_drill.json` is the sanitized deterministic
+baseline: the attack and detector are observed, containment fails, and explicit
+USDC integer-unit before/after evidence records damage of 480,000,000 units.
+All required evidence is present and the explicitly supplied verdict is `fail`.
+It contains no execution instructions, private keys, seed phrases or
+credentials.
+
+`DrillVerdict.status` is a required typed value: `pass`, `fail` or
+`incomplete`. It is supplied data, not inferred from prose, AI or defaults. A
+future BD-9 verdict engine may decide a status from validated evidence, but is
+not implemented by this contract.
 
 ## 20. MTTD
 
@@ -585,14 +559,17 @@ Artifacts must not contain production secrets.
 
 BeeDrill public API should remain minimal.
 
-Public names should be exported intentionally through:
+Public contracts use explicit module imports:
 
-```text
-src/beedrill/__init__.py
+```python
+from beedrill.domain import Scenario
+from beedrill.domain import DrillVerdict
+from beedrill.module import BeeDrillModule
 ```
 
-The bootstrap package should not publish speculative domain types before their
-contracts are introduced by roadmap work.
+`src/beedrill/__init__.py` is byte-empty and is not a re-export layer. Do not
+publish speculative domain types before their contracts are introduced by
+roadmap work.
 
 ## 30. Package guarantees
 
