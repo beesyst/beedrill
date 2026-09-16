@@ -1,6 +1,6 @@
 [project]
 name = "beedrill"
-version = "0.2.0"
+version = "0.3.0"
 description = "Continuous security-control validation for Solana protocols"
 readme = "README.md"
 requires-python = ">=3.14"
