@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.2.0...beedrill-v0.3.0) (2026-09-16)
+
+
+### Features
+
+* add deterministic drill domain contracts ([#6](https://github.com/beesyst/beedrill/issues/6)) ([5c2a05e](https://github.com/beesyst/beedrill/commit/5c2a05e26e28dbff38e302ce4be40d3bb11416c7))
+
 ## [0.2.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.1.0...beedrill-v0.2.0) (2026-09-15)
 
 
