@@ -1,8 +1,16 @@
+from pathlib import Path
+
 import pytest
 from beesdk.artifacts import ArtifactPort
 from beesdk.modules import AuthorityLevel, ModuleContext, ModuleContract, ModuleResult
 
 from beedrill.module import BeeDrillModule
+
+
+def test_first_party_package_initializer_is_byte_empty() -> None:
+    initializer = Path(__file__).parents[1] / "src" / "beedrill" / "__init__.py"
+
+    assert initializer.read_bytes() == b""
 
 
 def test_module_identity_and_initial_authority() -> None:

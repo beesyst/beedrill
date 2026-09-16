@@ -408,8 +408,9 @@ Use:
 - resolved development environment:
   - `uv.lock`;
 
-- public import surface:
-  - `src/beedrill/__init__.py`;
+- public import modules:
+  - `src/beedrill/domain.py`;
+  - `src/beedrill/module.py`;
 
 - BeeDrill implementation:
   - `src/beedrill/`;
@@ -443,13 +444,20 @@ Rules:
 - no hidden defaults for required security behavior;
 - no duplicate source of truth;
 - package metadata must remain internally consistent;
-- public exports must be explicit;
+- public imports must use explicit public modules;
 - type and protocol contracts are compatibility surfaces;
 - scenario data is not execution authority;
 - evidence is not execution authority;
 - runtime identity and policy remain host-owned;
 - preserve compatibility unless the approved Issue explicitly permits a
   breaking change.
+
+## First-party package initializers
+
+All first-party Python `__init__.py` files must remain byte-empty. They contain
+no imports or re-exports, `__all__`, version constants, registration or
+initialization logic, side effects or package metadata. Stable public imports
+use explicit public modules such as `beedrill.domain` and `beedrill.module`.
 
 ## Implementation rules
 

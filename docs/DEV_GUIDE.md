@@ -515,13 +515,15 @@ are verification outputs and normally remain ignored.
 
 Keep the public API minimal.
 
-Public names should be intentionally exported through:
+Use documented explicit public modules:
 
-```text
-src/beedrill/__init__.py
+```python
+from beedrill.domain import Scenario
+from beedrill.module import BeeDrillModule
 ```
 
-Do not publish every internal domain helper.
+`src/beedrill/__init__.py` is byte-empty and is not a re-export layer. Do not
+publish every internal domain helper.
 
 When a public contract changes:
 

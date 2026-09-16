@@ -602,22 +602,18 @@ Rule:
 
 ## Public import surface
 
-The public package boundary is:
+Public contracts use explicit module boundaries:
 
 ```python
-import beedrill
+from beedrill.domain import Scenario
+from beedrill.module import BeeDrillModule
 ```
 
-Only intentionally public names should be exported from:
+`src/beedrill/__init__.py` remains byte-empty and is not a re-export layer. Do
+not publish every internal domain helper.
 
-```text
-src/beedrill/__init__.py
-```
-
-Do not force consumers to rely on deep internal paths for stable public
-behavior.
-
-At bootstrap, keep the public surface as small as possible.
+Keep the public surface small by making only documented modules stable public
+boundaries.
 
 ## Repository structure
 
