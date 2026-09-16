@@ -31,6 +31,11 @@
 
 BeeDrill provides continuous security-control validation for Solana protocols.
 
+For `isolated_solana_smoke`, BeeDrill supplies only the fixed
+`surfpool_local` intent through the BeeSDK `CapabilityCaller`. BeeAgent owns
+the isolated process, local RPC, policy, authority and cleanup. Returned
+capability evidence never upgrades BeeDrill's `READ_ONLY` authority.
+
 The product goal is to verify that defenses actually work under reproducible
 attack conditions.
 
