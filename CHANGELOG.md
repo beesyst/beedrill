@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.3.0...beedrill-v0.4.0) (2026-09-16)
+
+
+### Features
+
+* **module:** request bounded isolated Solana lifecycle smoke ([#9](https://github.com/beesyst/beedrill/issues/9)) ([514d6a5](https://github.com/beesyst/beedrill/commit/514d6a576ffd913d68ff7ac088dd8cd1cb3f0953))
+
 ## [0.3.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.2.0...beedrill-v0.3.0) (2026-09-16)
 
 
