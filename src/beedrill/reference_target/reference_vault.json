@@ -1,0 +1,14 @@
+{
+  "canonical_initial_state": {
+    "breaker": "available",
+    "containment_configurations": ["valid", "broken"],
+    "detector_signal": "vault_outflow_signal",
+    "economic_unit": "lamports",
+    "initial_state_id": "reference_vault_canonical_v1",
+    "normal_operation": "deposit",
+    "unsafe_condition": "unchecked_withdraw",
+    "vault_lamports": 1000000
+  },
+  "resource_id": "beedrill.reference_vault.v1",
+  "target_id": "reference_vault"
+}

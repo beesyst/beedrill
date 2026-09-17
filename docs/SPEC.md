@@ -36,6 +36,13 @@ For `isolated_solana_smoke`, BeeDrill supplies only the fixed
 the isolated process, local RPC, policy, authority and cleanup. Returned
 capability evidence never upgrades BeeDrill's `READ_ONLY` authority.
 
+For `reference_target_baseline`, BeeDrill supplies only the fixed
+`surfpool_local` and `reference_vault` intent. The package-owned
+`reference_target/reference_vault.json` resource defines the stable logical
+target identity, canonical initial state and integer lamport baseline. BeeAgent
+resolves that resource, owns the isolated lifecycle and returns bounded
+evidence; malformed or incomplete evidence is refused by the module.
+
 The product goal is to verify that defenses actually work under reproducible
 attack conditions.
 

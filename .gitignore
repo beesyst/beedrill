@@ -11,3 +11,4 @@ htmlcov/
 .ruff_cache/
 .idea/
 .vscode/
+src/beedrill/reference_target/target/

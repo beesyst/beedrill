@@ -26,6 +26,14 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+beedrill = [
+    "reference_target/Cargo.toml",
+    "reference_target/Cargo.lock",
+    "reference_target/reference_vault.json",
+    "reference_target/src/lib.rs",
+]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
