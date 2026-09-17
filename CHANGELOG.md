@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.4.0...beedrill-v0.5.0) (2026-09-17)
+
+
+### Features
+
+* **beedrill:** add reproducible reference vault target ([#12](https://github.com/beesyst/beedrill/issues/12)) ([ddd4e45](https://github.com/beesyst/beedrill/commit/ddd4e455868939c463c4c2c8fa11c9c54562915d))
+
 ## [0.4.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.3.0...beedrill-v0.4.0) (2026-09-16)
 
 
