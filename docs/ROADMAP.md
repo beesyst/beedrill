@@ -1114,7 +1114,7 @@ BeeDrill can reach a real isolated Solana environment only through a bounded Bee
 
 ## Iteration 5 — Reference vulnerable protocol and reproducible state
 
-**Status:** PLANNED
+**Status:** DONE
 
 ### Goal
 
