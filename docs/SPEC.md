@@ -43,6 +43,12 @@ target identity, canonical initial state and integer lamport baseline. BeeAgent
 resolves that resource, owns the isolated lifecycle and returns bounded
 evidence; malformed or incomplete evidence is refused by the module.
 
+For `reference_target_attack`, BeeDrill supplies that same fixed intent through
+the BeeSDK `CapabilityCaller`. BeeAgent alone owns the isolated target and
+transaction execution. A successful response must provide the exact bounded
+economic evidence contract in section 17; BeeDrill emits it as an artifact only
+after strict validation and remains `READ_ONLY`.
+
 The product goal is to verify that defenses actually work under reproducible
 attack conditions.
 
@@ -361,6 +367,29 @@ partition required values. `EconomicDelta` carries an uppercase asset symbol, a
 unit identifier and explicit integer `before` and `after` values. Integer units
 are authoritative; floats are rejected. BD-3 does not calculate a delta, MTTD,
 MTTC, residual loss or a verdict.
+
+### 17.1 Reference-target attack evidence
+
+The `reference_target_attack` capability has one fixed request:
+`{"target_profile": "surfpool_local", "target_id": "reference_vault"}`. Its
+successful evidence has exactly these fields and no others:
+
+- `target_id`: `reference_vault`;
+- `initial_state_id`: `reference_vault_canonical_v1`;
+- `economic_unit`: `lamports`;
+- `attack_start_slot`: non-negative integer local-slot reference;
+- `attack_transaction_signature`: bounded non-empty transaction identifier;
+- `vault_lamports_before`: `1000000`;
+- `vault_lamports_after`: `999900`;
+- `unsafe_withdraw_count_before`: `0`;
+- `unsafe_withdraw_count_after`: `1`;
+- `gross_loss_lamports`: `100`.
+
+BeeDrill accepts the evidence only when the integer loss equals `before - after`
+and the complete state transition matches this fixed isolated reference target.
+It writes one `reference_target_attack.json` artifact containing the bounded
+evidence. Refused, timeout, error and invalid host results remain non-successful
+module results; this evidence is neither a detector result nor a verdict.
 
 ## 18. Evidence validity
 
