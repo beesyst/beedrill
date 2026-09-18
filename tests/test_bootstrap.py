@@ -3,9 +3,10 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from beesdk._authority import AuthorityLevel
 from beesdk.artifacts import ArtifactPort
 from beesdk.capabilities import CapabilityResult, CapabilityStatus
-from beesdk.modules import AuthorityLevel, ModuleContext, ModuleContract, ModuleResult
+from beesdk.modules import ModuleContext, ModuleContract, ModuleResult
 
 from beedrill.module import BeeDrillModule
 
@@ -42,6 +43,7 @@ def test_module_handles_only_the_bounded_integration_case() -> None:
         "isolated_solana_smoke",
         "reference_target_baseline",
         "reference_target_attack",
+        "reference_target_detection",
     ]
     assert isinstance(result, ModuleResult)
     assert result == ModuleResult(
@@ -319,6 +321,13 @@ _REFERENCE_TARGET_ATTACK_EVIDENCE = {
     "unsafe_withdraw_count_before": 0,
     "unsafe_withdraw_count_after": 1,
     "gross_loss_lamports": 100,
+}
+_REFERENCE_TARGET_DETECTION_EVIDENCE = {
+    "detector_id": "reference_vault_outflow_monitor",
+    "signal_id": "vault_outflow_signal",
+    "detection_status": "observed",
+    "attack_start_slot": 42,
+    "first_detection_slot": 44,
 }
 
 
@@ -604,6 +613,242 @@ def test_reference_target_attack_fails_closed_for_invalid_success_evidence(
     assert module_result.status == "error"
     assert module_result.authority is AuthorityLevel.READ_ONLY
     assert "evidence" not in artifacts.artifacts["reference_target_attack.json"]
+
+
+def test_reference_target_detection_uses_only_the_fixed_bounded_intent() -> None:
+    caller = _FakeCapabilityCaller(
+        CapabilityResult(
+            capability_name="solana.reference_target_detection",
+            status=CapabilityStatus.OK,
+            authority=AuthorityLevel.EXECUTION_CAPABLE,
+            summary="completed",
+            data=_REFERENCE_TARGET_DETECTION_EVIDENCE,
+        )
+    )
+    artifacts = _MemoryArtifactPort()
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_target_detection",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_TARGET_PAYLOAD,
+            capability_caller=caller,
+            artifact_api=artifacts,
+        )
+    )
+
+    assert result.status == "ok"
+    assert result.authority is AuthorityLevel.READ_ONLY
+    assert result.data == {
+        "capability_status": "ok",
+        "capability_authority": "execution_capable",
+        "detection": "verified",
+    }
+    assert caller.calls == [
+        ("solana.reference_target_detection", _VALID_REFERENCE_TARGET_PAYLOAD)
+    ]
+    assert artifacts.artifacts["reference_target_detection.json"] == {
+        "module_id": "beedrill",
+        "case_type": "reference_target_detection",
+        "status": "ok",
+        "capability_status": "ok",
+        "capability_authority": "execution_capable",
+        "evidence": _REFERENCE_TARGET_DETECTION_EVIDENCE,
+    }
+
+
+def test_reference_target_detection_accepts_completed_not_observed() -> None:
+    evidence = {
+        "detector_id": "reference_vault_outflow_monitor",
+        "signal_id": "vault_outflow_signal",
+        "detection_status": "not_observed",
+        "attack_start_slot": 42,
+    }
+    caller = _FakeCapabilityCaller(
+        CapabilityResult(
+            capability_name="solana.reference_target_detection",
+            status=CapabilityStatus.OK,
+            authority=AuthorityLevel.EXECUTION_CAPABLE,
+            summary="completed",
+            data=evidence,
+        )
+    )
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_target_detection",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_TARGET_PAYLOAD,
+            capability_caller=caller,
+        )
+    )
+
+    assert result.status == "ok"
+    assert result.data["detection"] == "verified"
+
+
+def test_reference_target_detection_preserves_semantics_for_replayed_evidence() -> None:
+    results = []
+    for _ in range(2):
+        caller = _FakeCapabilityCaller(
+            CapabilityResult(
+                capability_name="solana.reference_target_detection",
+                status=CapabilityStatus.OK,
+                authority=AuthorityLevel.EXECUTION_CAPABLE,
+                summary="completed",
+                data=_REFERENCE_TARGET_DETECTION_EVIDENCE,
+            )
+        )
+        results.append(
+            BeeDrillModule().handle(
+                ModuleContext(
+                    run_id="run-1",
+                    case_type="reference_target_detection",
+                    module_id="beedrill",
+                    payload=_VALID_REFERENCE_TARGET_PAYLOAD,
+                    capability_caller=caller,
+                )
+            )
+        )
+
+    assert results[0] == results[1]
+
+
+@pytest.mark.parametrize(
+    "evidence",
+    [
+        {},
+        CapabilityResult(
+            capability_name="solana.reference_target_detection",
+            status=CapabilityStatus.OK,
+            authority=AuthorityLevel.READ_ONLY,
+            summary="completed",
+            data=_REFERENCE_TARGET_DETECTION_EVIDENCE,
+        ),
+        CapabilityResult(
+            capability_name="other.capability",
+            status=CapabilityStatus.OK,
+            authority=AuthorityLevel.EXECUTION_CAPABLE,
+            summary="completed",
+            data=_REFERENCE_TARGET_DETECTION_EVIDENCE,
+        ),
+        {**_REFERENCE_TARGET_DETECTION_EVIDENCE, "first_detection_slot": 41},
+        {
+            key: value
+            for key, value in _REFERENCE_TARGET_DETECTION_EVIDENCE.items()
+            if key != "first_detection_slot"
+        },
+        {**_REFERENCE_TARGET_DETECTION_EVIDENCE, "unknown": "value"},
+        {**_REFERENCE_TARGET_DETECTION_EVIDENCE, "detector_id": "other"},
+        {**_REFERENCE_TARGET_DETECTION_EVIDENCE, "signal_id": "other"},
+        {**_REFERENCE_TARGET_DETECTION_EVIDENCE, "attack_start_slot": True},
+        {
+            "detector_id": "reference_vault_outflow_monitor",
+            "signal_id": "vault_outflow_signal",
+            "detection_status": "not_observed",
+            "attack_start_slot": 42,
+            "first_detection_slot": 44,
+        },
+    ],
+)
+def test_reference_target_detection_fails_closed_for_invalid_success_evidence(
+    evidence: CapabilityResult | dict[str, object],
+) -> None:
+    artifacts = _MemoryArtifactPort()
+    host_result = (
+        evidence
+        if isinstance(evidence, CapabilityResult)
+        else CapabilityResult(
+            capability_name="solana.reference_target_detection",
+            status=CapabilityStatus.OK,
+            authority=AuthorityLevel.EXECUTION_CAPABLE,
+            summary="completed",
+            data=evidence,
+        )
+    )
+    caller = _FakeCapabilityCaller(host_result)
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_target_detection",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_TARGET_PAYLOAD,
+            capability_caller=caller,
+            artifact_api=artifacts,
+        )
+    )
+
+    assert result.status == "error"
+    assert "evidence" not in artifacts.artifacts["reference_target_detection.json"]
+
+
+@pytest.mark.parametrize(
+    "status",
+    [CapabilityStatus.REFUSED, CapabilityStatus.TIMEOUT, CapabilityStatus.ERROR],
+)
+def test_reference_target_detection_preserves_host_non_success(
+    status: CapabilityStatus,
+) -> None:
+    caller = _FakeCapabilityCaller(
+        CapabilityResult(
+            capability_name="solana.reference_target_detection",
+            status=status,
+            authority=AuthorityLevel.EXECUTION_CAPABLE,
+            summary="not completed",
+        )
+    )
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_target_detection",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_TARGET_PAYLOAD,
+            capability_caller=caller,
+        )
+    )
+
+    assert result.status == status.value
+    assert result.authority is AuthorityLevel.READ_ONLY
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {"target_profile": "other", "target_id": "reference_vault"},
+        {**_VALID_REFERENCE_TARGET_PAYLOAD, "rpc_url": "untrusted"},
+        {**_VALID_REFERENCE_TARGET_PAYLOAD, "detector": "untrusted"},
+    ],
+)
+def test_reference_target_detection_refuses_invalid_intent(
+    payload: dict[str, str],
+) -> None:
+    caller = _FakeCapabilityCaller(
+        CapabilityResult(
+            capability_name="solana.reference_target_detection",
+            status=CapabilityStatus.OK,
+            authority=AuthorityLevel.EXECUTION_CAPABLE,
+            summary="completed",
+            data=_REFERENCE_TARGET_DETECTION_EVIDENCE,
+        )
+    )
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_target_detection",
+            module_id="beedrill",
+            payload=payload,
+            capability_caller=caller,
+        )
+    )
+
+    assert result.status == "refused"
+    assert caller.calls == []
 
 
 class _MemoryArtifactPort:

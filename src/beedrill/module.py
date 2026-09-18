@@ -6,6 +6,8 @@ _REFERENCE_TARGET_CASE = "reference_target_baseline"
 _REFERENCE_TARGET_CAPABILITY = "solana.reference_target_baseline"
 _REFERENCE_TARGET_ATTACK_CASE = "reference_target_attack"
 _REFERENCE_TARGET_ATTACK_CAPABILITY = "solana.reference_target_attack"
+_REFERENCE_TARGET_DETECTION_CASE = "reference_target_detection"
+_REFERENCE_TARGET_DETECTION_CAPABILITY = "solana.reference_target_detection"
 _REFERENCE_TARGET_PAYLOAD = {
     "target_profile": "surfpool_local",
     "target_id": "reference_vault",
@@ -35,6 +37,15 @@ _REFERENCE_TARGET_ATTACK_EVIDENCE_FIELDS = {
     "unsafe_withdraw_count_after",
     "gross_loss_lamports",
 }
+_REFERENCE_TARGET_DETECTION_EVIDENCE_FIELDS = {
+    "detector_id",
+    "signal_id",
+    "detection_status",
+    "attack_start_slot",
+}
+_REFERENCE_TARGET_OBSERVED_DETECTION_EVIDENCE_FIELDS = (
+    _REFERENCE_TARGET_DETECTION_EVIDENCE_FIELDS | {"first_detection_slot"}
+)
 
 _ISOLATED_SOLANA_CASE = "isolated_solana_smoke"
 _ISOLATED_SOLANA_CAPABILITY = "solana.isolated_lifecycle"
@@ -57,6 +68,7 @@ class BeeDrillModule:
             _ISOLATED_SOLANA_CASE,
             _REFERENCE_TARGET_CASE,
             _REFERENCE_TARGET_ATTACK_CASE,
+            _REFERENCE_TARGET_DETECTION_CASE,
         ]
 
     def handle(self, context: ModuleContext) -> ModuleResult:
@@ -69,6 +81,8 @@ class BeeDrillModule:
             return self._handle_reference_target_baseline(context)
         if context.case_type == _REFERENCE_TARGET_ATTACK_CASE:
             return self._handle_reference_target_attack(context)
+        if context.case_type == _REFERENCE_TARGET_DETECTION_CASE:
+            return self._handle_reference_target_detection(context)
 
         artifact_api: ArtifactPort | None = context.artifact_api
         if artifact_api is not None:
@@ -310,6 +324,85 @@ class BeeDrillModule:
             {"capability_status": "invalid"},
         )
 
+    def _handle_reference_target_detection(
+        self,
+        context: ModuleContext,
+    ) -> ModuleResult:
+        if not _is_valid_reference_target_payload(context.payload):
+            return self._reference_target_detection_result(
+                context,
+                "refused",
+                "BeeDrill reference target detection intent is refused",
+                {"capability_status": "refused"},
+            )
+
+        caller = context.capability_caller
+        if caller is None:
+            return self._reference_target_detection_result(
+                context,
+                "error",
+                "Host capability caller is unavailable",
+                {"capability_status": "missing"},
+            )
+
+        result = caller.call(
+            _REFERENCE_TARGET_DETECTION_CAPABILITY,
+            _REFERENCE_TARGET_PAYLOAD,
+        )
+        if not isinstance(result, CapabilityResult):
+            return self._reference_target_detection_result(
+                context,
+                "error",
+                "Host capability returned an invalid result",
+                {"capability_status": "invalid"},
+            )
+        capability_evidence = {
+            "capability_status": result.status.value,
+            "capability_authority": result.authority.value,
+        }
+        if result.capability_name != _REFERENCE_TARGET_DETECTION_CAPABILITY:
+            return self._reference_target_detection_result(
+                context,
+                "error",
+                "Host capability returned inconsistent evidence",
+                capability_evidence,
+            )
+        if result.status is CapabilityStatus.OK:
+            if (
+                result.authority is not AuthorityLevel.EXECUTION_CAPABLE
+                or not _is_valid_reference_target_detection_evidence(result.data)
+            ):
+                return self._reference_target_detection_result(
+                    context,
+                    "error",
+                    "Host capability detection evidence is incomplete",
+                    capability_evidence,
+                )
+            return self._reference_target_detection_result(
+                context,
+                "ok",
+                "BeeDrill reference target detection completed",
+                {**capability_evidence, "detection": "verified"},
+                result.data,
+            )
+        if result.status in {
+            CapabilityStatus.REFUSED,
+            CapabilityStatus.TIMEOUT,
+            CapabilityStatus.ERROR,
+        }:
+            return self._reference_target_detection_result(
+                context,
+                result.status.value,
+                "BeeDrill reference target detection did not complete",
+                capability_evidence,
+            )
+        return self._reference_target_detection_result(
+            context,
+            "error",
+            "Host capability returned an unknown status",
+            {"capability_status": "invalid"},
+        )
+
     def _capability_result(
         self,
         context: ModuleContext,
@@ -408,6 +501,40 @@ class BeeDrillModule:
             data=data,
         )
 
+    def _reference_target_detection_result(
+        self,
+        context: ModuleContext,
+        status: str,
+        summary: str,
+        data: dict[str, str],
+        evidence: dict[str, object] | None = None,
+    ) -> ModuleResult:
+        artifact_api: ArtifactPort | None = context.artifact_api
+        if artifact_api is not None:
+            artifact_api.write_json(
+                "reference_target_detection.json",
+                {
+                    "module_id": self.module_id,
+                    "case_type": context.case_type,
+                    "status": status,
+                    "capability_status": data["capability_status"],
+                    **(
+                        {"capability_authority": data["capability_authority"]}
+                        if "capability_authority" in data
+                        else {}
+                    ),
+                    **({"evidence": evidence} if evidence is not None else {}),
+                },
+            )
+        return ModuleResult(
+            module_id=self.module_id,
+            case_type=context.case_type,
+            authority=self.authority,
+            status=status,
+            summary=summary,
+            data=data,
+        )
+
 
 def _is_valid_isolated_solana_payload(payload: object) -> bool:
     return type(payload) is dict and payload == _ISOLATED_SOLANA_PAYLOAD
@@ -453,4 +580,38 @@ def _is_valid_reference_target_attack_evidence(evidence: object) -> bool:
         and values["unsafe_withdraw_count_after"] == 1
         and values["gross_loss_lamports"]
         == values["vault_lamports_before"] - values["vault_lamports_after"]
+    )
+
+
+def _is_valid_reference_target_detection_evidence(evidence: object) -> bool:
+    if type(evidence) is not dict:
+        return False
+    values = evidence
+    status = values.get("detection_status")
+    if status == "observed":
+        expected_fields = _REFERENCE_TARGET_OBSERVED_DETECTION_EVIDENCE_FIELDS
+    elif status == "not_observed":
+        expected_fields = _REFERENCE_TARGET_DETECTION_EVIDENCE_FIELDS
+    else:
+        return False
+
+    if set(values) != expected_fields:
+        return False
+
+    attack_start_slot = values["attack_start_slot"]
+    if (
+        isinstance(attack_start_slot, bool)
+        or not isinstance(attack_start_slot, int)
+        or attack_start_slot < 0
+        or values["detector_id"] != "reference_vault_outflow_monitor"
+        or values["signal_id"] != "vault_outflow_signal"
+    ):
+        return False
+    if status == "not_observed":
+        return True
+    first_detection_slot = values["first_detection_slot"]
+    return (
+        not isinstance(first_detection_slot, bool)
+        and isinstance(first_detection_slot, int)
+        and first_detection_slot >= attack_start_slot
     )
