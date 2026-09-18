@@ -1202,7 +1202,7 @@ BeeDrill has one real, intentionally vulnerable and reproducible Solana target t
 
 ### Iteration 6 — First real economic attack and attack evidence
 
-**Status:** PLANNED
+**Status:** DONE
 
 #### Goal
 
