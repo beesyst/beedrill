@@ -1306,8 +1306,7 @@ BeeDrill has a real isolated attack path, not a mocked security event, with host
 
 ### Iteration 7 — Independent detection observation
 
-**Status:** PLANNED
-**Window:** 2026-09-22..2026-09-23
+**Status:** DONE
 
 #### Goal
 
