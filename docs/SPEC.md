@@ -49,6 +49,13 @@ transaction execution. A successful response must provide the exact bounded
 economic evidence contract in section 17; BeeDrill emits it as an artifact only
 after strict validation and remains `READ_ONLY`.
 
+For `reference_target_detection`, BeeDrill supplies only that same fixed intent
+to `solana.reference_target_detection`. BeeAgent owns the fixed monitor, its
+RPC observation, attack execution, timeout and cleanup. BeeDrill accepts only
+the exact detection evidence contract in section 17.2, writes it through
+`ArtifactPort`, and keeps completed `not_observed` separate from host refusal,
+timeout and error.
+
 The product goal is to verify that defenses actually work under reproducible
 attack conditions.
 
@@ -390,6 +397,19 @@ and the complete state transition matches this fixed isolated reference target.
 It writes one `reference_target_attack.json` artifact containing the bounded
 evidence. Refused, timeout, error and invalid host results remain non-successful
 module results; this evidence is neither a detector result nor a verdict.
+
+### 17.2 Reference-target detection evidence
+
+The `reference_target_detection` capability has the same sole fixed request as
+the attack capability. Successful evidence identifies only
+`reference_vault_outflow_monitor` and `vault_outflow_signal`, includes a
+non-negative `attack_start_slot`, and has no unknown fields. For
+`detection_status: observed`, it additionally has a non-negative
+`first_detection_slot` that is not earlier than `attack_start_slot`. For
+`detection_status: not_observed`, that field is absent. BeeDrill rejects all
+other identities, status values, field shapes and timing relations. It writes
+the validated bounded evidence to `reference_target_detection.json`; host
+refusal, timeout and error remain distinct non-successful module results.
 
 ## 18. Evidence validity
 
