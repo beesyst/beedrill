@@ -1203,11 +1203,10 @@ BeeDrill has one real, intentionally vulnerable and reproducible Solana target t
 ### Iteration 6 — First real economic attack and attack evidence
 
 **Status:** PLANNED
-**Window:** 2026-09-21
 
 #### Goal
 
-Execute the first deterministic economic attack against the reference target and capture bounded machine-verifiable attack/economic evidence.
+Выполнить первую детерминированную экономическую атаку на `reference_vault` через approved BeeAgent-owned isolated execution boundary и получить bounded machine-verifiable attack/economic evidence.
 
 #### Scope
 
@@ -1217,37 +1216,69 @@ First attack class:
 vault drain / abnormal outflow
 ```
 
-Capture:
+Included:
 
+- один фиксированный BeeDrill-owned attack intent для `reference_vault`;
+- dedicated bounded BeeAgent capability для подготовки target, выполнения фиксированной атаки и наблюдения результата в `surfpool_local`;
+- host-owned Surfpool lifecycle, Solana RPC, process execution, target resolution, timeout and cleanup;
 - attack start marker;
-- submitted transactions;
-- safe transaction identifiers/signatures;
+- safe submitted transaction identifier(s);
 - slots/timing reference;
-- balances;
+- target state and balances before/after attack;
 - relevant state transitions;
 - completion evidence;
-- gross economic loss.
+- integer gross economic loss;
+- bounded BeeDrill validation and artifact/report of returned attack evidence;
+- repeatable fresh-state execution from the canonical Iteration 5 baseline.
+
+Ownership:
+
+```text
+BeeAgent
+→ execution authority
+→ process / Surfpool lifecycle
+→ RPC target selection
+→ target preparation
+→ transaction submission
+→ timeout / cleanup
+→ bounded host evidence
+
+BeeDrill
+→ fixed attack intent
+→ attack/economic evidence validation
+→ domain artifact/report semantics
+```
 
 #### Excluded
 
-- detector verdict;
-- containment verdict;
+- detector verdict or MTTD calculation;
+- containment verdict, MTTC calculation, or FAIL → PASS replay;
+- final deterministic verdict computation;
 - AI analysis;
-- additional attack classes.
+- additional attack classes;
+- arbitrary transaction submission, executable, argv, program path, RPC endpoint/method, raw transaction, or credentials from BeeDrill input;
+- generic Solana provider, execution framework, or scenario DSL;
+- production/mainnet mutation or production private keys;
+- BeeSDK contract changes unless a real integration gap is proven.
 
 #### Deliverable
 
-A reproducible real isolated attack trace with objectively measurable economic loss.
+A reproducible real isolated attack trace with objectively measurable economic loss, bounded transaction/state evidence, and an explicit host/module authority boundary.
 
 #### Acceptance criteria
 
-- attack changes real isolated Solana state;
+- attack changes real isolated Solana target state from the canonical Iteration 5 baseline;
 - attack succeeds against the intentionally vulnerable baseline;
-- loss is measurable;
-- transaction/state evidence is captured;
-- repeated execution from identical initial state produces equivalent security outcome;
+- gross loss is measurable in explicit integer units;
+- transaction and state evidence is captured with bounded identifiers;
+- repeated fresh execution produces equivalent security-relevant economic outcome;
+- BeeDrill reaches execution only through the dedicated BeeAgent-owned bounded capability;
+- BeeDrill module authority remains `READ_ONLY`;
+- module/scenario input cannot select arbitrary execution, RPC destination, target, path, transaction, or credential;
+- invalid or incomplete host evidence is explicit and cannot be reported as successful attack evidence;
 - no fake attack event is injected;
-- execution remains isolated from production/mainnet.
+- execution remains isolated from production/mainnet;
+- timeout, failure, cleanup, and no-orphan-process outcomes are explicit.
 
 #### Checks
 
@@ -1256,15 +1287,22 @@ attack success
 economic delta
 transaction/state evidence
 repeatability
-bounded serialization
-reset and replay
+fresh-state reset and replay
+bounded serialization and malformed-evidence refusal
+approved module/case/capability/payload scope
+forbidden execution-shaped input refusal
+target preparation / transaction / observation failure
+timeout and cleanup
+no orphan process
+BeeDrill/BeeAgent real isolated integration smoke
+artifact and log inspection
+SAST
+SCA only if dependency surface changes
 ```
 
 #### DoD
 
-BeeDrill has a real isolated attack path, not a mocked security event.
-
----
+BeeDrill has a real isolated attack path, not a mocked security event, with host-owned execution authority and bounded evidence sufficient for the later detection, metrics, and containment iterations.
 
 ### Iteration 7 — Independent detection observation
 
