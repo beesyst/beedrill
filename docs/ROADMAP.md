@@ -1311,61 +1311,80 @@ BeeDrill has a real isolated attack path, not a mocked security event, with host
 
 #### Goal
 
-Integrate one real independent technical detector/reference monitor and capture machine-verifiable detection timing.
+Integrate one real independent technical reference monitor for the existing `reference_vault` attack and capture bounded machine-verifiable detection evidence suitable for later deterministic MTTD calculation.
 
 #### Scope
 
 Included:
 
-- bounded detector observation contract/use;
-- one real detector/reference-monitor integration;
-- attack-start marker;
-- detection marker;
-- slot/time evidence;
-- MTTD input evidence;
-- timeout;
-- missing-alert handling;
-- detector unavailable/error distinction.
+- one fixed BeeDrill detection intent for `reference_vault`;
+- one dedicated BeeAgent-owned bounded detection capability;
+- reuse of the canonical reference target and fixed attack from Iterations 5–6;
+- an independent host-owned reference monitor observing `vault_outflow_signal`;
+- attack-start slot reference;
+- first valid detection slot reference when detection occurs;
+- explicit detector identity and signal identity;
+- bounded detection status distinguishing `observed` from `not_observed`;
+- explicit host timeout/error outcomes distinct from a completed observation with no detection;
+- strict BeeDrill validation of returned detection evidence;
+- bounded detection artifact/report semantics;
+- repeatable fresh-state observation through the existing isolated execution boundary.
 
 #### Excluded
 
-- human PagerDuty response;
-- SOC workflow;
-- manual operator judgment;
-- subjective AI detection score;
-- broad SIEM integrations.
+- MTTD calculation or final metric evaluation;
+- containment execution, MTTC or FAIL → PASS replay;
+- final deterministic drill verdict;
+- subjective AI detection decisions;
+- human/SOC/PagerDuty workflow;
+- broad SIEM or generic detector framework;
+- module-controlled RPC endpoints, executable, argv, transaction or credentials;
+- production/mainnet observation or mutation;
+- changes to the existing Iteration 6 attack-evidence contract;
+- BeeSDK changes unless a real shared-contract gap is proven.
 
 #### Deliverable
 
-Real detector evidence capable of supporting deterministic detection outcome and MTTD calculation.
+A real independent detector trace for the fixed reference attack, with comparable attack-start and detection timing evidence and explicit distinction between no detection and detector/runtime failure.
 
 #### Acceptance criteria
 
-- detector observes real attack-related state/events;
-- successful detection is captured as bounded evidence;
-- absent detection differs from execution failure;
-- delayed detection is measurable;
-- malformed detector output is refused/degraded explicitly;
-- attack start and detection have comparable timing evidence;
-- AI does not decide whether detection occurred.
+- the reference monitor observes the real isolated target independently of the attack success assertion;
+- the real fixed attack can produce a bounded `observed` detection result;
+- successful detection contains an attack-start slot and a first valid detection slot;
+- detection timing references are comparable and suitable as later MTTD inputs;
+- a completed observation window with no signal produces explicit `not_observed` evidence rather than infrastructure error;
+- detector/runtime failure and timeout remain distinct from `not_observed`;
+- malformed, contradictory or incomplete host evidence is rejected explicitly;
+- repeated fresh runs preserve equivalent detection semantics;
+- BeeDrill reaches detector/RPC execution only through the BeeAgent-owned bounded capability;
+- BeeDrill remains `READ_ONLY`;
+- AI does not determine whether detection occurred;
+- existing attack capability behavior remains compatible.
 
 #### Checks
 
 ```text
-detection produced
-detection absent
-detection delayed
-malformed observation
-detector unavailable
+real detection produced
+completed observation with detection absent
+delayed detection evidence
+malformed/inconsistent detection evidence
+detector/runtime failure
 timeout
-replay consistency
+approved module/case/capability/payload scope
+forbidden execution-shaped input refusal
+fresh-state replay consistency
+BeeDrill/BeeAgent real isolated integration smoke
+artifact inspection
+secret-leak review
+SAST
+SCA only if dependency surface changes
+git diff --check
 ```
 
 #### DoD
 
-Detection status is derived from real bounded evidence, not narrative or manual interpretation.
-
----
+BeeDrill receives real bounded independent detection evidence for the existing reference attack without owning detector execution, RPC authority or MTTD/verdict calculation.
 
 ### Iteration 8 — Deterministic metrics and verdict engine
 
