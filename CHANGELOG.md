@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.6.0...beedrill-v0.7.0) (2026-09-18)
+
+
+### Features
+
+* add independent detection observation ([#18](https://github.com/beesyst/beedrill/issues/18)) ([eb30576](https://github.com/beesyst/beedrill/commit/eb30576c28279ddfa6cc251ccad012097cc98437))
+
 ## [0.6.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.5.0...beedrill-v0.6.0) (2026-09-18)
 
 
