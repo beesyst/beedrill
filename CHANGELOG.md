@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.5.0...beedrill-v0.6.0) (2026-09-18)
+
+
+### Features
+
+* validate bounded reference-target attack evidence ([#15](https://github.com/beesyst/beedrill/issues/15)) ([696416a](https://github.com/beesyst/beedrill/commit/696416a3675325686a3801f2338a3fcb7bd6a537))
+
 ## [0.5.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.4.0...beedrill-v0.5.0) (2026-09-17)
 
 
