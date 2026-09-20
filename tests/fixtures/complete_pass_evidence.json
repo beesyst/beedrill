@@ -1,0 +1,20 @@
+{
+  "detection_status": "observed",
+  "containment_status": "succeeded",
+  "attack_start_slot": 100,
+  "first_detection_slot": 102,
+  "first_containment_slot": 105,
+  "gross_attack_loss": {
+    "asset": "USDC",
+    "unit": "micro_usdc",
+    "economic_basis": "vault_balance",
+    "amount": 100
+  },
+  "residual_loss": {
+    "asset": "USDC",
+    "unit": "micro_usdc",
+    "economic_basis": "vault_balance",
+    "amount": 20
+  },
+  "expected_verdict": "pass"
+}

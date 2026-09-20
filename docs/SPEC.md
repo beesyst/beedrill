@@ -372,8 +372,7 @@ proof of containment. Containment execution is outside BD-3.
 identifiers. Present and missing values must be unique, disjoint and together
 partition required values. `EconomicDelta` carries an uppercase asset symbol, a
 unit identifier and explicit integer `before` and `after` values. Integer units
-are authoritative; floats are rejected. BD-3 does not calculate a delta, MTTD,
-MTTC, residual loss or a verdict.
+are authoritative; floats are rejected.
 
 ### 17.1 Reference-target attack evidence
 
@@ -446,16 +445,37 @@ timestamps, random values or environment state.
 `tests/fixtures/failed_containment_drill.json` is the sanitized deterministic
 baseline: the attack and detector are observed, containment fails, and explicit
 USDC integer-unit before/after evidence records damage of 480,000,000 units.
-All required evidence is present and the explicitly supplied verdict is `fail`.
-It contains no execution instructions, private keys, seed phrases or
-credentials.
+All required evidence is present and its supplied verdict is an expected test
+oracle only. It contains no execution instructions, private keys, seed phrases
+or credentials.
 
 `DrillVerdict.status` is a required typed value: `pass`, `fail` or
-`incomplete`. It is supplied data, not inferred from prose, AI or defaults. A
-future BD-9 verdict engine may decide a status from validated evidence, but is
-not implemented by this contract.
+`incomplete`. Scenario or fixture values are expected test oracles, not runtime
+verdict authority. Runtime/product verdicts are created only by
+`evaluate_drill` from `DrillEvidence`.
 
-## 20. MTTD
+## 20. Deterministic evaluator
+
+`beedrill.evaluator` is the typed, pure evaluator contract:
+
+```python
+from beedrill.evaluator import DrillEvidence, evaluate_drill
+```
+
+`DrillEvidence` combines validated evidence completeness, detection and
+containment results, Solana slot references, gross loss and residual loss.
+`evaluate_drill` returns `DrillEvaluation(metrics, verdict)` and never reads a
+scenario or fixture verdict. The evaluator performs no I/O, starts no runtime,
+changes no authority and has no AI/LLM input.
+
+`EconomicLoss(asset, unit, economic_basis, amount)` uses non-negative integer
+amounts. Gross and residual loss comparisons require exactly equal asset, unit
+and economic basis. The evaluator computes
+`capital_saved = gross_attack_loss - residual_loss` in the same integer unit.
+Residual loss greater than gross loss, or non-zero residual loss when gross loss
+is zero, is contradictory evidence and is rejected.
+
+## 21. MTTD
 
 MTTD measures detection responsiveness for the drill.
 
@@ -467,34 +487,33 @@ valid detector observation time
 attack start time
 ```
 
-The exact reference points and units must be defined by the domain contract that
-introduces the metric.
+The evaluator defines the exact reference points and unit:
+
+```text
+MTTD slots = first_detection_slot - attack_start_slot
+```
+
+Both values are non-negative integer Solana slots. Observed detection requires
+`first_detection_slot >= attack_start_slot`. Missing or `not_observed`
+detection has no MTTD; it cannot manufacture a metric.
 
 MTTD must be derived deterministically from validated evidence.
 
-## 21. MTTC
+## 22. MTTC
 
 MTTC measures containment responsiveness for the drill.
 
-The exact reference point must be explicit in the metric contract.
-
-Possible interpretations such as:
+The evaluator uses only:
 
 ```text
-containment time - attack start time
+MTTC slots = first_containment_slot - first_detection_slot
 ```
 
-or:
+Successful containment requires observed detection and
+`first_containment_slot >= first_detection_slot`. Missing or unsuccessful
+containment has no MTTC. Slot metrics do not imply a wall-clock duration.
 
-```text
-containment time - detection time
-```
-
-must not be mixed implicitly.
-
-The approved metric contract must define one semantic meaning.
-
-## 22. Residual loss
+## 23. Residual loss
 
 Residual loss represents measurable economic damage remaining after the tested
 controls act.
@@ -507,9 +526,11 @@ The calculation must:
 - define missing-input behavior;
 - avoid subjective AI scoring.
 
-The exact formula belongs to the roadmap iteration introducing the metric.
+Gross attack loss and residual loss use equivalent asset, unit and economic
+basis. `capital_saved` is their deterministic integer difference. A positive
+capital-saved value with positive residual loss represents partial containment.
 
-## 23. Verdict contract
+## 24. Verdict contract
 
 Critical verdicts are deterministic.
 
@@ -532,7 +553,17 @@ AI may explain a verdict.
 
 AI does not determine the critical verdict.
 
-## 24. PASS semantics
+The evaluator produces `INCOMPLETE` when critical evidence is missing, including
+missing slots for an observed detection or successful containment, missing loss
+values, missing evidence identifiers, or `missing` detection/containment
+results. It produces `FAIL` for completed valid evidence with
+`detection_status: not_observed` or `containment_status: failed`. For positive
+gross loss, `PASS` requires observed detection, successful containment and
+`residual_loss < gross_attack_loss`; equal residual loss is `FAIL`. For zero
+gross loss, residual loss must be zero and observed detection plus successful
+containment produces `PASS`.
+
+## 25. PASS semantics
 
 PASS means the approved scenario's required controls and outcome thresholds were
 satisfied by valid evidence.
@@ -546,7 +577,7 @@ PASS must not mean merely:
 
 The relevant iteration defines the exact required conditions.
 
-## 25. Failure/incomplete semantics
+## 26. Failure/incomplete semantics
 
 A drill must explicitly represent non-success cases.
 
@@ -566,7 +597,7 @@ The invariant is:
 
 > Missing critical proof must not become PASS.
 
-## 26. Replay contract
+## 27. Replay contract
 
 Replay is used to confirm that a control change improves the outcome under an
 equivalent scenario.
@@ -583,7 +614,7 @@ Replay need not preserve irrelevant wall-clock or process identifiers.
 
 It must preserve equivalent security meaning.
 
-## 27. Regression contract
+## 28. Regression contract
 
 Scenario regression tests should make security behavior reproducible.
 
@@ -599,7 +630,7 @@ scenario fixture
 Real runtime drills may supplement fixture tests but do not replace deterministic
 domain tests.
 
-## 28. Artifact contract
+## 29. Artifact contract
 
 BeeDrill may produce structured drill artifacts through the host-provided
 artifact boundary.
@@ -616,7 +647,7 @@ BeeDrill does not define the host filesystem/storage implementation.
 
 Artifacts must not contain production secrets.
 
-## 29. Package/public API
+## 30. Package/public API
 
 BeeDrill public API should remain minimal.
 
@@ -625,6 +656,7 @@ Public contracts use explicit module imports:
 ```python
 from beedrill.domain import Scenario
 from beedrill.domain import DrillVerdict
+from beedrill.evaluator import DrillEvidence, DrillEvaluation, evaluate_drill
 from beedrill.module import BeeDrillModule
 ```
 
@@ -632,7 +664,7 @@ from beedrill.module import BeeDrillModule
 publish speculative domain types before their contracts are introduced by
 roadmap work.
 
-## 30. Package guarantees
+## 31. Package guarantees
 
 BeeDrill should remain:
 
@@ -643,7 +675,7 @@ BeeDrill should remain:
 - compatible with approved BeeSDK shared contracts;
 - focused on Solana during the MVP.
 
-## 31. Dependency guarantees
+## 32. Dependency guarantees
 
 Dependency additions must be explicit and justified.
 
@@ -655,7 +687,7 @@ an approved available source.
 
 Do not invent future package versions.
 
-## 32. AI usage
+## 33. AI usage
 
 AI is optional and assistive.
 
@@ -675,7 +707,7 @@ Not allowed for critical product truth:
 
 Deterministic evidence and rules remain authoritative.
 
-## 33. UI
+## 34. UI
 
 The MVP does not require a large dedicated UI.
 
@@ -695,7 +727,7 @@ evidence
 
 but UI is not the source of truth.
 
-## 34. BeeScan relationship
+## 35. BeeScan relationship
 
 BeeScan and BeeDrill solve different problems.
 
@@ -714,7 +746,7 @@ BeeDrill does not depend on BeeScan for the MVP.
 Shared integration may be considered later only if a concrete product need is
 proven.
 
-## 35. BeeUI relationship
+## 36. BeeUI relationship
 
 BeeUI owns generic presentation behavior.
 
@@ -722,7 +754,7 @@ BeeDrill should not create its own large presentation framework.
 
 BeeUI integration should occur only when there is an actual presentation need.
 
-## 36. Security guarantees
+## 37. Security guarantees
 
 The current product contract requires:
 
@@ -745,7 +777,7 @@ critical LLM-controlled verdict
 
 These are architecture/security invariants, not optional implementation details.
 
-## 37. Versioning
+## 38. Versioning
 
 BeeDrill uses SemVer.
 
@@ -767,7 +799,7 @@ Ordinary feature/fix work does not manually bump package version.
 
 Release automation owns release version lifecycle.
 
-## 38. Maturity rule
+## 39. Maturity rule
 
 BeeDrill is developing correctly when:
 
@@ -790,7 +822,7 @@ BeeDrill is developing incorrectly when:
 - UI complexity arrives before end-to-end drill evidence;
 - framework code grows faster than real scenarios.
 
-## 39. Current bootstrap boundary
+## 40. Bootstrap history
 
 Initial repository bootstrap should remain limited to:
 
