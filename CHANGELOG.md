@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.7.0...beedrill-v0.8.0) (2026-09-20)
+
+
+### Features
+
+* add deterministic drill metrics evaluator ([#21](https://github.com/beesyst/beedrill/issues/21)) ([722ab43](https://github.com/beesyst/beedrill/commit/722ab43b337711c1582e5a02c7e1c78cc7598833))
+
 ## [0.7.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.6.0...beedrill-v0.7.0) (2026-09-18)
 
 
