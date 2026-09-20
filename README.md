@@ -77,8 +77,8 @@ Attack      PASS
 Detect      PASS
 
 Contain     NEXT
-Measure     NEXT
-Verdict     NEXT
+Measure     PASS
+Verdict     PASS
 Replay      NEXT
 ```
 
@@ -180,13 +180,11 @@ Did the expected technical detector actually observe the attack?
 
 ### MTTD
 
-Time from the attack-start reference to validated detection.
-
 ```text
-attack start
-→ detector signal
-= MTTD
+MTTD slots = first_detection_slot - attack_start_slot
 ```
+
+MTTD is an integer Solana-slot metric and does not imply a wall-clock duration.
 
 ### Containment
 
@@ -194,7 +192,11 @@ Did the expected defensive control actually stop or limit the attack?
 
 ### MTTC
 
-Time from the containment reference point to validated containment.
+```text
+MTTC slots = first_containment_slot - first_detection_slot
+```
+
+MTTC is an integer Solana-slot metric and does not imply a wall-clock duration.
 
 ### Economic outcome
 
@@ -224,7 +226,7 @@ The target result is structured evidence such as:
 Attack executed          PASS
 Detection                PASS
 Containment              FAIL
-MTTD                      4.2 s
+MTTD                      4 slots
 MTTC                      unavailable
 Residual loss             480,000 units
 Final verdict             FAIL
@@ -502,13 +504,14 @@ Define
 Isolate
 Attack
 Detect
+Measure
+Verdict
 ```
 
 ### Next
 
 ```text
-deterministic metrics and verdict
-→ real containment
+real containment
 → FAIL → fix → PASS replay
 ```
 

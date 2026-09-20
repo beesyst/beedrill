@@ -1387,8 +1387,7 @@ BeeDrill receives real bounded independent detection evidence for the existing r
 
 ### Iteration 8 — Deterministic metrics and verdict engine
 
-**Status:** PLANNED
-**Window:** 2026-09-24
+**Status:** DONE
 
 #### Goal
 
