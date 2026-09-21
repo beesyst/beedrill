@@ -1464,94 +1464,100 @@ fixture expected-verdict vs computed-verdict check
 
 BeeDrill has a deterministic product truth function before the real FAIL → PASS demonstration.
 
----
-
 ### Iteration 9 — Real containment and FAIL → PASS replay
 
-**Status:** PLANNED
-**Window:** 2026-09-25..2026-09-26
+**Status:** DONE
 
 #### Goal
 
-Prove the central BeeDrill thesis using the exact same attack before and after one defensive-control correction.
+Prove the central BeeDrill thesis by replaying the same bounded attack sequence against a broken and then corrected containment condition and obtaining deterministic FAIL → PASS from real evidence.
 
 #### Scope
 
-Use the reference target and attack from Iterations 5–7.
-
-Reference failure mode:
-
-```text
-attack detected
-→ containment requested/expected
-→ wrong authority or deliberately invalid containment configuration
-→ containment effect not achieved
-→ higher residual loss
-→ deterministic FAIL
-```
-
-Then:
-
-```text
-fix only the defensive authority/configuration
-→ restore equivalent initial state
-→ replay exact scenario identity/version
-→ detection succeeds
-→ containment effect is observed
-→ lower residual loss
-→ deterministic PASS
-```
-
-This iteration absorbs the previously separate "broken authority / containment scenario" because that failure mode is the strongest form of the core FAIL → PASS demonstration and does not justify a later duplicate synthetic scenario.
+- reuse the existing `reference_vault`, canonical initial state, unsafe-withdraw attack, reference detector and deterministic evaluator;
+- require a dedicated BeeAgent-owned bounded containment capability before BeeDrill integration;
+- execute equivalent fresh-state `broken` and `fixed` defense phases;
+- use the same scenario identity/version and the same fixed attack sequence in both phases;
+- observe detection before containment evaluation;
+- verify the containment effect through real target state and a subsequent identical unsafe operation;
+- derive gross and residual economic loss from machine evidence in integer lamports;
+- validate all critical host evidence fail closed;
+- build `DrillEvidence` and use the existing `evaluate_drill` truth function;
+- produce a bounded comparison artifact containing evidence, metrics and computed verdicts for both phases.
 
 #### Excluded
 
-- production autonomous response;
-- human multisig workflow;
-- broad incident-response automation;
 - new attack class;
-- manual verdict override.
+- new reference target;
+- BeeDrill-owned process, Surfpool or RPC execution;
+- generic containment framework;
+- arbitrary runtime configuration supplied by scenario input;
+- production/mainnet mutation;
+- human multisig workflow;
+- autonomous production response;
+- manual or AI verdict override;
+- BeeSDK contract changes unless a new shared gap is independently proven.
 
 #### Deliverable
 
 One reproducible real security-control regression:
 
 ```text
-before fix → FAIL
-after fix  → PASS
-```
+same bounded attack sequence
++ broken containment
+→ higher residual loss
+→ deterministic FAIL
 
-with real chain-state/economic evidence and the same attack semantics.
+same bounded attack sequence
++ corrected containment
+→ lower residual loss
+→ deterministic PASS
+```
 
 #### Acceptance criteria
 
-- first run produces real containment failure;
-- failure reason is machine-evidenced;
-- scenario identity/version is unchanged;
-- relevant initial state is equivalent;
-- correction changes only the intended defense condition;
-- replay produces real successful containment;
-- economic outcome improves measurably;
-- evaluator from Iteration 8 produces FAIL then PASS without manual override;
-- repeated replay preserves equivalent security meaning.
+- both phases start from equivalent canonical economic state;
+- scenario identity/version is unchanged between phases;
+- attack semantics and bounded attack sequence are unchanged;
+- only the intended defensive condition changes;
+- the broken phase has observed detection and machine-evidenced failed containment;
+- the fixed phase has observed detection and machine-evidenced successful containment;
+- containment success is proven by target effect, not by a request or success string;
+- the fixed phase prevents a subsequent identical unsafe operation;
+- economic evidence does not erase already incurred loss;
+- residual loss is lower after the defense correction;
+- existing `evaluate_drill` produces FAIL then PASS without manual override;
+- missing, malformed or contradictory critical evidence cannot produce PASS;
+- repeated fresh replay preserves equivalent security meaning;
+- BeeDrill remains `READ_ONLY`;
+- execution authority remains owned by BeeAgent.
 
 #### Checks
 
 ```text
-broken-defense run
-fixed-defense run
-scenario identity check
-initial-state equivalence
+broken-defense real run
+fixed-defense real run
+canonical-state equivalence
+scenario identity/version equality
+same-attack-sequence verification
 detection evidence
-containment evidence
+containment-effect evidence
 economic comparison
-computed verdicts
-repeatability
+computed MTTD/MTTC/loss/capital-saved metrics
+FAIL → PASS verdict sequence
+malformed/incomplete evidence refusal
+host refusal/timeout/error handling
+fresh-state repeatability
+BeeDrill/BeeAgent integration smoke
+artifact inspection
+SAST
+SCA only if dependency surface changes
+git diff --check
 ```
 
 #### DoD
 
-BeeDrill proves that correcting one real defensive control changes the economic outcome of the same attack.
+BeeDrill proves with real isolated execution evidence that correcting one containment condition changes the economic outcome of the same attack sequence from deterministic FAIL to deterministic PASS without taking ownership of runtime execution.
 
 ---
 

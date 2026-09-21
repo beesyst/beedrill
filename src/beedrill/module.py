@@ -1,6 +1,14 @@
 from beesdk.artifacts import ArtifactPort
-from beesdk.capabilities import CapabilityResult, CapabilityStatus
+from beesdk.capabilities import CapabilityCaller, CapabilityResult, CapabilityStatus
 from beesdk.modules import AuthorityLevel, ModuleContext, ModuleResult
+
+from beedrill.domain import ContainmentStatus, EvidenceCompleteness, ObservationStatus
+from beedrill.evaluator import (
+    DrillEvaluation,
+    DrillEvidence,
+    EconomicLoss,
+    evaluate_drill,
+)
 
 _REFERENCE_TARGET_CASE = "reference_target_baseline"
 _REFERENCE_TARGET_CAPABILITY = "solana.reference_target_baseline"
@@ -8,6 +16,8 @@ _REFERENCE_TARGET_ATTACK_CASE = "reference_target_attack"
 _REFERENCE_TARGET_ATTACK_CAPABILITY = "solana.reference_target_attack"
 _REFERENCE_TARGET_DETECTION_CASE = "reference_target_detection"
 _REFERENCE_TARGET_DETECTION_CAPABILITY = "solana.reference_target_detection"
+_REFERENCE_TARGET_CONTAINMENT_CASE = "reference_target_containment_replay"
+_REFERENCE_TARGET_CONTAINMENT_CAPABILITY = "solana.reference_target_containment"
 _REFERENCE_TARGET_PAYLOAD = {
     "target_profile": "surfpool_local",
     "target_id": "reference_vault",
@@ -46,6 +56,30 @@ _REFERENCE_TARGET_DETECTION_EVIDENCE_FIELDS = {
 _REFERENCE_TARGET_OBSERVED_DETECTION_EVIDENCE_FIELDS = (
     _REFERENCE_TARGET_DETECTION_EVIDENCE_FIELDS | {"first_detection_slot"}
 )
+_REFERENCE_TARGET_CONTAINMENT_EVIDENCE_FIELDS = {
+    "target_id",
+    "initial_state_id",
+    "economic_unit",
+    "defense_condition",
+    "attack_sequence_id",
+    "initial_vault_lamports",
+    "attack_start_slot",
+    "first_attack_signature",
+    "first_attack_vault_lamports",
+    "first_attack_unsafe_withdraw_count",
+    "detection_status",
+    "first_detection_slot",
+    "containment_status",
+    "first_containment_slot",
+    "second_attack_status",
+    "final_vault_lamports",
+    "final_unsafe_withdraw_count",
+    "residual_loss_lamports",
+}
+_REFERENCE_TARGET_CONTAINMENT_SCENARIO = {
+    "scenario_id": "reference_target_containment_replay",
+    "version": 1,
+}
 
 _ISOLATED_SOLANA_CASE = "isolated_solana_smoke"
 _ISOLATED_SOLANA_CAPABILITY = "solana.isolated_lifecycle"
@@ -69,6 +103,7 @@ class BeeDrillModule:
             _REFERENCE_TARGET_CASE,
             _REFERENCE_TARGET_ATTACK_CASE,
             _REFERENCE_TARGET_DETECTION_CASE,
+            _REFERENCE_TARGET_CONTAINMENT_CASE,
         ]
 
     def handle(self, context: ModuleContext) -> ModuleResult:
@@ -83,6 +118,8 @@ class BeeDrillModule:
             return self._handle_reference_target_attack(context)
         if context.case_type == _REFERENCE_TARGET_DETECTION_CASE:
             return self._handle_reference_target_detection(context)
+        if context.case_type == _REFERENCE_TARGET_CONTAINMENT_CASE:
+            return self._handle_reference_target_containment(context)
 
         artifact_api: ArtifactPort | None = context.artifact_api
         if artifact_api is not None:
@@ -403,6 +440,155 @@ class BeeDrillModule:
             {"capability_status": "invalid"},
         )
 
+    def _handle_reference_target_containment(
+        self,
+        context: ModuleContext,
+    ) -> ModuleResult:
+        if not _is_valid_reference_target_payload(context.payload):
+            return self._reference_target_containment_result(
+                context,
+                "refused",
+                "BeeDrill reference target containment intent is refused",
+                {"capability_status": "refused"},
+            )
+        caller = context.capability_caller
+        if caller is None:
+            return self._reference_target_containment_result(
+                context,
+                "error",
+                "Host capability caller is unavailable",
+                {"capability_status": "missing"},
+            )
+        broken = self._call_reference_target_containment(caller, "broken")
+        if isinstance(broken, ModuleResult):
+            return self._reference_target_containment_result(
+                context,
+                broken.status,
+                broken.summary,
+                broken.data,
+            )
+        fixed = self._call_reference_target_containment(caller, "fixed")
+        if isinstance(fixed, ModuleResult):
+            return self._reference_target_containment_result(
+                context,
+                fixed.status,
+                fixed.summary,
+                fixed.data,
+            )
+        try:
+            broken_evaluation = _containment_evaluation(
+                broken, broken["residual_loss_lamports"]
+            )
+            fixed_evaluation = _containment_evaluation(
+                fixed, broken["residual_loss_lamports"]
+            )
+        except KeyError, ValueError:
+            return self._reference_target_containment_result(
+                context,
+                "error",
+                "Host capability containment evidence is inconsistent",
+                {
+                    "capability_status": "ok",
+                    "capability_authority": "execution_capable",
+                },
+            )
+        if (
+            broken_evaluation.verdict.status.value != "fail"
+            or fixed_evaluation.verdict.status.value != "pass"
+            or fixed_evaluation.metrics.capital_saved is None
+            or fixed_evaluation.metrics.capital_saved.amount <= 0
+        ):
+            return self._reference_target_containment_result(
+                context,
+                "error",
+                "Host capability containment replay did not prove FAIL to PASS",
+                {
+                    "capability_status": "ok",
+                    "capability_authority": "execution_capable",
+                },
+            )
+        return self._reference_target_containment_result(
+            context,
+            "ok",
+            "BeeDrill reference target containment replay completed",
+            {
+                "capability_status": "ok",
+                "capability_authority": "execution_capable",
+                "broken_verdict": broken_evaluation.verdict.status.value,
+                "fixed_verdict": fixed_evaluation.verdict.status.value,
+            },
+            {
+                "scenario": _REFERENCE_TARGET_CONTAINMENT_SCENARIO,
+                "broken": broken,
+                "fixed": fixed,
+                "metrics": {
+                    "broken": _evaluation_to_dict(broken_evaluation),
+                    "fixed": _evaluation_to_dict(fixed_evaluation),
+                },
+            },
+        )
+
+    def _call_reference_target_containment(
+        self,
+        caller: CapabilityCaller,
+        defense_condition: str,
+    ) -> dict[str, object] | ModuleResult:
+        result = caller.call(
+            _REFERENCE_TARGET_CONTAINMENT_CAPABILITY,
+            {**_REFERENCE_TARGET_PAYLOAD, "defense_condition": defense_condition},
+        )
+        if not isinstance(result, CapabilityResult):
+            return ModuleResult(
+                module_id=self.module_id,
+                case_type=_REFERENCE_TARGET_CONTAINMENT_CASE,
+                authority=self.authority,
+                status="error",
+                summary="Host capability returned an invalid result",
+                data={"capability_status": "invalid"},
+            )
+        evidence = {
+            "capability_status": result.status.value,
+            "capability_authority": result.authority.value,
+        }
+        if result.capability_name != _REFERENCE_TARGET_CONTAINMENT_CAPABILITY:
+            return ModuleResult(
+                self.module_id,
+                _REFERENCE_TARGET_CONTAINMENT_CASE,
+                self.authority,
+                "error",
+                "Host capability returned inconsistent evidence",
+                evidence,
+            )
+        if result.status in {
+            CapabilityStatus.REFUSED,
+            CapabilityStatus.TIMEOUT,
+            CapabilityStatus.ERROR,
+        }:
+            return ModuleResult(
+                self.module_id,
+                _REFERENCE_TARGET_CONTAINMENT_CASE,
+                self.authority,
+                result.status.value,
+                "BeeDrill reference target containment replay did not complete",
+                evidence,
+            )
+        if (
+            result.status is not CapabilityStatus.OK
+            or result.authority is not AuthorityLevel.EXECUTION_CAPABLE
+            or not _is_valid_reference_target_containment_evidence(
+                result.data, defense_condition
+            )
+        ):
+            return ModuleResult(
+                self.module_id,
+                _REFERENCE_TARGET_CONTAINMENT_CASE,
+                self.authority,
+                "error",
+                "Host capability containment evidence is incomplete",
+                evidence,
+            )
+        return result.data
+
     def _capability_result(
         self,
         context: ModuleContext,
@@ -535,6 +721,35 @@ class BeeDrillModule:
             data=data,
         )
 
+    def _reference_target_containment_result(
+        self,
+        context: ModuleContext,
+        status: str,
+        summary: str,
+        data: dict[str, object],
+        comparison: dict[str, object] | None = None,
+    ) -> ModuleResult:
+        artifact_api: ArtifactPort | None = context.artifact_api
+        if artifact_api is not None:
+            artifact_api.write_json(
+                "reference_target_containment_replay.json",
+                {
+                    "module_id": self.module_id,
+                    "case_type": context.case_type,
+                    "status": status,
+                    **data,
+                    **({"comparison": comparison} if comparison is not None else {}),
+                },
+            )
+        return ModuleResult(
+            module_id=self.module_id,
+            case_type=context.case_type,
+            authority=self.authority,
+            status=status,
+            summary=summary,
+            data=data,
+        )
+
 
 def _is_valid_isolated_solana_payload(payload: object) -> bool:
     return type(payload) is dict and payload == _ISOLATED_SOLANA_PAYLOAD
@@ -615,3 +830,148 @@ def _is_valid_reference_target_detection_evidence(evidence: object) -> bool:
         and isinstance(first_detection_slot, int)
         and first_detection_slot >= attack_start_slot
     )
+
+
+def _is_valid_reference_target_containment_evidence(
+    evidence: object,
+    defense_condition: str,
+) -> bool:
+    if (
+        type(evidence) is not dict
+        or set(evidence) != _REFERENCE_TARGET_CONTAINMENT_EVIDENCE_FIELDS
+    ):
+        return False
+    values = evidence
+    integer_fields = {
+        "initial_vault_lamports",
+        "attack_start_slot",
+        "first_attack_vault_lamports",
+        "first_attack_unsafe_withdraw_count",
+        "first_detection_slot",
+        "final_vault_lamports",
+        "final_unsafe_withdraw_count",
+        "residual_loss_lamports",
+    }
+    if any(
+        isinstance(values[field], bool)
+        or not isinstance(values[field], int)
+        or values[field] < 0
+        for field in integer_fields
+    ):
+        return False
+    containment_slot = values["first_containment_slot"]
+    if containment_slot is not None and (
+        isinstance(containment_slot, bool)
+        or not isinstance(containment_slot, int)
+        or containment_slot < values["first_detection_slot"]
+    ):
+        return False
+    if (
+        values["target_id"] != "reference_vault"
+        or values["initial_state_id"] != "reference_vault_canonical_v1"
+        or values["economic_unit"] != "lamports"
+        or values["defense_condition"] != defense_condition
+        or values["attack_sequence_id"] != "reference_vault_unsafe_withdraw_twice_v1"
+        or values["initial_vault_lamports"] != 1_000_000
+        or values["first_attack_vault_lamports"] != 999_900
+        or values["first_attack_unsafe_withdraw_count"] != 1
+        or values["detection_status"] != "observed"
+        or not isinstance(values["first_attack_signature"], str)
+        or not values["first_attack_signature"]
+        or len(values["first_attack_signature"]) > 128
+        or values["residual_loss_lamports"]
+        != values["initial_vault_lamports"] - values["final_vault_lamports"]
+    ):
+        return False
+    if defense_condition == "broken":
+        return (
+            values["containment_status"] == "failed"
+            and containment_slot is None
+            and values["second_attack_status"] == "succeeded"
+            and values["final_vault_lamports"] == 999_800
+            and values["final_unsafe_withdraw_count"] == 2
+            and values["residual_loss_lamports"] == 200
+        )
+    return (
+        values["containment_status"] == "succeeded"
+        and containment_slot is not None
+        and values["second_attack_status"] == "rejected"
+        and values["final_vault_lamports"] == 999_900
+        and values["final_unsafe_withdraw_count"] == 1
+        and values["residual_loss_lamports"] == 100
+    )
+
+
+def _containment_evaluation(
+    evidence: dict[str, object],
+    gross_loss_lamports: object,
+) -> DrillEvaluation:
+    if isinstance(gross_loss_lamports, bool) or not isinstance(
+        gross_loss_lamports, int
+    ):
+        raise ValueError("gross loss must be an integer")
+    detection_status = evidence["detection_status"]
+    containment_status = evidence["containment_status"]
+    attack_start_slot = evidence["attack_start_slot"]
+    first_detection_slot = evidence["first_detection_slot"]
+    first_containment_slot = evidence["first_containment_slot"]
+    residual_loss_lamports = evidence["residual_loss_lamports"]
+    if (
+        not isinstance(detection_status, str)
+        or not isinstance(containment_status, str)
+        or isinstance(attack_start_slot, bool)
+        or not isinstance(attack_start_slot, int)
+        or isinstance(first_detection_slot, bool)
+        or not isinstance(first_detection_slot, int)
+        or (
+            first_containment_slot is not None
+            and (
+                isinstance(first_containment_slot, bool)
+                or not isinstance(first_containment_slot, int)
+            )
+        )
+        or isinstance(residual_loss_lamports, bool)
+        or not isinstance(residual_loss_lamports, int)
+    ):
+        raise ValueError("containment evidence has invalid field types")
+    return evaluate_drill(
+        DrillEvidence(
+            evidence=EvidenceCompleteness(
+                ("attack", "detection", "containment", "economics"),
+                ("attack", "detection", "containment", "economics"),
+                (),
+            ),
+            detection_status=ObservationStatus(detection_status),
+            containment_status=ContainmentStatus(containment_status),
+            attack_start_slot=attack_start_slot,
+            first_detection_slot=first_detection_slot,
+            first_containment_slot=first_containment_slot,
+            gross_attack_loss=EconomicLoss(
+                "SOL", "lamports", "reference_vault_lamports", gross_loss_lamports
+            ),
+            residual_loss=EconomicLoss(
+                "SOL",
+                "lamports",
+                "reference_vault_lamports",
+                residual_loss_lamports,
+            ),
+        )
+    )
+
+
+def _evaluation_to_dict(evaluation: DrillEvaluation) -> dict[str, object]:
+    metrics = evaluation.metrics
+    if (
+        metrics.gross_attack_loss is None
+        or metrics.residual_loss is None
+        or metrics.capital_saved is None
+    ):
+        raise ValueError("containment evaluation metrics are incomplete")
+    return {
+        "verdict": evaluation.verdict.status.value,
+        "mttd_slots": metrics.mttd_slots,
+        "mttc_slots": metrics.mttc_slots,
+        "gross_attack_loss_lamports": metrics.gross_attack_loss.amount,
+        "residual_loss_lamports": metrics.residual_loss.amount,
+        "capital_saved_lamports": metrics.capital_saved.amount,
+    }
