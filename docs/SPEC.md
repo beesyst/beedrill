@@ -63,6 +63,15 @@ uses the measured broken residual loss as the comparable gross-loss baseline,
 and evaluates both phases with `evaluate_drill(...)`. BeeDrill remains
 `READ_ONLY`; it neither selects execution parameters nor authors a verdict.
 
+For `reference_oracle_manipulation_replay`, BeeDrill supplies only the fixed
+`surfpool_local` and `reference_oracle_market` intent. It makes one bounded
+host call for each `broken` and `fixed` defense condition to
+`solana.reference_oracle_manipulation`, validates the canonical and manipulated
+integer price, collateral, LTV, debt, reserve, detector, containment and
+second-borrow evidence, and uses the broken 50,000,000 micro-USDC residual as
+the gross-loss baseline for both existing evaluator calls. BeeAgent owns the
+isolated target and all execution; BeeDrill remains `READ_ONLY`.
+
 The product goal is to verify that defenses actually work under reproducible
 attack conditions.
 
@@ -432,6 +441,38 @@ earlier than detection, and the final residual loss is 100 lamports. Both start
 from the canonical 1,000,000-lamport state and use the identical two-attempt
 attack sequence. The comparison artifact records validated host evidence,
 metrics, and evaluator-derived `fail` then `pass` verdicts. Missing,
+contradictory, refused, timed-out, or erroneous host evidence cannot produce a
+PASS result.
+
+### 17.4 Reference oracle-manipulation replay evidence
+
+The oracle-manipulation replay has one fixed BeeDrill request identity and two
+fixed host payloads: `{"target_profile": "surfpool_local", "target_id":
+"reference_oracle_market", "defense_condition": "broken"}` and the
+equivalent `fixed` payload. The package-owned
+`reference_target/reference_oracle_market.json` resource defines canonical
+integer economics: 1,000,000 micro-USD oracle price, 2,000,000 micro-USD
+manipulated price, 100 collateral units, 5,000 bps LTV, 50,000,000 micro-USDC
+canonical debt limit, 50,000,000 micro-USDC initial debt, and a fixed
+25,000,000 micro-USDC borrow increment. Its fixed isolated program source is
+`reference_target/oracle_market/src/lib.rs`; the host selects its build and
+deployment path without accepting one from BeeDrill input.
+
+Successful host evidence has exactly bounded identity, price, debt, reserve,
+detector, containment, slot and second-borrow fields. It must prove the first
+borrow changed debt from 50,000,000 to 75,000,000 micro-USDC and reserve from
+100,000,000 to 75,000,000 micro-USDC after the fixed manipulation. Detection
+must independently identify `reference_oracle_deviation_monitor` and
+`oracle_price_deviation_signal`. Broken containment must leave borrowing open,
+allow the second borrow and finish with 100,000,000 micro-USDC debt and
+50,000,000 micro-USDC residual bad debt. Fixed containment must prove the
+target state blocks borrowing, reject the same second borrow and retain
+75,000,000 micro-USDC debt with 25,000,000 micro-USDC residual bad debt.
+
+Residual loss is `max(0, observed_debt - canonical_debt_limit)`. Both evaluator
+calls use the broken 50,000,000 micro-USDC residual as gross loss. The
+comparison artifact contains validated bounded host evidence, computed metrics,
+and the existing evaluator's `fail` then `pass` verdicts. Missing,
 contradictory, refused, timed-out, or erroneous host evidence cannot produce a
 PASS result.
 

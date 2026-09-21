@@ -1,3 +1,4 @@
+import json
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -45,6 +46,7 @@ def test_module_handles_only_the_bounded_integration_case() -> None:
         "reference_target_attack",
         "reference_target_detection",
         "reference_target_containment_replay",
+        "reference_oracle_manipulation_replay",
     ]
     assert isinstance(result, ModuleResult)
     assert result == ModuleResult(
@@ -1030,3 +1032,261 @@ class _MemoryArtifactPort:
 
 def test_memory_artifact_port_satisfies_beesdk_contract() -> None:
     assert isinstance(_MemoryArtifactPort(), ArtifactPort)
+
+
+_VALID_REFERENCE_ORACLE_PAYLOAD = {
+    "target_profile": "surfpool_local",
+    "target_id": "reference_oracle_market",
+}
+
+
+def test_reference_oracle_market_resource_has_fixed_economics() -> None:
+    resource = (
+        Path(__file__).parents[1]
+        / "src"
+        / "beedrill"
+        / "reference_target"
+        / "reference_oracle_market.json"
+    )
+
+    data = json.loads(resource.read_text())
+
+    assert data == {
+        "canonical_initial_state": {
+            "borrow_increment_micro_usdc": 25_000_000,
+            "canonical_debt_limit_micro_usdc": 50_000_000,
+            "canonical_oracle_price_micro_usd": 1_000_000,
+            "collateral_units": 100,
+            "initial_debt_micro_usdc": 50_000_000,
+            "initial_reserve_micro_usdc": 100_000_000,
+            "ltv_bps": 5_000,
+            "manipulated_oracle_price_micro_usd": 2_000_000,
+        },
+        "resource_id": "beedrill.reference_oracle_market.v1",
+        "target_id": "reference_oracle_market",
+    }
+
+
+def _oracle_evidence(condition: str) -> dict[str, object]:
+    broken = condition == "broken"
+    return {
+        "target_id": "reference_oracle_market",
+        "initial_state_id": "reference_oracle_market_canonical_v1",
+        "economic_unit": "micro_usdc",
+        "defense_condition": condition,
+        "attack_sequence_id": "reference_oracle_manipulation_borrow_twice_v1",
+        "canonical_oracle_price_micro_usd": 1_000_000,
+        "manipulated_oracle_price_micro_usd": 2_000_000,
+        "collateral_units": 100,
+        "ltv_bps": 5_000,
+        "canonical_debt_limit_micro_usdc": 50_000_000,
+        "initial_debt_micro_usdc": 50_000_000,
+        "initial_reserve_micro_usdc": 100_000_000,
+        "attack_start_slot": 42,
+        "oracle_manipulation_signature": "oracle-manipulation",
+        "first_borrow_signature": "borrow-1",
+        "first_borrow_debt_micro_usdc": 75_000_000,
+        "first_borrow_reserve_micro_usdc": 75_000_000,
+        "detector_id": "reference_oracle_deviation_monitor",
+        "signal_id": "oracle_price_deviation_signal",
+        "detection_status": "observed",
+        "first_detection_slot": 44,
+        "containment_status": "failed" if broken else "succeeded",
+        "first_containment_slot": None if broken else 46,
+        "containment_state": "borrowing_open" if broken else "borrowing_blocked",
+        "second_borrow_status": "succeeded" if broken else "rejected",
+        "final_debt_micro_usdc": 100_000_000 if broken else 75_000_000,
+        "final_reserve_micro_usdc": 50_000_000 if broken else 75_000_000,
+        "residual_loss_micro_usdc": 50_000_000 if broken else 25_000_000,
+    }
+
+
+def _oracle_caller() -> _ContainmentCapabilityCaller:
+    return _ContainmentCapabilityCaller(
+        [
+            CapabilityResult(
+                capability_name="solana.reference_oracle_manipulation",
+                status=CapabilityStatus.OK,
+                authority=AuthorityLevel.EXECUTION_CAPABLE,
+                summary="completed",
+                data=_oracle_evidence("broken"),
+            ),
+            CapabilityResult(
+                capability_name="solana.reference_oracle_manipulation",
+                status=CapabilityStatus.OK,
+                authority=AuthorityLevel.EXECUTION_CAPABLE,
+                summary="completed",
+                data=_oracle_evidence("fixed"),
+            ),
+        ]
+    )
+
+
+def test_reference_oracle_manipulation_replay_evaluates_host_evidence() -> None:
+    caller = _oracle_caller()
+    artifacts = _MemoryArtifactPort()
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_oracle_manipulation_replay",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_ORACLE_PAYLOAD,
+            capability_caller=caller,
+            artifact_api=artifacts,
+        )
+    )
+
+    assert result.authority is AuthorityLevel.READ_ONLY
+    assert result.status == "ok"
+    assert result.data["broken_verdict"] == "fail"
+    assert result.data["fixed_verdict"] == "pass"
+    assert caller.calls == [
+        (
+            "solana.reference_oracle_manipulation",
+            {**_VALID_REFERENCE_ORACLE_PAYLOAD, "defense_condition": "broken"},
+        ),
+        (
+            "solana.reference_oracle_manipulation",
+            {**_VALID_REFERENCE_ORACLE_PAYLOAD, "defense_condition": "fixed"},
+        ),
+    ]
+    artifact = artifacts.artifacts["reference_oracle_manipulation_replay.json"]
+    assert isinstance(artifact, Mapping)
+    comparison = artifact["comparison"]
+    assert isinstance(comparison, Mapping)
+    assert comparison["scenario"] == {
+        "scenario_id": "reference_oracle_manipulation_replay",
+        "version": 1,
+    }
+    metrics = comparison["metrics"]
+    assert isinstance(metrics, Mapping)
+    assert metrics["broken"]["residual_loss_micro_usdc"] == 50_000_000
+    assert metrics["fixed"]["residual_loss_micro_usdc"] == 25_000_000
+    assert metrics["fixed"]["gross_attack_loss_micro_usdc"] == 50_000_000
+    assert metrics["fixed"]["capital_saved_micro_usdc"] == 25_000_000
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {"target_profile": "other", "target_id": "reference_oracle_market"},
+        {"target_profile": "surfpool_local", "target_id": "reference_vault"},
+        {**_VALID_REFERENCE_ORACLE_PAYLOAD, "price": 2_000_000},
+        {**_VALID_REFERENCE_ORACLE_PAYLOAD, "borrow": 25_000_000},
+        {**_VALID_REFERENCE_ORACLE_PAYLOAD, "rpc_url": "untrusted"},
+        {**_VALID_REFERENCE_ORACLE_PAYLOAD, "executable": "untrusted"},
+    ],
+)
+def test_reference_oracle_manipulation_refuses_untrusted_intent(
+    payload: dict[str, object],
+) -> None:
+    caller = _oracle_caller()
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_oracle_manipulation_replay",
+            module_id="beedrill",
+            payload=payload,
+            capability_caller=caller,
+        )
+    )
+
+    assert result.status == "refused"
+    assert caller.calls == []
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        lambda evidence: evidence.pop("detector_id"),
+        lambda evidence: evidence.update({"unknown": "value"}),
+        lambda evidence: evidence.update({"canonical_oracle_price_micro_usd": 1}),
+        lambda evidence: evidence.update({"first_borrow_debt_micro_usdc": 50_000_000}),
+        lambda evidence: evidence.update({"first_detection_slot": 41}),
+        lambda evidence: evidence.update({"first_detection_slot": True}),
+        lambda evidence: evidence.update({"second_borrow_status": "rejected"}),
+        lambda evidence: evidence.update({"residual_loss_micro_usdc": 0}),
+    ],
+)
+def test_reference_oracle_manipulation_fails_closed_for_invalid_evidence(
+    mutation: Any,
+) -> None:
+    broken = _oracle_evidence("broken")
+    mutation(broken)
+    caller = _ContainmentCapabilityCaller(
+        [
+            CapabilityResult(
+                capability_name="solana.reference_oracle_manipulation",
+                status=CapabilityStatus.OK,
+                authority=AuthorityLevel.EXECUTION_CAPABLE,
+                summary="completed",
+                data=broken,
+            )
+        ]
+    )
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_oracle_manipulation_replay",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_ORACLE_PAYLOAD,
+            capability_caller=caller,
+        )
+    )
+
+    assert result.status == "error"
+    assert len(caller.calls) == 1
+
+
+@pytest.mark.parametrize(
+    "status",
+    [CapabilityStatus.REFUSED, CapabilityStatus.TIMEOUT, CapabilityStatus.ERROR],
+)
+def test_reference_oracle_manipulation_preserves_host_non_success(
+    status: CapabilityStatus,
+) -> None:
+    caller = _ContainmentCapabilityCaller(
+        [
+            CapabilityResult(
+                capability_name="solana.reference_oracle_manipulation",
+                status=status,
+                authority=AuthorityLevel.EXECUTION_CAPABLE,
+                summary="not completed",
+            )
+        ]
+    )
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_oracle_manipulation_replay",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_ORACLE_PAYLOAD,
+            capability_caller=caller,
+        )
+    )
+
+    assert result.status == status.value
+    assert len(caller.calls) == 1
+
+
+def test_reference_oracle_manipulation_replays_deterministically() -> None:
+    results = []
+    for _ in range(2):
+        results.append(
+            BeeDrillModule().handle(
+                ModuleContext(
+                    run_id="run-1",
+                    case_type="reference_oracle_manipulation_replay",
+                    module_id="beedrill",
+                    payload=_VALID_REFERENCE_ORACLE_PAYLOAD,
+                    capability_caller=_oracle_caller(),
+                )
+            )
+        )
+
+    assert results[0] == results[1]

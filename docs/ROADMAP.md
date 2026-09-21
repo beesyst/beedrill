@@ -1578,64 +1578,101 @@ same core domain/evidence/evaluator
 
 ### Iteration 10 — Second attack class: oracle manipulation
 
-**Status:** PLANNED
-**Window:** 2026-09-27..2026-09-28
+**Status:** DONE
 
 #### Goal
 
-Add one materially different economic attack class to prove the architecture is not hardcoded to the first vault-drain path.
+Add one materially different economic attack class and prove that the existing BeeDrill domain, evidence and deterministic evaluator core is reusable beyond the `reference_vault` unsafe-withdraw path.
 
 #### Scope
 
-Included:
-
-- bounded oracle manipulation scenario;
-- unsafe economic action;
-- expected detector behavior;
-- expected containment behavior;
-- measurable economic outcome;
-- deterministic replay;
-- reuse of existing domain/evidence/evaluator contracts.
+- add one package-owned logical reference target: `reference_oracle_market`;
+- add one fixed scenario: `reference_oracle_manipulation_replay`, version `1`;
+- use only the approved `surfpool_local` execution profile;
+- model a fixed vulnerable oracle-dependent borrow path;
+- start each phase from the same canonical price, collateral, debt and reserve state;
+- perform one fixed oracle-price manipulation followed by a fixed unsafe borrow;
+- require an independent machine-observed oracle-price-deviation signal;
+- replay the same fixed attack under `broken` and `fixed` containment conditions;
+- prove containment through the effect on a subsequent identical borrow attempt;
+- derive economic loss as excess debt above the canonical unmanipulated debt limit;
+- use integer economic units only;
+- reuse the existing `DrillEvidence`, metrics and `evaluate_drill` truth function;
+- produce one bounded comparison artifact with evidence, metrics and computed verdicts;
+- require one companion BeeAgent-owned bounded execution capability.
 
 #### Excluded
 
-- generic oracle framework;
-- support for every Solana oracle provider;
-- production oracle manipulation;
-- arbitrary runtime scripting;
-- a third synthetic scenario merely for count.
+- generic oracle framework or provider abstraction;
+- Pyth, Switchboard or other live oracle integration;
+- arbitrary price, borrow amount, instruction, RPC or script supplied by scenario input;
+- production oracle manipulation or mainnet mutation;
+- generic lending protocol framework;
+- third attack class;
+- new evaluator or duplicated verdict logic;
+- BeeSDK contract changes unless a separate shared-contract gap is proven.
 
 #### Deliverable
 
-A second real replayable scenario exercising the same BeeDrill core through a different economic failure class.
+One second real isolated regression:
+
+```text
+same fixed oracle manipulation + borrow sequence
++ broken containment
+→ larger excess debt
+→ deterministic FAIL
+
+same fixed oracle manipulation + borrow sequence
++ corrected containment
+→ lower excess debt
+→ deterministic PASS
+```
 
 #### Acceptance criteria
 
-- uses the same core domain/evidence/evaluator model;
-- no duplicated orchestration framework;
-- manipulation creates measurable unsafe economic state/action;
-- detector expectation is machine-verifiable;
-- containment expectation is machine-verifiable;
-- PASS/FAIL remains deterministic;
-- scenario resets/replays reproducibly.
+- the new scenario is materially different from the vault-drain path;
+- both phases start from equivalent canonical oracle-market state;
+- scenario identity/version and attack sequence are unchanged between phases;
+- oracle manipulation is evidenced by real target state;
+- the unsafe borrow changes real target economic state;
+- detection is machine-observed independently from attack success;
+- broken containment allows the subsequent identical borrow;
+- fixed containment causes the subsequent identical borrow to be rejected;
+- containment success is proven by target effect rather than a success string;
+- economic loss is derived from target state and canonical debt-limit arithmetic;
+- fixed residual loss is lower than broken residual loss;
+- existing `evaluate_drill` produces FAIL then PASS without override;
+- malformed, missing or contradictory critical evidence cannot produce PASS;
+- fresh replay preserves equivalent security meaning;
+- BeeDrill remains `READ_ONLY`;
+- execution authority remains owned by BeeAgent.
 
 #### Checks
 
 ```text
-attack baseline
-detection PASS/FAIL
-containment PASS/FAIL
-economic delta
-computed verdict
-reset
-deterministic replay
+reference-oracle target tests
+module contract tests
+broken and fixed host-evidence tests
+oracle-state and borrow-state evidence
+independent detector evidence
+containment-effect evidence
+economic arithmetic
+computed MTTD/MTTC/loss/capital-saved metrics
+FAIL → PASS sequence
+malformed/contradictory evidence refusal
+host refused/timeout/error propagation
+fresh-state replay
+BeeDrill/BeeAgent integration smoke
+package build and import smoke
+artifact inspection
+SAST
+SCA only if dependency surface changes
+git diff --check
 ```
 
 #### DoD
 
-BeeDrill supports two materially different security scenarios without scenario-specific architecture duplication.
-
----
+BeeDrill executes two materially different security-regression classes through the same domain/evidence/evaluator core, with the oracle-manipulation scenario producing deterministic real-evidence FAIL → PASS while runtime execution remains host-owned.
 
 ### Iteration 11 — Reproducible regression runner and CI entry point
 
