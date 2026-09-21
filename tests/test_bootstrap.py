@@ -44,6 +44,7 @@ def test_module_handles_only_the_bounded_integration_case() -> None:
         "reference_target_baseline",
         "reference_target_attack",
         "reference_target_detection",
+        "reference_target_containment_replay",
     ]
     assert isinstance(result, ModuleResult)
     assert result == ModuleResult(
@@ -849,6 +850,169 @@ def test_reference_target_detection_refuses_invalid_intent(
 
     assert result.status == "refused"
     assert caller.calls == []
+
+
+def _containment_evidence(condition: str) -> dict[str, object]:
+    broken = condition == "broken"
+    return {
+        "target_id": "reference_vault",
+        "initial_state_id": "reference_vault_canonical_v1",
+        "economic_unit": "lamports",
+        "defense_condition": condition,
+        "attack_sequence_id": "reference_vault_unsafe_withdraw_twice_v1",
+        "initial_vault_lamports": 1_000_000,
+        "attack_start_slot": 42,
+        "first_attack_signature": "attack-1",
+        "first_attack_vault_lamports": 999_900,
+        "first_attack_unsafe_withdraw_count": 1,
+        "detection_status": "observed",
+        "first_detection_slot": 44,
+        "containment_status": "failed" if broken else "succeeded",
+        "first_containment_slot": None if broken else 46,
+        "second_attack_status": "succeeded" if broken else "rejected",
+        "final_vault_lamports": 999_800 if broken else 999_900,
+        "final_unsafe_withdraw_count": 2 if broken else 1,
+        "residual_loss_lamports": 200 if broken else 100,
+    }
+
+
+class _ContainmentCapabilityCaller:
+    def __init__(self, results: list[CapabilityResult]) -> None:
+        self.results = iter(results)
+        self.calls: list[tuple[str, dict[str, Any]]] = []
+
+    def call(
+        self,
+        capability_name: str,
+        payload: Mapping[str, Any],
+    ) -> CapabilityResult:
+        self.calls.append((capability_name, dict(payload)))
+        return next(self.results)
+
+
+def test_reference_target_containment_replay_evaluates_real_host_evidence() -> None:
+    caller = _ContainmentCapabilityCaller(
+        [
+            CapabilityResult(
+                capability_name="solana.reference_target_containment",
+                status=CapabilityStatus.OK,
+                authority=AuthorityLevel.EXECUTION_CAPABLE,
+                summary="completed",
+                data=_containment_evidence("broken"),
+            ),
+            CapabilityResult(
+                capability_name="solana.reference_target_containment",
+                status=CapabilityStatus.OK,
+                authority=AuthorityLevel.EXECUTION_CAPABLE,
+                summary="completed",
+                data=_containment_evidence("fixed"),
+            ),
+        ]
+    )
+    artifacts = _MemoryArtifactPort()
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_target_containment_replay",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_TARGET_PAYLOAD,
+            capability_caller=caller,
+            artifact_api=artifacts,
+        )
+    )
+
+    assert result.authority is AuthorityLevel.READ_ONLY
+    assert result.status == "ok"
+    assert result.data == {
+        "capability_status": "ok",
+        "capability_authority": "execution_capable",
+        "broken_verdict": "fail",
+        "fixed_verdict": "pass",
+    }
+    assert caller.calls == [
+        (
+            "solana.reference_target_containment",
+            {**_VALID_REFERENCE_TARGET_PAYLOAD, "defense_condition": "broken"},
+        ),
+        (
+            "solana.reference_target_containment",
+            {**_VALID_REFERENCE_TARGET_PAYLOAD, "defense_condition": "fixed"},
+        ),
+    ]
+    comparison = artifacts.artifacts["reference_target_containment_replay.json"]
+    assert isinstance(comparison, Mapping)
+    artifact_comparison = comparison["comparison"]
+    assert isinstance(artifact_comparison, Mapping)
+    metrics = artifact_comparison["metrics"]
+    assert isinstance(metrics, Mapping)
+    broken_metrics = metrics["broken"]
+    fixed_metrics = metrics["fixed"]
+    assert isinstance(broken_metrics, Mapping)
+    assert isinstance(fixed_metrics, Mapping)
+    assert broken_metrics["mttc_slots"] is None
+    assert fixed_metrics["capital_saved_lamports"] == 100
+
+
+@pytest.mark.parametrize(
+    "status",
+    [CapabilityStatus.REFUSED, CapabilityStatus.TIMEOUT, CapabilityStatus.ERROR],
+)
+def test_reference_target_containment_preserves_host_non_success(
+    status: CapabilityStatus,
+) -> None:
+    caller = _ContainmentCapabilityCaller(
+        [
+            CapabilityResult(
+                capability_name="solana.reference_target_containment",
+                status=status,
+                authority=AuthorityLevel.EXECUTION_CAPABLE,
+                summary="not completed",
+            )
+        ]
+    )
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_target_containment_replay",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_TARGET_PAYLOAD,
+            capability_caller=caller,
+        )
+    )
+
+    assert result.status == status.value
+    assert len(caller.calls) == 1
+
+
+def test_reference_target_containment_fails_closed_for_contradictory_evidence() -> None:
+    broken = _containment_evidence("broken")
+    broken["second_attack_status"] = "rejected"
+    caller = _ContainmentCapabilityCaller(
+        [
+            CapabilityResult(
+                capability_name="solana.reference_target_containment",
+                status=CapabilityStatus.OK,
+                authority=AuthorityLevel.EXECUTION_CAPABLE,
+                summary="completed",
+                data=broken,
+            )
+        ]
+    )
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_target_containment_replay",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_TARGET_PAYLOAD,
+            capability_caller=caller,
+        )
+    )
+
+    assert result.status == "error"
+    assert result.data["capability_status"] == "ok"
 
 
 class _MemoryArtifactPort:

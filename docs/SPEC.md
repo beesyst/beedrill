@@ -56,6 +56,13 @@ the exact detection evidence contract in section 17.2, writes it through
 `ArtifactPort`, and keeps completed `not_observed` separate from host refusal,
 timeout and error.
 
+For `reference_target_containment_replay`, BeeDrill makes two fresh calls only
+to `solana.reference_target_containment`, first with the host-bounded `broken`
+condition and then with `fixed`. It validates each complete host evidence shape,
+uses the measured broken residual loss as the comparable gross-loss baseline,
+and evaluates both phases with `evaluate_drill(...)`. BeeDrill remains
+`READ_ONLY`; it neither selects execution parameters nor authors a verdict.
+
 The product goal is to verify that defenses actually work under reproducible
 attack conditions.
 
@@ -409,6 +416,24 @@ non-negative `attack_start_slot`, and has no unknown fields. For
 other identities, status values, field shapes and timing relations. It writes
 the validated bounded evidence to `reference_target_detection.json`; host
 refusal, timeout and error remain distinct non-successful module results.
+
+### 17.3 Reference-target containment replay evidence
+
+The containment replay has one fixed BeeDrill request identity and two fixed
+host payloads: `{"target_profile": "surfpool_local", "target_id":
+"reference_vault", "defense_condition": "broken"}` and the equivalent
+`fixed` payload. Each successful host response has exactly bounded target,
+state, timing, detector, containment, two-attempt and integer-lamport fields.
+
+For `broken`, the second unsafe withdrawal must succeed, containment has no
+slot, and the final residual loss is 200 lamports. For `fixed`, the second
+unsafe withdrawal must be rejected by the target, containment has a slot not
+earlier than detection, and the final residual loss is 100 lamports. Both start
+from the canonical 1,000,000-lamport state and use the identical two-attempt
+attack sequence. The comparison artifact records validated host evidence,
+metrics, and evaluator-derived `fail` then `pass` verdicts. Missing,
+contradictory, refused, timed-out, or erroneous host evidence cannot produce a
+PASS result.
 
 ## 18. Evidence validity
 
