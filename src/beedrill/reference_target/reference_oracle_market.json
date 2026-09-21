@@ -1,0 +1,14 @@
+{
+  "canonical_initial_state": {
+    "canonical_debt_limit_micro_usdc": 50000000,
+    "borrow_increment_micro_usdc": 25000000,
+    "canonical_oracle_price_micro_usd": 1000000,
+    "collateral_units": 100,
+    "initial_debt_micro_usdc": 50000000,
+    "initial_reserve_micro_usdc": 100000000,
+    "ltv_bps": 5000,
+    "manipulated_oracle_price_micro_usd": 2000000
+  },
+  "resource_id": "beedrill.reference_oracle_market.v1",
+  "target_id": "reference_oracle_market"
+}

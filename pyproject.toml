@@ -31,6 +31,9 @@ beedrill = [
     "reference_target/Cargo.toml",
     "reference_target/Cargo.lock",
     "reference_target/reference_vault.json",
+    "reference_target/reference_oracle_market.json",
+    "reference_target/oracle_market/Cargo.toml",
+    "reference_target/oracle_market/src/lib.rs",
     "reference_target/src/lib.rs",
 ]
 
