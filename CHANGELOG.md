@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.8.0...beedrill-v0.9.0) (2026-09-21)
+
+
+### Features
+
+* **replay:** add real containment fail-to-pass replay ([#24](https://github.com/beesyst/beedrill/issues/24)) ([2ac718c](https://github.com/beesyst/beedrill/commit/2ac718c85ae17acaddcbdaca862ad5151bba53e3))
+
 ## [0.8.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.7.0...beedrill-v0.8.0) (2026-09-20)
 
 
