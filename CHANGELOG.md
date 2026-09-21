@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.9.0...beedrill-v0.10.0) (2026-09-21)
+
+
+### Features
+
+* add oracle manipulation security replay ([#27](https://github.com/beesyst/beedrill/issues/27)) ([490efe0](https://github.com/beesyst/beedrill/commit/490efe0425a50fa7aadbec3cc661a29426227c15))
+
 ## [0.9.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.8.0...beedrill-v0.9.0) (2026-09-21)
 
 
