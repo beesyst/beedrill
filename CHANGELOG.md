@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.10.0...beedrill-v0.11.0) (2026-09-22)
+
+
+### Features
+
+* expose BeeDrill regression security verdict ([#30](https://github.com/beesyst/beedrill/issues/30)) ([7edd054](https://github.com/beesyst/beedrill/commit/7edd0541b7593acd8748620c44b02f36b69e2799))
+
 ## [0.10.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.9.0...beedrill-v0.10.0) (2026-09-21)
 
 
