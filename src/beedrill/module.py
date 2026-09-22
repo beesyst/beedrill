@@ -537,14 +537,13 @@ class BeeDrillModule:
             )
         if (
             broken_evaluation.verdict.status.value != "fail"
-            or fixed_evaluation.verdict.status.value != "pass"
-            or fixed_evaluation.metrics.capital_saved is None
-            or fixed_evaluation.metrics.capital_saved.amount <= 0
+            or broken_evaluation.metrics.containment_result
+            is not ContainmentStatus.FAILED
         ):
             return self._reference_target_containment_result(
                 context,
                 "error",
-                "Host capability containment replay did not prove FAIL to PASS",
+                "Host capability containment negative control is inconsistent",
                 {
                     "capability_status": "ok",
                     "capability_authority": "execution_capable",
@@ -559,6 +558,7 @@ class BeeDrillModule:
                 "capability_authority": "execution_capable",
                 "broken_verdict": broken_evaluation.verdict.status.value,
                 "fixed_verdict": fixed_evaluation.verdict.status.value,
+                "security_verdict": fixed_evaluation.verdict.status.value,
             },
             {
                 "scenario": _REFERENCE_TARGET_CONTAINMENT_SCENARIO,
@@ -680,14 +680,13 @@ class BeeDrillModule:
             )
         if (
             broken_evaluation.verdict.status.value != "fail"
-            or fixed_evaluation.verdict.status.value != "pass"
-            or fixed_evaluation.metrics.capital_saved is None
-            or fixed_evaluation.metrics.capital_saved.amount != 25_000_000
+            or broken_evaluation.metrics.containment_result
+            is not ContainmentStatus.FAILED
         ):
             return self._reference_oracle_result(
                 context,
                 "error",
-                "Host capability oracle replay did not prove FAIL to PASS",
+                "Host capability oracle negative control is inconsistent",
                 {
                     "capability_status": "ok",
                     "capability_authority": "execution_capable",
@@ -702,6 +701,7 @@ class BeeDrillModule:
                 "capability_authority": "execution_capable",
                 "broken_verdict": broken_evaluation.verdict.status.value,
                 "fixed_verdict": fixed_evaluation.verdict.status.value,
+                "security_verdict": fixed_evaluation.verdict.status.value,
             },
             {
                 "scenario": _REFERENCE_ORACLE_SCENARIO,
@@ -1096,16 +1096,14 @@ def _is_valid_reference_target_containment_evidence(
         != values["initial_vault_lamports"] - values["final_vault_lamports"]
     ):
         return False
-    if defense_condition == "broken":
-        return (
-            values["containment_status"] == "failed"
-            and containment_slot is None
-            and values["second_attack_status"] == "succeeded"
-            and values["final_vault_lamports"] == 999_800
-            and values["final_unsafe_withdraw_count"] == 2
-            and values["residual_loss_lamports"] == 200
-        )
     return (
+        values["containment_status"] == "failed"
+        and containment_slot is None
+        and values["second_attack_status"] == "succeeded"
+        and values["final_vault_lamports"] == 999_800
+        and values["final_unsafe_withdraw_count"] == 2
+        and values["residual_loss_lamports"] == 200
+    ) or (
         values["containment_status"] == "succeeded"
         and containment_slot is not None
         and values["second_attack_status"] == "rejected"
@@ -1198,17 +1196,15 @@ def _is_valid_reference_oracle_evidence(
         - (values["final_debt_micro_usdc"] - values["initial_debt_micro_usdc"])
     ):
         return False
-    if defense_condition == "broken":
-        return (
-            values["containment_status"] == "failed"
-            and containment_slot is None
-            and values["containment_state"] == "borrowing_open"
-            and values["second_borrow_status"] == "succeeded"
-            and values["final_debt_micro_usdc"] == 100_000_000
-            and values["final_reserve_micro_usdc"] == 50_000_000
-            and values["residual_loss_micro_usdc"] == 50_000_000
-        )
     return (
+        values["containment_status"] == "failed"
+        and containment_slot is None
+        and values["containment_state"] == "borrowing_open"
+        and values["second_borrow_status"] == "succeeded"
+        and values["final_debt_micro_usdc"] == 100_000_000
+        and values["final_reserve_micro_usdc"] == 50_000_000
+        and values["residual_loss_micro_usdc"] == 50_000_000
+    ) or (
         values["containment_status"] == "succeeded"
         and containment_slot is not None
         and values["containment_state"] == "borrowing_blocked"

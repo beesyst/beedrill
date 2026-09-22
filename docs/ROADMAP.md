@@ -1676,69 +1676,86 @@ BeeDrill executes two materially different security-regression classes through t
 
 ### Iteration 11 — Reproducible regression runner and CI entry point
 
-**Status:** PLANNED
-**Window:** 2026-09-29
+**Status:** DONE
 
 #### Goal
 
-Turn the validated scenarios into a stable repeatable security regression product surface.
+Turn the two validated real scenarios into a stable security-regression surface that can distinguish a completed security FAIL from host/runtime failure and can be invoked reliably from local development or CI without moving execution ownership into BeeDrill.
 
 #### Scope
 
 Included:
 
-- stable BeeDrill local command/entrypoint;
-- explicit scenario selection;
-- environment reset;
-- deterministic exit status;
+- stable BeeDrill regression invocation exposed through the BeeAgent host CLI;
+- explicit allowlisted scenario selection for `reference_target_containment_replay` and `reference_oracle_manipulation_replay`;
+- reuse of the existing BeeAgent module runtime and bounded capability boundary;
+- actual observed containment outcome treated as evidence rather than an expected host success precondition;
+- deterministic BeeDrill security verdict derived only through the existing evaluator;
+- explicit separation of execution status from `pass` / `fail` / `incomplete` security meaning;
+- stable process exit semantics for CI;
 - machine-readable run summary;
-- canonical references to evidence/metrics/verdict artifacts;
-- repeatable scenario execution;
-- CI-friendly invocation;
-- regression tests for known defenses.
+- canonical references to host-owned evidence, metrics, verdict and module-result artifacts;
+- fresh/reset isolated execution for every replay;
+- repeatability tests for both scenario classes;
+- regression coverage proving that a previously effective fixed control can produce a completed security FAIL rather than an infrastructure ERROR.
 
 #### Excluded
 
-- SaaS scheduler;
-- hosted CI fleet;
-- dashboard;
-- marketplace;
-- generalized workflow engine.
+- BeeDrill-owned Surfpool, subprocess, RPC, credential or lifecycle management;
+- arbitrary module, case, capability or payload execution from CLI;
+- generic workflow or test-runner framework;
+- hosted CI fleet or SaaS scheduler;
+- dashboard or large Web UI;
+- third attack class;
+- new evaluator or duplicated verdict logic;
+- BeeSDK contract changes unless a separate shared-contract gap is proven;
+- new runtime dependencies;
+- production/mainnet mutation.
 
 #### Deliverable
 
-A release/test pipeline can fail when a previously passing security-control drill regresses.
+A bounded local/CI command can execute either approved BeeDrill scenario through BeeAgent and produce a machine-readable result where security PASS, security FAIL and infrastructure/incomplete failure are unambiguously different outcomes.
 
 #### Acceptance criteria
 
-- stable local invocation exists;
-- scenario is selected explicitly;
-- run starts from clean/reset state;
-- PASS returns stable success behavior;
-- security FAIL returns stable failure behavior;
-- infrastructure ERROR/INCOMPLETE is distinguishable from security FAIL;
-- machine-readable summary is produced;
-- both scenario classes run repeatedly;
-- intentional defense regression fails;
-- restored defense passes;
-- runner does not bypass BeeAgent execution ownership.
+- both approved scenario IDs are explicitly selectable and no arbitrary scenario payload is accepted;
+- execution continues through the existing BeeAgent module runtime and scoped capabilities;
+- every run starts from a fresh/equivalent isolated state;
+- completed valid evidence is evaluated only by the existing BeeDrill evaluator;
+- a working fixed defense produces security PASS and stable success exit behavior;
+- a completed fixed-defense regression produces security FAIL rather than host ERROR;
+- malformed, contradictory or incomplete critical evidence cannot produce PASS;
+- refusal, timeout, runtime error and incomplete evaluation remain distinguishable from security FAIL;
+- machine-readable summary contains stable run/scenario/status/verdict/artifact-reference fields;
+- both attack classes preserve equivalent security meaning across repeated fresh runs;
+- existing broken-phase negative controls remain valid;
+- BeeDrill remains `READ_ONLY`;
+- execution authority, RPC, process lifecycle, timeout and cleanup remain BeeAgent-owned;
+- BeeSDK public contracts remain unchanged.
 
 #### Checks
 
 ```text
-expected-pass scenarios
-intentional regression
-clean rerun
-exit status
-machine-readable output
-artifact references
-environment reset
-repeatability
+targeted regression-result contract tests
+expected PASS for both scenario classes
+completed security FAIL for an intentional fixed-defense regression
+INCOMPLETE / malformed evidence handling
+refused / timeout / host error handling
+stable exit-code mapping
+machine-readable summary validation
+artifact-reference validation
+fresh-state reset and repeatability
+both real scenario replays
+BeeDrill/BeeAgent integration smoke
+package build and import smoke
+SAST
+SCA only if dependency surface unexpectedly changes
+git diff --check
 ```
 
 #### DoD
 
-BeeDrill behaves like a repeatable security regression tool rather than a manually orchestrated demo script.
+BeeDrill behaves as a repeatable security regression product: an approved isolated scenario can be invoked through the host, a real control regression becomes deterministic security FAIL, infrastructure failure remains a separate outcome, and CI can consume the result without BeeDrill acquiring runtime execution authority.
 
 ---
 

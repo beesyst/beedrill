@@ -931,6 +931,7 @@ def test_reference_target_containment_replay_evaluates_real_host_evidence() -> N
         "capability_authority": "execution_capable",
         "broken_verdict": "fail",
         "fixed_verdict": "pass",
+        "security_verdict": "pass",
     }
     assert caller.calls == [
         (
@@ -954,6 +955,115 @@ def test_reference_target_containment_replay_evaluates_real_host_evidence() -> N
     assert isinstance(fixed_metrics, Mapping)
     assert broken_metrics["mttc_slots"] is None
     assert fixed_metrics["capital_saved_lamports"] == 100
+
+
+def test_reference_target_containment_reports_a_completed_fixed_regression() -> None:
+    fixed = _containment_evidence("broken")
+    fixed["defense_condition"] = "fixed"
+    artifacts = _MemoryArtifactPort()
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_target_containment_replay",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_TARGET_PAYLOAD,
+            capability_caller=_ContainmentCapabilityCaller(
+                [
+                    CapabilityResult(
+                        capability_name="solana.reference_target_containment",
+                        status=CapabilityStatus.OK,
+                        authority=AuthorityLevel.EXECUTION_CAPABLE,
+                        summary="completed",
+                        data=_containment_evidence("broken"),
+                    ),
+                    CapabilityResult(
+                        capability_name="solana.reference_target_containment",
+                        status=CapabilityStatus.OK,
+                        authority=AuthorityLevel.EXECUTION_CAPABLE,
+                        summary="completed",
+                        data=fixed,
+                    ),
+                ]
+            ),
+            artifact_api=artifacts,
+        )
+    )
+
+    assert result.status == "ok"
+    assert result.data["security_verdict"] == "fail"
+    assert result.data["fixed_verdict"] == "fail"
+    artifact = artifacts.artifacts["reference_target_containment_replay.json"]
+    assert isinstance(artifact, Mapping)
+    assert artifact["security_verdict"] == "fail"
+
+
+def test_reference_target_containment_rejects_a_passing_negative_control() -> None:
+    broken = _containment_evidence("fixed")
+    broken["defense_condition"] = "broken"
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_target_containment_replay",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_TARGET_PAYLOAD,
+            capability_caller=_ContainmentCapabilityCaller(
+                [
+                    CapabilityResult(
+                        capability_name="solana.reference_target_containment",
+                        status=CapabilityStatus.OK,
+                        authority=AuthorityLevel.EXECUTION_CAPABLE,
+                        summary="completed",
+                        data=broken,
+                    ),
+                    CapabilityResult(
+                        capability_name="solana.reference_target_containment",
+                        status=CapabilityStatus.OK,
+                        authority=AuthorityLevel.EXECUTION_CAPABLE,
+                        summary="completed",
+                        data=_containment_evidence("fixed"),
+                    ),
+                ]
+            ),
+        )
+    )
+
+    assert result.status == "error"
+    assert "security_verdict" not in result.data
+
+
+def test_reference_target_containment_replays_deterministically() -> None:
+    results = []
+    for _ in range(2):
+        results.append(
+            BeeDrillModule().handle(
+                ModuleContext(
+                    run_id="run-1",
+                    case_type="reference_target_containment_replay",
+                    module_id="beedrill",
+                    payload=_VALID_REFERENCE_TARGET_PAYLOAD,
+                    capability_caller=_ContainmentCapabilityCaller(
+                        [
+                            CapabilityResult(
+                                capability_name="solana.reference_target_containment",
+                                status=CapabilityStatus.OK,
+                                authority=AuthorityLevel.EXECUTION_CAPABLE,
+                                summary="completed",
+                                data=_containment_evidence("broken"),
+                            ),
+                            CapabilityResult(
+                                capability_name="solana.reference_target_containment",
+                                status=CapabilityStatus.OK,
+                                authority=AuthorityLevel.EXECUTION_CAPABLE,
+                                summary="completed",
+                                data=_containment_evidence("fixed"),
+                            ),
+                        ]
+                    ),
+                )
+            )
+        )
+
+    assert results[0] == results[1]
 
 
 @pytest.mark.parametrize(
@@ -1141,6 +1251,7 @@ def test_reference_oracle_manipulation_replay_evaluates_host_evidence() -> None:
     assert result.status == "ok"
     assert result.data["broken_verdict"] == "fail"
     assert result.data["fixed_verdict"] == "pass"
+    assert result.data["security_verdict"] == "pass"
     assert caller.calls == [
         (
             "solana.reference_oracle_manipulation",
@@ -1165,6 +1276,80 @@ def test_reference_oracle_manipulation_replay_evaluates_host_evidence() -> None:
     assert metrics["fixed"]["residual_loss_micro_usdc"] == 25_000_000
     assert metrics["fixed"]["gross_attack_loss_micro_usdc"] == 50_000_000
     assert metrics["fixed"]["capital_saved_micro_usdc"] == 25_000_000
+
+
+def test_reference_oracle_reports_a_completed_fixed_regression() -> None:
+    fixed = _oracle_evidence("broken")
+    fixed["defense_condition"] = "fixed"
+    artifacts = _MemoryArtifactPort()
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_oracle_manipulation_replay",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_ORACLE_PAYLOAD,
+            capability_caller=_ContainmentCapabilityCaller(
+                [
+                    CapabilityResult(
+                        capability_name="solana.reference_oracle_manipulation",
+                        status=CapabilityStatus.OK,
+                        authority=AuthorityLevel.EXECUTION_CAPABLE,
+                        summary="completed",
+                        data=_oracle_evidence("broken"),
+                    ),
+                    CapabilityResult(
+                        capability_name="solana.reference_oracle_manipulation",
+                        status=CapabilityStatus.OK,
+                        authority=AuthorityLevel.EXECUTION_CAPABLE,
+                        summary="completed",
+                        data=fixed,
+                    ),
+                ]
+            ),
+            artifact_api=artifacts,
+        )
+    )
+
+    assert result.status == "ok"
+    assert result.data["security_verdict"] == "fail"
+    assert result.data["fixed_verdict"] == "fail"
+    artifact = artifacts.artifacts["reference_oracle_manipulation_replay.json"]
+    assert isinstance(artifact, Mapping)
+    assert artifact["security_verdict"] == "fail"
+
+
+def test_reference_oracle_rejects_a_passing_negative_control() -> None:
+    broken = _oracle_evidence("fixed")
+    broken["defense_condition"] = "broken"
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_oracle_manipulation_replay",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_ORACLE_PAYLOAD,
+            capability_caller=_ContainmentCapabilityCaller(
+                [
+                    CapabilityResult(
+                        capability_name="solana.reference_oracle_manipulation",
+                        status=CapabilityStatus.OK,
+                        authority=AuthorityLevel.EXECUTION_CAPABLE,
+                        summary="completed",
+                        data=broken,
+                    ),
+                    CapabilityResult(
+                        capability_name="solana.reference_oracle_manipulation",
+                        status=CapabilityStatus.OK,
+                        authority=AuthorityLevel.EXECUTION_CAPABLE,
+                        summary="completed",
+                        data=_oracle_evidence("fixed"),
+                    ),
+                ]
+            ),
+        )
+    )
+
+    assert result.status == "error"
+    assert "security_verdict" not in result.data
 
 
 @pytest.mark.parametrize(
