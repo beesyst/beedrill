@@ -60,7 +60,11 @@ For `reference_target_containment_replay`, BeeDrill makes two fresh calls only
 to `solana.reference_target_containment`, first with the host-bounded `broken`
 condition and then with `fixed`. It validates each complete host evidence shape,
 uses the measured broken residual loss as the comparable gross-loss baseline,
-and evaluates both phases with `evaluate_drill(...)`. BeeDrill remains
+and evaluates both phases with `evaluate_drill(...)`. The completed module
+result and replay artifact expose the fixed-phase evaluator result as
+`security_verdict`, independently of host completion status. A valid fixed
+phase may therefore report `fail`; a passing broken-phase negative control is
+an inconsistent calibration and cannot report `pass`. BeeDrill remains
 `READ_ONLY`; it neither selects execution parameters nor authors a verdict.
 
 For `reference_oracle_manipulation_replay`, BeeDrill supplies only the fixed
@@ -69,7 +73,11 @@ host call for each `broken` and `fixed` defense condition to
 `solana.reference_oracle_manipulation`, validates the canonical and manipulated
 integer price, collateral, LTV, debt, reserve, detector, containment and
 second-borrow evidence, and uses the broken 50,000,000 micro-USDC residual as
-the gross-loss baseline for both existing evaluator calls. BeeAgent owns the
+the gross-loss baseline for both existing evaluator calls. The completed
+module result and replay artifact expose the fixed-phase evaluator result as
+`security_verdict`, independently of host completion status. A valid fixed
+phase may therefore report `fail`; a passing broken-phase negative control is
+an inconsistent calibration and cannot report `pass`. BeeAgent owns the
 isolated target and all execution; BeeDrill remains `READ_ONLY`.
 
 The product goal is to verify that defenses actually work under reproducible
