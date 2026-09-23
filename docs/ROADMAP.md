@@ -1783,76 +1783,75 @@ No broad product expansion is allowed.
 
 #### Goal
 
-Adversarially harden the execution and hostile-input boundaries already introduced by the working product.
-
-Baseline safety is required from Iteration 4 onward; this iteration is not permission to defer fundamental isolation/authority controls.
+Adversarially verify the existing BeeDrill execution boundary and close only demonstrated security gaps without adding execution authority, new scenario classes, or a generic sandbox framework.
 
 #### Scope
 
 Included:
 
-- local/sandbox-only execution guard review;
-- explicit target allowlisting;
-- bounded RPC destinations;
-- scenario input validation;
-- process/subprocess timeout;
-- cleanup under failure;
-- artifact bounds;
-- path restrictions;
-- secret redaction;
-- deterministic refusals;
-- malformed/adversarial scenario tests;
-- no-production-key enforcement;
-- evidence fail-closed review.
+- adversarial validation of the two existing regression scenarios;
+- strict validation of malformed host `CapabilityResult` envelopes before their fields are consumed;
+- bounded validation of host evidence before arithmetic or verdict construction;
+- explicit rejection/error handling for malformed, contradictory, oversized, or execution-shaped input;
+- verification that incomplete or invalid critical evidence cannot produce `PASS`;
+- verification that raw host diagnostics or secret-like values are not copied into BeeDrill artifacts;
+- verification of existing fixed scenario, target, RPC, path, timeout, cleanup and authority assumptions through the BeeAgent integration;
+- one separate BeeAgent-owned companion hardening task for any demonstrated host execution gap;
+- security-boundary documentation updated only where actual behavior or assumptions require clarification.
 
 #### Excluded
 
-- production autonomous response;
-- mainnet mutation;
-- remote arbitrary command execution;
-- arbitrary executable selection;
-- generalized sandbox product.
+- BeeDrill-owned subprocess, Surfpool, RPC, credential, filesystem or process lifecycle;
+- generic sandbox or execution framework;
+- new attack classes or scenarios;
+- arbitrary executable, argv, RPC, path or transaction support;
+- production/mainnet mutation;
+- generic ArtifactAPI redesign;
+- BeeSDK changes without a separately proven shared-contract gap;
+- new runtime dependencies.
 
 #### Deliverable
 
-A tested fail-closed execution boundary where malformed/untrusted input cannot escape the approved sandbox or manufacture a successful security result.
+A tested fail-closed BeeDrill boundary where malformed scenario intent or malformed host evidence cannot escalate execution authority, escape the existing isolated host path, crash normal bounded result handling, or manufacture a successful security verdict.
 
 #### Acceptance criteria
 
-- arbitrary executable selection impossible through scenario data;
-- arbitrary RPC target refused;
-- production/mainnet mutation target refused;
-- production private keys not accepted/required;
-- timeout terminates bounded execution;
-- cleanup occurs after failures;
-- unsafe paths rejected;
-- malformed scenarios rejected;
-- secret material not emitted in logs/artifacts;
-- incomplete critical evidence cannot produce PASS;
-- security assumptions documented;
-- existing positive scenarios still pass after hardening.
+- existing scenario payloads remain exact and allowlisted;
+- malformed `CapabilityResult` status, authority, capability name or data produces a deterministic non-successful module result rather than an uncaught boundary error;
+- extreme or invalid integer evidence is rejected before unsafe arithmetic or evaluator construction;
+- unknown, missing, contradictory and execution-shaped evidence cannot produce `PASS`;
+- `REFUSED`, `TIMEOUT`, host `ERROR`, incomplete evaluation and completed security `FAIL` remain distinct;
+- BeeDrill remains `READ_ONLY`;
+- no scenario field can select executable, argv, path, RPC destination, transaction or credential;
+- no raw capability diagnostics or injected sentinel secret appears in BeeDrill scenario artifacts;
+- BeeAgent retains target selection, RPC, subprocess, timeout and cleanup ownership;
+- both existing real regression scenarios still complete successfully after hardening;
+- BeeSDK public contracts remain unchanged;
+- dependency and lockfile surfaces remain unchanged.
 
 #### Checks
 
 ```text
-targeted negative tests
-full tests
-integration smoke
+targeted malformed CapabilityResult tests
+targeted hostile evidence tests
+execution-shaped scenario/input refusal tests
+oversized numeric and signature tests
+missing/contradictory evidence tests
+secret-sentinel artifact checks
+REFUSED / TIMEOUT / ERROR propagation
+completed security FAIL regression
+both positive real scenario replays
+BeeDrill/BeeAgent integration smoke
+uv run pytest -q
+package build and import smoke
 SAST
-SCA if dependencies changed
-forbidden target tests
-path/input tests
-timeout tests
-cleanup tests
-secret-leak tests
-artifact-bound checks
-positive-regression rerun
+SCA only if dependency surface unexpectedly changes
 git diff --check
 ```
 
 #### DoD
 
-The working BeeDrill execution path remains functional while hostile input and execution-boundary failures are handled safely and explicitly.
+BeeDrill's existing regression product remains functional and deterministic, while adversarial inputs and malformed host evidence fail closed through explicit bounded outcomes; all host-owned execution hardening remains in BeeAgent and no new shared BeeSDK contract is required.
 
 ### Iteration 13 — Real external integration and product evidence
 
