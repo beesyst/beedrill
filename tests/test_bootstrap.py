@@ -1475,3 +1475,244 @@ def test_reference_oracle_manipulation_replays_deterministically() -> None:
         )
 
     assert results[0] == results[1]
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "expected_status"),
+    [
+        ("status", "ok", "error"),
+        ("authority", "execution_capable", "error"),
+        ("capability_name", 1, "error"),
+        ("data", ["sentinel-secret-value"], "error"),
+        ("diagnostics", "sentinel-secret-value", "error"),
+        ("summary", "sentinel-secret-value", "ok"),
+    ],
+)
+def test_isolated_solana_smoke_rejects_malformed_envelopes_without_secret_leaks(
+    field: str,
+    value: object,
+    expected_status: str,
+) -> None:
+    sentinel = "sentinel-secret-value"
+    host_result = CapabilityResult(
+        capability_name="solana.isolated_lifecycle",
+        status=CapabilityStatus.OK,
+        authority=AuthorityLevel.EXECUTION_CAPABLE,
+        summary="completed",
+        data={
+            "lifecycle": "completed",
+            "readiness": "ok",
+            "rpc": "ok",
+            "cleanup": "ok",
+        },
+        diagnostics={"sentinel": sentinel},
+    )
+    object.__setattr__(host_result, field, value)
+    artifacts = _MemoryArtifactPort()
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="isolated_solana_smoke",
+            module_id="beedrill",
+            payload=_VALID_ISOLATED_SOLANA_PAYLOAD,
+            capability_caller=_FakeCapabilityCaller(host_result),
+            artifact_api=artifacts,
+        )
+    )
+
+    assert result.status == expected_status
+    assert result.authority is AuthorityLevel.READ_ONLY
+    assert sentinel not in repr(artifacts.artifacts)
+
+
+@pytest.mark.parametrize("value", [True, -1, 1_000_000_001])
+def test_reference_target_attack_rejects_unbounded_integer_evidence(
+    value: object,
+) -> None:
+    evidence = dict(_REFERENCE_TARGET_ATTACK_EVIDENCE)
+    evidence["attack_start_slot"] = value
+    artifacts = _MemoryArtifactPort()
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_target_attack",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_TARGET_PAYLOAD,
+            capability_caller=_FakeCapabilityCaller(
+                CapabilityResult(
+                    capability_name="solana.reference_target_attack",
+                    status=CapabilityStatus.OK,
+                    authority=AuthorityLevel.EXECUTION_CAPABLE,
+                    summary="completed",
+                    data=evidence,
+                )
+            ),
+            artifact_api=artifacts,
+        )
+    )
+
+    assert result.status == "error"
+    assert "evidence" not in artifacts.artifacts["reference_target_attack.json"]
+
+
+def test_reference_target_containment_rejects_oversized_evidence_before_arithmetic(
+) -> None:
+    broken = _containment_evidence("broken")
+    broken["final_vault_lamports"] = 10**1000
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_target_containment_replay",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_TARGET_PAYLOAD,
+            capability_caller=_ContainmentCapabilityCaller(
+                [
+                    CapabilityResult(
+                        capability_name="solana.reference_target_containment",
+                        status=CapabilityStatus.OK,
+                        authority=AuthorityLevel.EXECUTION_CAPABLE,
+                        summary="completed",
+                        data=broken,
+                    )
+                ]
+            ),
+        )
+    )
+
+    assert result.status == "error"
+    assert "security_verdict" not in result.data
+
+
+def test_reference_oracle_rejects_oversized_evidence_before_arithmetic() -> None:
+    broken = _oracle_evidence("broken")
+    broken["collateral_units"] = 10**1000
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_oracle_manipulation_replay",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_ORACLE_PAYLOAD,
+            capability_caller=_ContainmentCapabilityCaller(
+                [
+                    CapabilityResult(
+                        capability_name="solana.reference_oracle_manipulation",
+                        status=CapabilityStatus.OK,
+                        authority=AuthorityLevel.EXECUTION_CAPABLE,
+                        summary="completed",
+                        data=broken,
+                    )
+                ]
+            ),
+        )
+    )
+
+    assert result.status == "error"
+    assert "security_verdict" not in result.data
+
+
+@pytest.mark.parametrize(
+    "field", ["status", "authority", "capability_name", "data"]
+)
+def test_isolated_solana_smoke_rejects_missing_capability_envelope_fields(
+    field: str,
+) -> None:
+    sentinel = "sentinel-secret-value"
+    host_result = CapabilityResult(
+        capability_name="solana.isolated_lifecycle",
+        status=CapabilityStatus.OK,
+        authority=AuthorityLevel.EXECUTION_CAPABLE,
+        summary="completed",
+        data={
+            "lifecycle": "completed",
+            "readiness": "ok",
+            "rpc": "ok",
+            "cleanup": "ok",
+        },
+        diagnostics={"sentinel": sentinel},
+    )
+    object.__delattr__(host_result, field)
+    artifacts = _MemoryArtifactPort()
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="isolated_solana_smoke",
+            module_id="beedrill",
+            payload=_VALID_ISOLATED_SOLANA_PAYLOAD,
+            capability_caller=_FakeCapabilityCaller(host_result),
+            artifact_api=artifacts,
+        )
+    )
+
+    assert result.status == "error"
+    assert result.data == {"capability_status": "invalid"}
+    assert sentinel not in repr(artifacts.artifacts)
+
+
+@pytest.mark.parametrize(
+    ("case_type", "capability_name", "signature_field"),
+    [
+        (
+            "reference_target_attack",
+            "solana.reference_target_attack",
+            "attack_transaction_signature",
+        ),
+        (
+            "reference_target_containment_replay",
+            "solana.reference_target_containment",
+            "first_attack_signature",
+        ),
+        (
+            "reference_oracle_manipulation_replay",
+            "solana.reference_oracle_manipulation",
+            "oracle_manipulation_signature",
+        ),
+    ],
+)
+def test_replays_reject_oversized_transaction_identifiers(
+    case_type: str,
+    capability_name: str,
+    signature_field: str,
+) -> None:
+    if case_type == "reference_target_attack":
+        payload = _VALID_REFERENCE_TARGET_PAYLOAD
+        evidence = dict(_REFERENCE_TARGET_ATTACK_EVIDENCE)
+        caller_type = _FakeCapabilityCaller
+    elif case_type == "reference_target_containment_replay":
+        payload = _VALID_REFERENCE_TARGET_PAYLOAD
+        evidence = _containment_evidence("broken")
+        caller_type = _ContainmentCapabilityCaller
+    else:
+        payload = _VALID_REFERENCE_ORACLE_PAYLOAD
+        evidence = _oracle_evidence("broken")
+        caller_type = _ContainmentCapabilityCaller
+    evidence[signature_field] = "x" * 129
+    host_result = CapabilityResult(
+        capability_name=capability_name,
+        status=CapabilityStatus.OK,
+        authority=AuthorityLevel.EXECUTION_CAPABLE,
+        summary="completed",
+        data=evidence,
+    )
+    caller = (
+        caller_type(host_result)
+        if caller_type is _FakeCapabilityCaller
+        else caller_type([host_result])
+    )
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type=case_type,
+            module_id="beedrill",
+            payload=payload,
+            capability_caller=caller,
+        )
+    )
+
+    assert result.status == "error"
+    assert "security_verdict" not in result.data

@@ -35,6 +35,7 @@ _REFERENCE_TARGET_PROOF = {
     "reset": "equivalent",
     "cleanup": "ok",
 }
+_MAX_EVIDENCE_INTEGER = 1_000_000_000
 _REFERENCE_TARGET_ATTACK_EVIDENCE_FIELDS = {
     "target_id",
     "initial_state_id",
@@ -203,6 +204,7 @@ class BeeDrillModule:
             )
 
         result = caller.call(_ISOLATED_SOLANA_CAPABILITY, _ISOLATED_SOLANA_PAYLOAD)
+        result = _validated_capability_result(result)
         if not isinstance(result, CapabilityResult):
             return self._capability_result(
                 context,
@@ -275,6 +277,7 @@ class BeeDrillModule:
             )
 
         result = caller.call(_REFERENCE_TARGET_CAPABILITY, _REFERENCE_TARGET_PAYLOAD)
+        result = _validated_capability_result(result)
         if not isinstance(result, CapabilityResult):
             return self._reference_target_result(
                 context,
@@ -350,6 +353,7 @@ class BeeDrillModule:
             _REFERENCE_TARGET_ATTACK_CAPABILITY,
             _REFERENCE_TARGET_PAYLOAD,
         )
+        result = _validated_capability_result(result)
         if not isinstance(result, CapabilityResult):
             return self._reference_target_attack_result(
                 context,
@@ -429,6 +433,7 @@ class BeeDrillModule:
             _REFERENCE_TARGET_DETECTION_CAPABILITY,
             _REFERENCE_TARGET_PAYLOAD,
         )
+        result = _validated_capability_result(result)
         if not isinstance(result, CapabilityResult):
             return self._reference_target_detection_result(
                 context,
@@ -580,6 +585,7 @@ class BeeDrillModule:
             _REFERENCE_TARGET_CONTAINMENT_CAPABILITY,
             {**_REFERENCE_TARGET_PAYLOAD, "defense_condition": defense_condition},
         )
+        result = _validated_capability_result(result)
         if not isinstance(result, CapabilityResult):
             return ModuleResult(
                 module_id=self.module_id,
@@ -723,6 +729,7 @@ class BeeDrillModule:
             _REFERENCE_ORACLE_CAPABILITY,
             {**_REFERENCE_ORACLE_PAYLOAD, "defense_condition": defense_condition},
         )
+        result = _validated_capability_result(result)
         if not isinstance(result, CapabilityResult):
             return ModuleResult(
                 self.module_id,
@@ -968,6 +975,31 @@ def _is_valid_isolated_solana_payload(payload: object) -> bool:
     return type(payload) is dict and payload == _ISOLATED_SOLANA_PAYLOAD
 
 
+def _validated_capability_result(result: object) -> CapabilityResult | None:
+    if not isinstance(result, CapabilityResult):
+        return None
+    capability_name = getattr(result, "capability_name", None)
+    status = getattr(result, "status", None)
+    authority = getattr(result, "authority", None)
+    summary = getattr(result, "summary", None)
+    data = getattr(result, "data", None)
+    diagnostics = getattr(result, "diagnostics", None)
+    if (
+        type(capability_name) is not str
+        or not isinstance(status, CapabilityStatus)
+        or not isinstance(authority, AuthorityLevel)
+        or type(summary) is not str
+        or type(data) is not dict
+        or type(diagnostics) is not dict
+    ):
+        return None
+    return result
+
+
+def _is_bounded_nonnegative_integer(value: object) -> bool:
+    return type(value) is int and 0 <= value <= _MAX_EVIDENCE_INTEGER
+
+
 def _is_valid_reference_target_payload(payload: object) -> bool:
     return type(payload) is dict and payload == _REFERENCE_TARGET_PAYLOAD
 
@@ -988,9 +1020,7 @@ def _is_valid_reference_target_attack_evidence(evidence: object) -> bool:
         "gross_loss_lamports",
     }
     if any(
-        isinstance(values[field], bool)
-        or not isinstance(values[field], int)
-        or values[field] < 0
+        not _is_bounded_nonnegative_integer(values[field])
         for field in integer_fields
     ):
         return False
@@ -1028,9 +1058,7 @@ def _is_valid_reference_target_detection_evidence(evidence: object) -> bool:
 
     attack_start_slot = values["attack_start_slot"]
     if (
-        isinstance(attack_start_slot, bool)
-        or not isinstance(attack_start_slot, int)
-        or attack_start_slot < 0
+        not _is_bounded_nonnegative_integer(attack_start_slot)
         or values["detector_id"] != "reference_vault_outflow_monitor"
         or values["signal_id"] != "vault_outflow_signal"
     ):
@@ -1039,8 +1067,7 @@ def _is_valid_reference_target_detection_evidence(evidence: object) -> bool:
         return True
     first_detection_slot = values["first_detection_slot"]
     return (
-        not isinstance(first_detection_slot, bool)
-        and isinstance(first_detection_slot, int)
+        _is_bounded_nonnegative_integer(first_detection_slot)
         and first_detection_slot >= attack_start_slot
     )
 
@@ -1066,16 +1093,13 @@ def _is_valid_reference_target_containment_evidence(
         "residual_loss_lamports",
     }
     if any(
-        isinstance(values[field], bool)
-        or not isinstance(values[field], int)
-        or values[field] < 0
+        not _is_bounded_nonnegative_integer(values[field])
         for field in integer_fields
     ):
         return False
     containment_slot = values["first_containment_slot"]
     if containment_slot is not None and (
-        isinstance(containment_slot, bool)
-        or not isinstance(containment_slot, int)
+        not _is_bounded_nonnegative_integer(containment_slot)
         or containment_slot < values["first_detection_slot"]
     ):
         return False
@@ -1141,16 +1165,13 @@ def _is_valid_reference_oracle_evidence(
         "residual_loss_micro_usdc",
     }
     if any(
-        isinstance(values[field], bool)
-        or not isinstance(values[field], int)
-        or values[field] < 0
+        not _is_bounded_nonnegative_integer(values[field])
         for field in integer_fields
     ):
         return False
     containment_slot = values["first_containment_slot"]
     if containment_slot is not None and (
-        isinstance(containment_slot, bool)
-        or not isinstance(containment_slot, int)
+        not _is_bounded_nonnegative_integer(containment_slot)
         or containment_slot < values["first_detection_slot"]
     ):
         return False
