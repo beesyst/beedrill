@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/beesyst/beedrill/compare/beedrill-v0.11.0...beedrill-v0.11.1) (2026-09-23)
+
+
+### Bug Fixes
+
+* harden capability evidence validation ([#33](https://github.com/beesyst/beedrill/issues/33)) ([aa09c5c](https://github.com/beesyst/beedrill/commit/aa09c5c68e1cc8eaec2c327b169404c7eaad1eca))
+
 ## [0.11.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.10.0...beedrill-v0.11.0) (2026-09-22)
 
 
