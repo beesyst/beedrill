@@ -1779,8 +1779,7 @@ No broad product expansion is allowed.
 
 ### Iteration 12 — Execution safety and fail-closed hardening
 
-**Status:** PLANNED
-**Window:** 2026-09-30..2026-10-01
+**Status:** DONE
 
 #### Goal
 
@@ -1854,8 +1853,6 @@ git diff --check
 #### DoD
 
 The working BeeDrill execution path remains functional while hostile input and execution-boundary failures are handled safely and explicitly.
-
----
 
 ### Iteration 13 — Real external integration and product evidence
 
