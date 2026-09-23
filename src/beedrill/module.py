@@ -674,7 +674,7 @@ class BeeDrillModule:
             fixed_evaluation = _oracle_evaluation(
                 fixed, broken["residual_loss_micro_usdc"]
             )
-        except (KeyError, ValueError):
+        except KeyError, ValueError:
             return self._reference_oracle_result(
                 context,
                 "error",
@@ -1020,8 +1020,7 @@ def _is_valid_reference_target_attack_evidence(evidence: object) -> bool:
         "gross_loss_lamports",
     }
     if any(
-        not _is_bounded_nonnegative_integer(values[field])
-        for field in integer_fields
+        not _is_bounded_nonnegative_integer(values[field]) for field in integer_fields
     ):
         return False
     signature = values["attack_transaction_signature"]
@@ -1093,8 +1092,7 @@ def _is_valid_reference_target_containment_evidence(
         "residual_loss_lamports",
     }
     if any(
-        not _is_bounded_nonnegative_integer(values[field])
-        for field in integer_fields
+        not _is_bounded_nonnegative_integer(values[field]) for field in integer_fields
     ):
         return False
     containment_slot = values["first_containment_slot"]
@@ -1165,8 +1163,7 @@ def _is_valid_reference_oracle_evidence(
         "residual_loss_micro_usdc",
     }
     if any(
-        not _is_bounded_nonnegative_integer(values[field])
-        for field in integer_fields
+        not _is_bounded_nonnegative_integer(values[field]) for field in integer_fields
     ):
         return False
     containment_slot = values["first_containment_slot"]

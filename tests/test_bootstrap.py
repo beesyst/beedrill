@@ -1557,8 +1557,9 @@ def test_reference_target_attack_rejects_unbounded_integer_evidence(
     assert "evidence" not in artifacts.artifacts["reference_target_attack.json"]
 
 
-def test_reference_target_containment_rejects_oversized_evidence_before_arithmetic(
-) -> None:
+def test_reference_target_containment_rejects_oversized_evidence_before_arithmetic() -> (
+    None
+):
     broken = _containment_evidence("broken")
     broken["final_vault_lamports"] = 10**1000
 
@@ -1614,9 +1615,7 @@ def test_reference_oracle_rejects_oversized_evidence_before_arithmetic() -> None
     assert "security_verdict" not in result.data
 
 
-@pytest.mark.parametrize(
-    "field", ["status", "authority", "capability_name", "data"]
-)
+@pytest.mark.parametrize("field", ["status", "authority", "capability_name", "data"])
 def test_isolated_solana_smoke_rejects_missing_capability_envelope_fields(
     field: str,
 ) -> None:
@@ -1701,7 +1700,7 @@ def test_replays_reject_oversized_transaction_identifiers(
     caller = (
         caller_type(host_result)
         if caller_type is _FakeCapabilityCaller
-        else caller_type([host_result])
+        else _ContainmentCapabilityCaller([host_result])
     )
 
     result = BeeDrillModule().handle(
