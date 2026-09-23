@@ -491,6 +491,12 @@ fields, invalid identifiers/enums/integers, duplicate identifiers and
 inconsistent evidence partitioning. A scenario with missing evidence cannot
 carry a `pass` verdict.
 
+At the capability boundary, BeeDrill accepts only type-valid fixed-name envelope
+fields and exact dictionary data and diagnostics; malformed envelopes are explicit
+non-successful outcomes. Every security-relevant integer must be non-boolean,
+non-negative and no greater than 1,000,000,000 before evaluator construction or
+arithmetic.
+
 ## 19. Evidence is not authority
 
 Evidence describes what happened.
