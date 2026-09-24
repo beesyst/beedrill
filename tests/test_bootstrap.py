@@ -47,6 +47,7 @@ def test_module_handles_only_the_bounded_integration_case() -> None:
         "reference_target_detection",
         "reference_target_containment_replay",
         "reference_oracle_manipulation_replay",
+        "spl_token_freeze_containment_replay",
     ]
     assert isinstance(result, ModuleResult)
     assert result == ModuleResult(
@@ -1713,5 +1714,316 @@ def test_replays_reject_oversized_transaction_identifiers(
         )
     )
 
+    assert result.status == "error"
+    assert "security_verdict" not in result.data
+
+
+_VALID_SPL_TOKEN_FREEZE_PAYLOAD = {
+    "target_profile": "surfpool_local",
+    "target_id": "spl_token_freeze_containment",
+}
+
+
+def _spl_token_evidence(condition: str) -> dict[str, object]:
+    broken = condition == "broken"
+    return {
+        "target_id": "spl_token_freeze_containment",
+        "initial_state_id": "spl_token_freeze_containment_canonical_v1",
+        "economic_unit": "base_units",
+        "program_id": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+        "defense_condition": condition,
+        "attack_sequence_id": "spl_token_transfer_twice_v1",
+        "initial_source_balance_units": 1_000_000,
+        "initial_target_balance_units": 0,
+        "attack_start_slot": 42,
+        "first_transfer_signature": "transfer-1",
+        "first_transfer_source_balance_units": 900_000,
+        "first_transfer_target_balance_units": 100_000,
+        "detector_id": "spl_token_target_balance_monitor",
+        "signal_id": "spl_token_target_balance_signal",
+        "detection_status": "observed",
+        "first_detection_slot": 44,
+        "containment_status": "failed" if broken else "succeeded",
+        "first_containment_slot": None if broken else 46,
+        "target_account_state": "initialized" if broken else "frozen",
+        "second_transfer_status": "succeeded" if broken else "rejected",
+        "final_source_balance_units": 800_000 if broken else 900_000,
+        "final_target_balance_units": 200_000 if broken else 100_000,
+        "residual_loss_units": 200_000 if broken else 100_000,
+    }
+
+
+def _spl_token_caller() -> _ContainmentCapabilityCaller:
+    return _ContainmentCapabilityCaller(
+        [
+            CapabilityResult(
+                "solana.spl_token_freeze_containment",
+                CapabilityStatus.OK,
+                AuthorityLevel.EXECUTION_CAPABLE,
+                "completed",
+                _spl_token_evidence("broken"),
+            ),
+            CapabilityResult(
+                "solana.spl_token_freeze_containment",
+                CapabilityStatus.OK,
+                AuthorityLevel.EXECUTION_CAPABLE,
+                "completed",
+                _spl_token_evidence("fixed"),
+            ),
+        ]
+    )
+
+
+def test_spl_token_freeze_containment_replay_evaluates_bounded_host_evidence() -> None:
+    caller = _spl_token_caller()
+    artifacts = _MemoryArtifactPort()
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="spl_token_freeze_containment_replay",
+            module_id="beedrill",
+            payload=_VALID_SPL_TOKEN_FREEZE_PAYLOAD,
+            capability_caller=caller,
+            artifact_api=artifacts,
+        )
+    )
+    assert result.authority is AuthorityLevel.READ_ONLY
+    assert result.status == "ok"
+    assert result.data == {
+        "capability_status": "ok",
+        "capability_authority": "execution_capable",
+        "broken_verdict": "fail",
+        "fixed_verdict": "pass",
+        "security_verdict": "pass",
+    }
+    assert caller.calls == [
+        (
+            "solana.spl_token_freeze_containment",
+            {**_VALID_SPL_TOKEN_FREEZE_PAYLOAD, "defense_condition": "broken"},
+        ),
+        (
+            "solana.spl_token_freeze_containment",
+            {**_VALID_SPL_TOKEN_FREEZE_PAYLOAD, "defense_condition": "fixed"},
+        ),
+    ]
+    artifact = artifacts.artifacts["spl_token_freeze_containment_replay.json"]
+    assert isinstance(artifact, Mapping)
+    comparison = artifact["comparison"]
+    assert isinstance(comparison, Mapping)
+    assert comparison["scenario"] == {
+        "scenario_id": "spl_token_freeze_containment_replay",
+        "version": 1,
+    }
+    assert comparison["metrics"]["broken"]["residual_loss_units"] == 200_000
+    assert comparison["metrics"]["fixed"]["capital_saved_units"] == 100_000
+    assert "completed" not in repr(artifact)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {"target_profile": "other", "target_id": "spl_token_freeze_containment"},
+        {"target_profile": "surfpool_local", "target_id": "other"},
+        {**_VALID_SPL_TOKEN_FREEZE_PAYLOAD, "program_id": "untrusted"},
+        {**_VALID_SPL_TOKEN_FREEZE_PAYLOAD, "rpc_url": "untrusted"},
+        {**_VALID_SPL_TOKEN_FREEZE_PAYLOAD, "executable": "untrusted"},
+    ],
+)
+def test_spl_token_freeze_refuses_untrusted_intent(payload: dict[str, object]) -> None:
+    caller = _spl_token_caller()
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="spl_token_freeze_containment_replay",
+            module_id="beedrill",
+            payload=payload,
+            capability_caller=caller,
+        )
+    )
+    assert result.status == "refused"
+    assert caller.calls == []
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        lambda evidence: evidence.pop("program_id"),
+        lambda evidence: evidence.update({"unknown": "value"}),
+        lambda evidence: evidence.update({"program_id": "untrusted"}),
+        lambda evidence: evidence.update({"first_detection_slot": True}),
+        lambda evidence: evidence.update({"final_target_balance_units": -1}),
+        lambda evidence: evidence.update({"attack_start_slot": 1_000_000_001}),
+        lambda evidence: evidence.update({"second_transfer_status": "rejected"}),
+        lambda evidence: evidence.update({"residual_loss_units": 0}),
+    ],
+)
+def test_spl_token_freeze_fails_closed_for_invalid_evidence(mutation: Any) -> None:
+    broken = _spl_token_evidence("broken")
+    mutation(broken)
+    caller = _ContainmentCapabilityCaller(
+        [
+            CapabilityResult(
+                "solana.spl_token_freeze_containment",
+                CapabilityStatus.OK,
+                AuthorityLevel.EXECUTION_CAPABLE,
+                "completed",
+                broken,
+            )
+        ]
+    )
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="spl_token_freeze_containment_replay",
+            module_id="beedrill",
+            payload=_VALID_SPL_TOKEN_FREEZE_PAYLOAD,
+            capability_caller=caller,
+        )
+    )
+    assert result.status == "error"
+    assert "security_verdict" not in result.data
+    assert len(caller.calls) == 1
+
+
+@pytest.mark.parametrize(
+    "status",
+    [CapabilityStatus.REFUSED, CapabilityStatus.TIMEOUT, CapabilityStatus.ERROR],
+)
+def test_spl_token_freeze_preserves_host_non_success(status: CapabilityStatus) -> None:
+    caller = _ContainmentCapabilityCaller(
+        [
+            CapabilityResult(
+                "solana.spl_token_freeze_containment",
+                status,
+                AuthorityLevel.EXECUTION_CAPABLE,
+                "not completed",
+            )
+        ]
+    )
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="spl_token_freeze_containment_replay",
+            module_id="beedrill",
+            payload=_VALID_SPL_TOKEN_FREEZE_PAYLOAD,
+            capability_caller=caller,
+        )
+    )
+    assert result.status == status.value
+    assert len(caller.calls) == 1
+
+
+@pytest.mark.parametrize(
+    "capability_name, authority",
+    [
+        ("solana.other", AuthorityLevel.EXECUTION_CAPABLE),
+        ("solana.spl_token_freeze_containment", AuthorityLevel.READ_ONLY),
+    ],
+)
+def test_spl_token_freeze_rejects_wrong_capability_or_authority(
+    capability_name: str,
+    authority: AuthorityLevel,
+) -> None:
+    caller = _ContainmentCapabilityCaller(
+        [
+            CapabilityResult(
+                capability_name,
+                CapabilityStatus.OK,
+                authority,
+                "completed",
+                _spl_token_evidence("broken"),
+            )
+        ]
+    )
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="spl_token_freeze_containment_replay",
+            module_id="beedrill",
+            payload=_VALID_SPL_TOKEN_FREEZE_PAYLOAD,
+            capability_caller=caller,
+        )
+    )
+    assert result.status == "error"
+    assert "security_verdict" not in result.data
+
+
+def test_spl_token_freeze_rejects_missing_caller_and_malformed_envelope() -> None:
+    missing = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="spl_token_freeze_containment_replay",
+            module_id="beedrill",
+            payload=_VALID_SPL_TOKEN_FREEZE_PAYLOAD,
+        )
+    )
+    malformed = CapabilityResult(
+        "solana.spl_token_freeze_containment",
+        CapabilityStatus.OK,
+        AuthorityLevel.EXECUTION_CAPABLE,
+        "completed",
+        _spl_token_evidence("broken"),
+    )
+    object.__setattr__(malformed, "diagnostics", "private")
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="spl_token_freeze_containment_replay",
+            module_id="beedrill",
+            payload=_VALID_SPL_TOKEN_FREEZE_PAYLOAD,
+            capability_caller=_FakeCapabilityCaller(malformed),
+        )
+    )
+    assert missing.status == "error"
+    assert result.status == "error"
+    assert result.data == {"capability_status": "invalid"}
+
+
+def test_spl_token_freeze_replay_is_deterministic() -> None:
+    results = [
+        BeeDrillModule().handle(
+            ModuleContext(
+                run_id="run-1",
+                case_type="spl_token_freeze_containment_replay",
+                module_id="beedrill",
+                payload=_VALID_SPL_TOKEN_FREEZE_PAYLOAD,
+                capability_caller=_spl_token_caller(),
+            )
+        )
+        for _ in range(2)
+    ]
+    assert results[0] == results[1]
+
+
+@pytest.mark.parametrize(
+    ("requested_condition", "evidence_condition"),
+    [("fixed", "broken"), ("broken", "fixed")],
+)
+def test_spl_token_freeze_rejects_cross_labelled_phase_evidence(
+    requested_condition: str, evidence_condition: str
+) -> None:
+    evidence = _spl_token_evidence(evidence_condition)
+    evidence["defense_condition"] = requested_condition
+    caller = _ContainmentCapabilityCaller(
+        [
+            CapabilityResult(
+                "solana.spl_token_freeze_containment",
+                CapabilityStatus.OK,
+                AuthorityLevel.EXECUTION_CAPABLE,
+                "completed",
+                evidence,
+            )
+        ]
+    )
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="spl_token_freeze_containment_replay",
+            module_id="beedrill",
+            payload=_VALID_SPL_TOKEN_FREEZE_PAYLOAD,
+            capability_caller=caller,
+        )
+    )
     assert result.status == "error"
     assert "security_verdict" not in result.data

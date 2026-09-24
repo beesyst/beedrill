@@ -121,6 +121,41 @@ _REFERENCE_ORACLE_SCENARIO = {
     "scenario_id": "reference_oracle_manipulation_replay",
     "version": 1,
 }
+_SPL_TOKEN_FREEZE_CASE = "spl_token_freeze_containment_replay"
+_SPL_TOKEN_FREEZE_CAPABILITY = "solana.spl_token_freeze_containment"
+_SPL_TOKEN_FREEZE_PAYLOAD = {
+    "target_profile": "surfpool_local",
+    "target_id": "spl_token_freeze_containment",
+}
+_SPL_TOKEN_FREEZE_EVIDENCE_FIELDS = {
+    "target_id",
+    "initial_state_id",
+    "economic_unit",
+    "program_id",
+    "defense_condition",
+    "attack_sequence_id",
+    "initial_source_balance_units",
+    "initial_target_balance_units",
+    "attack_start_slot",
+    "first_transfer_signature",
+    "first_transfer_source_balance_units",
+    "first_transfer_target_balance_units",
+    "detector_id",
+    "signal_id",
+    "detection_status",
+    "first_detection_slot",
+    "containment_status",
+    "first_containment_slot",
+    "target_account_state",
+    "second_transfer_status",
+    "final_source_balance_units",
+    "final_target_balance_units",
+    "residual_loss_units",
+}
+_SPL_TOKEN_FREEZE_SCENARIO = {
+    "scenario_id": "spl_token_freeze_containment_replay",
+    "version": 1,
+}
 
 _ISOLATED_SOLANA_CASE = "isolated_solana_smoke"
 _ISOLATED_SOLANA_CAPABILITY = "solana.isolated_lifecycle"
@@ -146,6 +181,7 @@ class BeeDrillModule:
             _REFERENCE_TARGET_DETECTION_CASE,
             _REFERENCE_TARGET_CONTAINMENT_CASE,
             _REFERENCE_ORACLE_CASE,
+            _SPL_TOKEN_FREEZE_CASE,
         ]
 
     def handle(self, context: ModuleContext) -> ModuleResult:
@@ -164,6 +200,8 @@ class BeeDrillModule:
             return self._handle_reference_target_containment(context)
         if context.case_type == _REFERENCE_ORACLE_CASE:
             return self._handle_reference_oracle_manipulation(context)
+        if context.case_type == _SPL_TOKEN_FREEZE_CASE:
+            return self._handle_spl_token_freeze_containment(context)
 
         artifact_api: ArtifactPort | None = context.artifact_api
         if artifact_api is not None:
@@ -780,6 +818,149 @@ class BeeDrillModule:
             )
         return result.data
 
+    def _handle_spl_token_freeze_containment(
+        self, context: ModuleContext
+    ) -> ModuleResult:
+        if not _is_valid_spl_token_freeze_payload(context.payload):
+            return self._spl_token_freeze_result(
+                context,
+                "refused",
+                "BeeDrill SPL Token freeze intent is refused",
+                {"capability_status": "refused"},
+            )
+        caller = context.capability_caller
+        if caller is None:
+            return self._spl_token_freeze_result(
+                context,
+                "error",
+                "Host capability caller is unavailable",
+                {"capability_status": "missing"},
+            )
+        broken = self._call_spl_token_freeze_containment(caller, "broken")
+        if isinstance(broken, ModuleResult):
+            return self._spl_token_freeze_result(
+                context, broken.status, broken.summary, broken.data
+            )
+        fixed = self._call_spl_token_freeze_containment(caller, "fixed")
+        if isinstance(fixed, ModuleResult):
+            return self._spl_token_freeze_result(
+                context, fixed.status, fixed.summary, fixed.data
+            )
+        try:
+            broken_evaluation = _spl_token_freeze_evaluation(
+                broken, broken["residual_loss_units"]
+            )
+            fixed_evaluation = _spl_token_freeze_evaluation(
+                fixed, broken["residual_loss_units"]
+            )
+        except KeyError, ValueError:
+            return self._spl_token_freeze_result(
+                context,
+                "error",
+                "Host capability SPL Token evidence is inconsistent",
+                {
+                    "capability_status": "ok",
+                    "capability_authority": "execution_capable",
+                },
+            )
+        if (
+            broken_evaluation.verdict.status.value != "fail"
+            or broken_evaluation.metrics.containment_result
+            is not ContainmentStatus.FAILED
+            or fixed_evaluation.verdict.status.value != "pass"
+            or fixed_evaluation.metrics.containment_result
+            is not ContainmentStatus.SUCCEEDED
+        ):
+            return self._spl_token_freeze_result(
+                context,
+                "error",
+                "Host capability SPL Token negative control is inconsistent",
+                {
+                    "capability_status": "ok",
+                    "capability_authority": "execution_capable",
+                },
+            )
+        return self._spl_token_freeze_result(
+            context,
+            "ok",
+            "BeeDrill SPL Token freeze containment replay completed",
+            {
+                "capability_status": "ok",
+                "capability_authority": "execution_capable",
+                "broken_verdict": broken_evaluation.verdict.status.value,
+                "fixed_verdict": fixed_evaluation.verdict.status.value,
+                "security_verdict": fixed_evaluation.verdict.status.value,
+            },
+            {
+                "scenario": _SPL_TOKEN_FREEZE_SCENARIO,
+                "broken": broken,
+                "fixed": fixed,
+                "metrics": {
+                    "broken": _spl_token_freeze_evaluation_to_dict(broken_evaluation),
+                    "fixed": _spl_token_freeze_evaluation_to_dict(fixed_evaluation),
+                },
+            },
+        )
+
+    def _call_spl_token_freeze_containment(
+        self, caller: CapabilityCaller, defense_condition: str
+    ) -> dict[str, object] | ModuleResult:
+        result = _validated_capability_result(
+            caller.call(
+                _SPL_TOKEN_FREEZE_CAPABILITY,
+                {**_SPL_TOKEN_FREEZE_PAYLOAD, "defense_condition": defense_condition},
+            )
+        )
+        if not isinstance(result, CapabilityResult):
+            return ModuleResult(
+                self.module_id,
+                _SPL_TOKEN_FREEZE_CASE,
+                self.authority,
+                "error",
+                "Host capability returned an invalid result",
+                {"capability_status": "invalid"},
+            )
+        evidence = {
+            "capability_status": result.status.value,
+            "capability_authority": result.authority.value,
+        }
+        if result.capability_name != _SPL_TOKEN_FREEZE_CAPABILITY:
+            return ModuleResult(
+                self.module_id,
+                _SPL_TOKEN_FREEZE_CASE,
+                self.authority,
+                "error",
+                "Host capability returned inconsistent evidence",
+                evidence,
+            )
+        if result.status in {
+            CapabilityStatus.REFUSED,
+            CapabilityStatus.TIMEOUT,
+            CapabilityStatus.ERROR,
+        }:
+            return ModuleResult(
+                self.module_id,
+                _SPL_TOKEN_FREEZE_CASE,
+                self.authority,
+                result.status.value,
+                "BeeDrill SPL Token freeze containment replay did not complete",
+                evidence,
+            )
+        if (
+            result.status is not CapabilityStatus.OK
+            or result.authority is not AuthorityLevel.EXECUTION_CAPABLE
+            or not _is_valid_spl_token_freeze_evidence(result.data, defense_condition)
+        ):
+            return ModuleResult(
+                self.module_id,
+                _SPL_TOKEN_FREEZE_CASE,
+                self.authority,
+                "error",
+                "Host capability SPL Token evidence is incomplete",
+                evidence,
+            )
+        return result.data
+
     def _capability_result(
         self,
         context: ModuleContext,
@@ -968,6 +1149,30 @@ class BeeDrillModule:
             status=status,
             summary=summary,
             data=data,
+        )
+
+    def _spl_token_freeze_result(
+        self,
+        context: ModuleContext,
+        status: str,
+        summary: str,
+        data: dict[str, object],
+        comparison: dict[str, object] | None = None,
+    ) -> ModuleResult:
+        artifact_api: ArtifactPort | None = context.artifact_api
+        if artifact_api is not None:
+            artifact_api.write_json(
+                "spl_token_freeze_containment_replay.json",
+                {
+                    "module_id": self.module_id,
+                    "case_type": context.case_type,
+                    "status": status,
+                    **data,
+                    **({"comparison": comparison} if comparison is not None else {}),
+                },
+            )
+        return ModuleResult(
+            self.module_id, context.case_type, self.authority, status, summary, data
         )
 
 
@@ -1233,6 +1438,81 @@ def _is_valid_reference_oracle_evidence(
     )
 
 
+def _is_valid_spl_token_freeze_payload(payload: object) -> bool:
+    return type(payload) is dict and payload == _SPL_TOKEN_FREEZE_PAYLOAD
+
+
+def _is_valid_spl_token_freeze_evidence(
+    evidence: object, defense_condition: str
+) -> bool:
+    if type(evidence) is not dict or set(evidence) != _SPL_TOKEN_FREEZE_EVIDENCE_FIELDS:
+        return False
+    values = evidence
+    integers = {
+        "initial_source_balance_units",
+        "initial_target_balance_units",
+        "attack_start_slot",
+        "first_transfer_source_balance_units",
+        "first_transfer_target_balance_units",
+        "first_detection_slot",
+        "final_source_balance_units",
+        "final_target_balance_units",
+        "residual_loss_units",
+    }
+    if any(not _is_bounded_nonnegative_integer(values[field]) for field in integers):
+        return False
+    containment_slot = values["first_containment_slot"]
+    if containment_slot is not None and (
+        not _is_bounded_nonnegative_integer(containment_slot)
+        or containment_slot < values["first_detection_slot"]
+    ):
+        return False
+    signature = values["first_transfer_signature"]
+    if not isinstance(signature, str) or not signature or len(signature) > 128:
+        return False
+    if (
+        values["target_id"] != "spl_token_freeze_containment"
+        or values["initial_state_id"] != "spl_token_freeze_containment_canonical_v1"
+        or values["economic_unit"] != "base_units"
+        or values["program_id"] != "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        or values["defense_condition"] != defense_condition
+        or values["attack_sequence_id"] != "spl_token_transfer_twice_v1"
+        or values["initial_source_balance_units"] != 1_000_000
+        or values["initial_target_balance_units"] != 0
+        or values["first_transfer_source_balance_units"] != 900_000
+        or values["first_transfer_target_balance_units"] != 100_000
+        or values["detector_id"] != "spl_token_target_balance_monitor"
+        or values["signal_id"] != "spl_token_target_balance_signal"
+        or values["detection_status"] != "observed"
+        or values["first_detection_slot"] < values["attack_start_slot"]
+        or values["residual_loss_units"] != values["final_target_balance_units"]
+        or values["final_source_balance_units"] + values["final_target_balance_units"]
+        != values["initial_source_balance_units"]
+    ):
+        return False
+    if defense_condition == "broken":
+        return (
+            values["containment_status"] == "failed"
+            and containment_slot is None
+            and values["target_account_state"] == "initialized"
+            and values["second_transfer_status"] == "succeeded"
+            and values["final_source_balance_units"] == 800_000
+            and values["final_target_balance_units"] == 200_000
+            and values["residual_loss_units"] == 200_000
+        )
+    if defense_condition == "fixed":
+        return (
+            values["containment_status"] == "succeeded"
+            and containment_slot is not None
+            and values["target_account_state"] == "frozen"
+            and values["second_transfer_status"] == "rejected"
+            and values["final_source_balance_units"] == 900_000
+            and values["final_target_balance_units"] == 100_000
+            and values["residual_loss_units"] == 100_000
+        )
+    return False
+
+
 def _containment_evaluation(
     evidence: dict[str, object],
     gross_loss_lamports: object,
@@ -1305,6 +1585,77 @@ def _evaluation_to_dict(evaluation: DrillEvaluation) -> dict[str, object]:
         "gross_attack_loss_lamports": metrics.gross_attack_loss.amount,
         "residual_loss_lamports": metrics.residual_loss.amount,
         "capital_saved_lamports": metrics.capital_saved.amount,
+    }
+
+
+def _spl_token_freeze_evaluation(
+    evidence: dict[str, object], gross_loss_units: object
+) -> DrillEvaluation:
+    if isinstance(gross_loss_units, bool) or not isinstance(gross_loss_units, int):
+        raise TypeError("gross loss must be an integer")
+    detection_status = evidence["detection_status"]
+    containment_status = evidence["containment_status"]
+    attack_start_slot = evidence["attack_start_slot"]
+    first_detection_slot = evidence["first_detection_slot"]
+    first_containment_slot = evidence["first_containment_slot"]
+    residual_loss_units = evidence["residual_loss_units"]
+    if (
+        not isinstance(detection_status, str)
+        or not isinstance(containment_status, str)
+        or isinstance(attack_start_slot, bool)
+        or not isinstance(attack_start_slot, int)
+        or isinstance(first_detection_slot, bool)
+        or not isinstance(first_detection_slot, int)
+        or (
+            first_containment_slot is not None
+            and (
+                isinstance(first_containment_slot, bool)
+                or not isinstance(first_containment_slot, int)
+            )
+        )
+        or isinstance(residual_loss_units, bool)
+        or not isinstance(residual_loss_units, int)
+    ):
+        raise ValueError("SPL Token evidence has invalid field types")
+    return evaluate_drill(
+        DrillEvidence(
+            evidence=EvidenceCompleteness(
+                ("attack", "detection", "containment", "economics"),
+                ("attack", "detection", "containment", "economics"),
+                (),
+            ),
+            detection_status=ObservationStatus(detection_status),
+            containment_status=ContainmentStatus(containment_status),
+            attack_start_slot=attack_start_slot,
+            first_detection_slot=first_detection_slot,
+            first_containment_slot=first_containment_slot,
+            gross_attack_loss=EconomicLoss(
+                "SPL", "base_units", "spl_token_target_balance", gross_loss_units
+            ),
+            residual_loss=EconomicLoss(
+                "SPL", "base_units", "spl_token_target_balance", residual_loss_units
+            ),
+        )
+    )
+
+
+def _spl_token_freeze_evaluation_to_dict(
+    evaluation: DrillEvaluation,
+) -> dict[str, object]:
+    metrics = evaluation.metrics
+    if (
+        metrics.gross_attack_loss is None
+        or metrics.residual_loss is None
+        or metrics.capital_saved is None
+    ):
+        raise ValueError("SPL Token evaluation metrics are incomplete")
+    return {
+        "verdict": evaluation.verdict.status.value,
+        "mttd_slots": metrics.mttd_slots,
+        "mttc_slots": metrics.mttc_slots,
+        "gross_attack_loss_units": metrics.gross_attack_loss.amount,
+        "residual_loss_units": metrics.residual_loss.amount,
+        "capital_saved_units": metrics.capital_saved.amount,
     }
 
 

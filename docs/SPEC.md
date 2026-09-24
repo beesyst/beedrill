@@ -484,6 +484,46 @@ and the existing evaluator's `fail` then `pass` verdicts. Missing,
 contradictory, refused, timed-out, or erroneous host evidence cannot produce a
 PASS result.
 
+### 17.5 SPL Token freeze-containment replay evidence
+
+`spl_token_freeze_containment_replay` is BeeDrill's one external-target validation
+case. Its sole request is `{"target_profile": "surfpool_local", "target_id":
+"spl_token_freeze_containment"}`. BeeDrill issues only the two bounded variants
+with `defense_condition` set to `broken` and `fixed`; it cannot supply a program
+ID, RPC endpoint, account address, executable, transaction, credential or
+execution authority.
+
+The external target is the canonical SPL Token program, whose fixed program ID
+is `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`. BeeAgent resolves and verifies
+that identity host-side in its isolated Surfpool environment; BeeDrill accepts
+only returned evidence containing that exact identity. The host creates fresh,
+equivalent ephemeral state for each phase: 1,000,000 source base units and zero
+target base units. The fixed attack is two transfers of 100,000 base units; the
+first succeeds in both phases. Detection must identify the bounded target-balance
+monitor and signal at an observed slot no earlier than the attack start.
+
+For `broken`, the target account remains `initialized`, containment has no slot,
+and the identical second transfer succeeds, leaving 200,000 target base units.
+For `fixed`, the host proves the target account is `frozen` after containment and
+the identical second transfer is rejected, leaving 100,000 target base units.
+The resulting artifact, `spl_token_freeze_containment_replay.json`, contains
+only validated bounded evidence, evaluator metrics and evaluator-derived
+verdicts: broken `fail`, then fixed `pass` when the valid evidence proves lower
+residual loss. It excludes host diagnostics, keys, credentials and raw runtime
+output.
+
+To reproduce it, run the BeeAgent-owned `solana.spl_token_freeze_containment`
+capability through the BeeDrill case in the approved isolated environment. The
+host owns Surfpool, RPC, the canonical program resolution, transactions,
+timeouts and cleanup. A completed host capability alone is not a security
+verdict, and refused, timeout, error or malformed evidence remains distinct from
+a successful evaluation.
+
+This validates one real SPL Token account-freeze containment pattern; it does
+not establish arbitrary-protocol compatibility, generic SPL Token adapter
+support, production/mainnet mutation safety or coverage of controls beyond this
+specific two-transfer replay.
+
 ## 18. Evidence validity
 
 Critical invalid data is rejected, including unknown fields, missing required
