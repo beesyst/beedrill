@@ -345,6 +345,15 @@ If BeeDrill requires a host capability that does not exist:
 
 Do not add the host implementation to BeeDrill as a shortcut.
 
+For the bounded SPL Token freeze-containment replay, run:
+
+```bash
+cd /home/bee/Pro/beeagent
+./start.sh beedrill run --scenario spl_token_freeze_containment_replay
+```
+
+Expected security semantics are `broken → fail`, `fixed → pass`, and final `security_verdict → pass`. Program selection, Surfpool, RPC, transactions, ephemeral keys, timeout, and cleanup remain BeeAgent-owned. This validates one SPL Token freeze-containment pattern only.
+
 ## Related repository environments
 
 Each repository must be verified in its own environment.

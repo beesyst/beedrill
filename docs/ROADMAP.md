@@ -1855,8 +1855,7 @@ BeeDrill's existing regression product remains functional and deterministic, whi
 
 ### Iteration 13 — Real external integration and product evidence
 
-**Status:** PLANNED
-**Window:** 2026-10-02..2026-10-03
+**Status:** DONE
 
 #### Goal
 
@@ -1921,8 +1920,6 @@ clean rerun when feasible
 #### DoD
 
 The hackathon submission has non-toy evidence that BeeDrill can validate a real-world-shaped security-control surface.
-
----
 
 ### Iteration 14 — Hackathon demo, reproducibility package and submission freeze
 
