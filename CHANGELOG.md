@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.11.1...beedrill-v0.12.0) (2026-09-24)
+
+
+### Features
+
+* add SPL Token external validation replay ([#36](https://github.com/beesyst/beedrill/issues/36)) ([901c14f](https://github.com/beesyst/beedrill/commit/901c14f556ecc7bf6ccf2cbbc7fa172ea431fd54))
+
 ## [0.11.1](https://github.com/beesyst/beedrill/compare/beedrill-v0.11.0...beedrill-v0.11.1) (2026-09-23)
 
 
