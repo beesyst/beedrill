@@ -56,66 +56,27 @@ security-sensitive change
 
 ## Current status
 
-The first half of the BeeDrill loop is working end to end:
+The MVP loop is implemented end to end:
 
 ```text
-defined drill
-→ fresh isolated Solana environment
-→ reproducible reference vault
-→ real economic attack
-→ independent detection
-→ bounded machine-verifiable evidence
-→ fresh-state replay
+Define → Isolate → Attack → Detect → Contain → Measure → Verdict → Replay
 ```
 
-Current product state:
+The supported replays each run a broken and fixed condition from fresh isolated
+state. The fixed phase is evaluated from validated evidence; host completion
+alone is not a verdict.
 
-```text
-Define      PASS
-Isolate     PASS
-Attack      PASS
-Detect      PASS
+| Replay                                 | Verified behavior                                                                                        |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `reference_target_containment_replay`  | Broken state permits a second withdrawal and fails; fixed containment rejects it and passes.             |
+| `reference_oracle_manipulation_replay` | Broken state permits a second borrow and fails; fixed containment blocks it and passes.                  |
+| `spl_token_freeze_containment_replay`  | Broken state permits a second SPL transfer and fails; freezing the target account rejects it and passes. |
 
-Contain     NEXT
-Measure     PASS
-Verdict     PASS
-Replay      NEXT
-```
-
-### Real detection proof
-
-BeeDrill can now execute the fixed reference attack from fresh isolated state
-and receive independent detection evidence through the BeeAgent-owned execution
-boundary.
-
-Example evidence:
-
-```text
-RUN 1 — fresh isolated state
-attack_start_slot      83
-first_detection_slot   84
-detection_status       observed
-
-RUN 2 — fresh isolated state
-attack_start_slot      83
-first_detection_slot   84
-detection_status       observed
-
-Fresh-state replay     PASS
-End-to-end detection   PASS
-```
-
-The exact slot numbers may differ between runs. The security-relevant semantics
-must remain equivalent:
-
-```text
-real attack
-→ real state change
-→ independent detector observation
-→ observed
-→ ordered timing evidence
-→ repeatable fresh-state result
-```
+The SPL Token replay is the external proof. It validates one canonical SPL
+Token freeze-containment pattern in an isolated host-owned environment; it does
+not claim arbitrary Solana protocol support, generic adapter coverage, or
+production/mainnet safety. A bounded fresh result is at
+[`docs/evidence/spl_token_freeze_containment_replay.example.json`](docs/evidence/spl_token_freeze_containment_replay.example.json).
 
 BeeDrill remains `READ_ONLY`.
 
@@ -504,26 +465,14 @@ Define
 Isolate
 Attack
 Detect
+Contain
 Measure
 Verdict
+Replay
 ```
 
-### Next
-
-```text
-real containment
-→ FAIL → fix → PASS replay
-```
-
-### After that
-
-```text
-second attack class
-→ reproducible regression runner / CI
-→ execution hardening
-→ external validation
-→ hackathon demo and submission freeze
-```
+The scope is frozen for submission: no additional scenario, protocol, control,
+runtime, UI, or AI verdict capability is implied by this repository state.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the complete delivery plan and
 iteration contracts.
@@ -565,6 +514,12 @@ Show dependencies:
 ```bash
 uv tree
 ```
+
+For a clean workspace, compatible sibling repositories, tool prerequisites,
+regression commands, and artifact locations are in
+[`docs/DEV_GUIDE.md`](docs/DEV_GUIDE.md). The evidence map, submission copy,
+and 60–90 second demo/pitch scripts are in
+[`docs/SUBMISSION.md`](docs/SUBMISSION.md).
 
 Do not run or require:
 

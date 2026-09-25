@@ -1,0 +1,57 @@
+{
+  "example_kind": "bounded_validated_artifact_projection",
+  "source": {
+    "scenario_artifact": "spl_token_freeze_containment_replay.json",
+    "derived_from_fresh_host_run": "run-2b7207274688",
+    "source_artifact_sha256": "8ccfeea78246a9e13a6f4c4fc2a9e95e9e681dc14f4ab352afdd89435669fa90",
+    "source_of_truth": "validated host evidence and the deterministic evaluator"
+  },
+  "module_id": "beedrill",
+  "case_type": "spl_token_freeze_containment_replay",
+  "status": "ok",
+  "broken_verdict": "fail",
+  "fixed_verdict": "pass",
+  "security_verdict": "pass",
+  "comparison": {
+    "scenario": {
+      "scenario_id": "spl_token_freeze_containment_replay",
+      "version": 1
+    },
+    "broken": {
+      "program_id": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "defense_condition": "broken",
+      "detection_status": "observed",
+      "containment_status": "failed",
+      "target_account_state": "initialized",
+      "second_transfer_status": "succeeded",
+      "residual_loss_units": 200000
+    },
+    "fixed": {
+      "program_id": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "defense_condition": "fixed",
+      "detection_status": "observed",
+      "containment_status": "succeeded",
+      "target_account_state": "frozen",
+      "second_transfer_status": "rejected",
+      "residual_loss_units": 100000
+    },
+    "metrics": {
+      "broken": {
+        "verdict": "fail",
+        "mttd_slots": 1,
+        "mttc_slots": null,
+        "gross_attack_loss_units": 200000,
+        "residual_loss_units": 200000,
+        "capital_saved_units": 0
+      },
+      "fixed": {
+        "verdict": "pass",
+        "mttd_slots": 1,
+        "mttc_slots": 1,
+        "gross_attack_loss_units": 200000,
+        "residual_loss_units": 100000,
+        "capital_saved_units": 100000
+      }
+    }
+  }
+}
