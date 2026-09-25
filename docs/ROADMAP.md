@@ -1923,8 +1923,7 @@ The hackathon submission has non-toy evidence that BeeDrill can validate a real-
 
 ### Iteration 14 — Hackathon demo, reproducibility package and submission freeze
 
-**Status:** PLANNED
-**Window:** 2026-10-04
+**Status:** DONE
 
 #### Goal
 

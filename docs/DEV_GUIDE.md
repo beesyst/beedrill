@@ -33,14 +33,77 @@ Rule:
 - Python 3.14+
 - `uv`
 - Git
+- Surfpool CLI on `PATH`
+- Solana CLI tooling on `PATH`, including `solana` and `cargo-build-sbf`
+- Rust tooling required by the Solana build tools
 
 ## Repository
 
 Primary repository:
 
 ```text
-/home/bee/Pro/beedrill
+beedrill
 ```
+
+## Clean workspace reproducibility
+
+The current development configuration uses local editable sibling repositories.
+Create this layout under any `<workspace>` directory:
+
+```text
+<workspace>/
+├── beeagent/
+├── beeagent-rop/
+├── beedrill/
+└── beesdk/
+```
+
+Use these compatible releases: `beedrill 0.12.0`, `beesdk 0.2.0`,
+`beeagent-rop 0.19.8`, and `beeagent 0.68.0`. `beeagent-rop` is required as a
+sibling because BeeAgent uses an editable source. No production credentials,
+RPC URL, wallet, or `.env` value is needed for the isolated replays.
+
+```bash
+mkdir <workspace>
+cd <workspace>
+git clone https://github.com/beesyst/beesdk.git beesdk
+git clone https://github.com/beesyst/beedrill.git beedrill
+git clone https://github.com/beesyst/beeagent-rop.git beeagent-rop
+git clone https://github.com/beesyst/beeagent.git beeagent
+git -C beesdk checkout beesdk-v0.2.0
+git -C beedrill checkout beedrill-v0.12.0
+git -C beeagent-rop checkout beeagent-rop-v0.19.8
+git -C beeagent checkout beeagent-v0.68.0
+cd beedrill
+uv sync
+uv run pytest -q
+uv build
+uv run python -c "import beedrill; print(beedrill.__file__)"
+```
+
+BeeAgent `0.68.0` validates its unrelated enabled ROP and Bitrix settings
+before dispatching a BeeDrill replay. The replays do not call either service, but
+clean startup needs these explicitly non-secret placeholders; do not substitute
+production values:
+
+```bash
+export OPENAI_API_KEY=not-used-by-beedrill
+export BITRIX_WRITEBACK_WEBHOOK_URL=https://example.invalid/
+```
+
+From the same sibling layout, execute the host-owned regressions:
+
+```bash
+cd <workspace>/beeagent
+./start.sh beedrill run --scenario reference_target_containment_replay
+./start.sh beedrill run --scenario reference_oracle_manipulation_replay
+./start.sh beedrill run --scenario spl_token_freeze_containment_replay
+```
+
+Each command prints a JSON summary. A successful fixed replay exits `0` with
+`security_verdict: "pass"`; scenario artifacts are stored under
+`storage/runs/<run-id>/module-beedrill/`. Run IDs and Solana slots vary. Inspect
+the scenario artifact, not logs, for bounded broken/fixed evidence and metrics.
 
 Python distribution:
 
@@ -345,10 +408,10 @@ If BeeDrill requires a host capability that does not exist:
 
 Do not add the host implementation to BeeDrill as a shortcut.
 
-For the bounded SPL Token freeze-containment replay, run:
+For the bounded SPL Token freeze-containment replay from the sibling workspace, run:
 
 ```bash
-cd /home/bee/Pro/beeagent
+cd <workspace>/beeagent
 ./start.sh beedrill run --scenario spl_token_freeze_containment_replay
 ```
 
@@ -361,7 +424,7 @@ Each repository must be verified in its own environment.
 For BeeDrill:
 
 ```bash
-cd /home/bee/Pro/beedrill
+cd <workspace>/beedrill
 uv sync
 uv run pytest -q
 uv build
