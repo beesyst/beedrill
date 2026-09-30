@@ -1,6 +1,6 @@
 # BeeDrill — Security Regression Testing for Solana
 
-**BeeDrill runs reproducible Solana attacks and verifies that your defenses actually detect and contain them.**
+**BeeDrill runs reproducible attacks and verifies that your security controls actually stop them.**
 
 > Audits test your code. BeeDrill tests your defenses.
 
@@ -8,73 +8,128 @@
 Attack → Detect → Contain → Measure → PASS / FAIL
 ```
 
-BeeDrill is designed to answer one question:
+BeeDrill answers one practical question:
 
-> If this attack happens now, do the deployed security controls actually protect the protocol?
+> If this attack happens now, will our real defenses detect it, contain it and limit the loss?
 
-The result is based on machine evidence, not a security score or an AI opinion.
+The verdict comes from machine evidence.
+
+No subjective security score.  
+No AI deciding PASS / FAIL.  
+No mainnet execution.
+
+## What BeeDrill does
+
+A protocol may already have audits, alerts, monitoring and emergency controls.
+
+That does not prove those controls still work.
+
+BeeDrill turns them into repeatable security regression tests.
+
+```mermaid
+flowchart LR
+    A[Reproducible attack] --> B[Detection]
+    B --> C[Containment]
+    C --> D[Measure loss]
+    D --> E{Verdict}
+    E -->|Control worked| F[PASS]
+    E -->|Control failed| G[FAIL]
+```
+
+The same idea as normal regression testing:
+
+```text
+code change
+→ tests
+→ PASS / FAIL
+
+security-sensitive change
+→ BeeDrill
+→ attack replay
+→ PASS / FAIL
+```
 
 ## Why BeeDrill?
 
-Having a security control does not prove that it works.
+| You have               | BeeDrill verifies                                   |
+| ---------------------- | --------------------------------------------------- |
+| Audit                  | whether the defenses still work now                 |
+| Alert                  | whether the attack actually triggers detection      |
+| Pause / freeze control | whether it actually stops the next malicious action |
+| Security assumption    | whether machine evidence proves it                  |
+| Manual test            | whether it can be replayed automatically            |
+| Risk score             | deterministic PASS / FAIL                           |
 
-| You have               | BeeDrill verifies                                      |
-| ---------------------- | ------------------------------------------------------ |
-| Audit                  | whether defenses still work after the audit            |
-| Alert                  | whether a real attack actually triggers it             |
-| Pause / freeze control | whether it actually stops the next malicious action    |
-| Incident procedure     | whether the technical control works before an incident |
-| Security assumption    | machine-verifiable evidence                            |
-
-BeeDrill turns security controls into regression tests:
+BeeDrill complements audits rather than replacing them.
 
 ```text
-working defense
-→ PASS
+Audit
+→ Can this code be exploited?
 
-broken defense
-→ FAIL
+BeeDrill
+→ If an attack happens, do the defenses actually stop it?
 ```
 
 ## Quick start
 
 BeeDrill is a module for [BeeAgent](https://github.com/beesyst/beeagent).
 
-It does not run its own runtime. BeeAgent owns Solana execution, Surfpool, RPC,
-timeouts, cleanup and artifacts.
+BeeAgent is the runtime.
+
+BeeDrill does not start a second service and does not manage Solana execution
+itself.
 
 ### 1. Requirements
+
+You need:
 
 - Linux
 - Git
 - Python 3.14+
-- Rust
+- Rust / Cargo
 - Solana CLI
 - `cargo-build-sbf`
 - Surfpool
 
-### 2. Install
+BeeAgent bootstraps `uv` automatically.
 
-Create the current Bee workspace with one copy/paste command:
+Detailed toolchain setup is documented in
+[`docs/DEV_GUIDE.md`](docs/DEV_GUIDE.md).
 
-```bash
-git clone https://github.com/beesyst/beeagent.git && \
-git clone https://github.com/beesyst/beedrill.git && \
-git clone https://github.com/beesyst/beesdk.git && \
-git clone https://github.com/beesyst/beeagent-rop.git
-```
+### 2. Create the workspace
 
-The repositories must remain next to each other:
+The current MVP uses three sibling repositories:
 
 ```text
 workspace/
 ├── beeagent/
 ├── beedrill/
-├── beesdk/
-└── beeagent-rop/
+└── beesdk/
 ```
 
-You do not install BeeDrill separately.
+Create them with one copy/paste command:
+
+```bash
+mkdir beedrill-workspace && cd beedrill-workspace && \
+git clone https://github.com/beesyst/beeagent.git && \
+git clone https://github.com/beesyst/beedrill.git && \
+git clone https://github.com/beesyst/beesdk.git
+```
+
+Why three repositories?
+
+| Repository | Purpose                         |
+| ---------- | ------------------------------- |
+| `beeagent` | runtime and execution           |
+| `beedrill` | security scenarios and verdicts |
+| `beesdk`   | shared module contracts         |
+
+BeeUI is a normal BeeAgent dependency and is installed automatically.
+
+BeeSDK currently uses a local sibling source, so `../beesdk` must exist in the
+workspace.
+
+You do **not** need `beeagent-rop` to use BeeDrill.
 
 ### 3. Enable BeeDrill
 
@@ -84,39 +139,117 @@ Open:
 beeagent/config/settings.yml
 ```
 
-Find:
+Enable BeeDrill:
 
 ```yaml
 - id: "beedrill"
   package: "beedrill.module"
   entry: "BeeDrillModule"
-  enabled: false
+  enabled: true
   install_extra: "beedrill"
 ```
 
-Change:
+If this workspace is only for BeeDrill, disable the unrelated ROP module:
 
 ```yaml
-enabled: true
+- id: "beeagent-rop"
+  package: "beeagent_rop"
+  entry: "RopModule"
+  enabled: false
+  install_extra: "rop"
 ```
 
-BeeAgent will install and load the BeeDrill module automatically.
+That is enough.
+
+There is no separate BeeDrill install command.
+
+When BeeDrill is enabled, BeeAgent resolves the BeeDrill module during its normal
+bootstrap.
 
 ### 4. Run
+
+From BeeAgent:
 
 ```bash
 cd beeagent
 ./start.sh beedrill check
 ```
 
-That's the normal BeeDrill interface.
+This is the primary BeeDrill command.
 
-You do not need to manually start Surfpool, install Python packages or run
-BeeDrill as another service.
+BeeAgent prepares the environment, starts the isolated runtime, executes the
+drills and stores the evidence.
 
-## What does `beedrill check` run?
+You do not need to manually:
 
-BeeDrill currently runs three security regressions:
+- install BeeDrill with `pip`;
+- run `uv`;
+- start Surfpool separately;
+- start another BeeDrill process.
+
+## How it works
+
+```mermaid
+flowchart TD
+    CMD["./start.sh beedrill check"]
+
+    CMD --> AGENT[BeeAgent]
+
+    AGENT --> ENV[Isolated Solana environment]
+    ENV --> ATTACK[Execute approved attack]
+    ATTACK --> CONTROL[Apply defensive control]
+    CONTROL --> EVIDENCE[Collect machine evidence]
+
+    EVIDENCE --> DRILL[BeeDrill]
+
+    DRILL --> VALIDATE[Validate evidence]
+    VALIDATE --> METRICS[Detection / containment / loss]
+    METRICS --> VERDICT{Deterministic verdict}
+
+    VERDICT --> PASS[PASS]
+    VERDICT --> FAIL[FAIL]
+
+    AGENT --> ARTIFACTS[Store run artifacts]
+```
+
+The responsibility boundary is simple:
+
+```text
+BeeAgent
+→ executes
+
+BeeDrill
+→ evaluates
+
+BeeSDK
+→ connects both through shared contracts
+```
+
+BeeAgent owns:
+
+- Surfpool;
+- Solana RPC;
+- transactions;
+- subprocesses;
+- ephemeral test keys;
+- timeouts;
+- cleanup;
+- runtime authority;
+- artifacts.
+
+BeeDrill owns:
+
+- attack scenario semantics;
+- evidence validation;
+- detection expectations;
+- containment expectations;
+- MTTD / MTTC;
+- economic metrics;
+- deterministic PASS / FAIL.
+
+## Current security regressions
+
+`beedrill check` currently executes three approved drills.
 
 | Drill                                  | Attack                                    | Defensive control        |
 | -------------------------------------- | ----------------------------------------- | ------------------------ |
@@ -127,19 +260,25 @@ BeeDrill currently runs three security regressions:
 The SPL Token drill uses the canonical SPL Token program inside the isolated
 Solana environment.
 
-Each drill compares equivalent attacks against two defensive conditions:
+## What is a regression?
+
+Every drill compares equivalent attacks under different defensive conditions.
+
+Broken defense:
 
 ```text
-BROKEN DEFENSE
 same attack
+→ detection
 → containment fails
 → higher residual loss
 → FAIL
 ```
 
+Fixed defense:
+
 ```text
-FIXED DEFENSE
 same attack
+→ detection
 → containment works
 → lower residual loss
 → PASS
@@ -149,42 +288,15 @@ The attack stays equivalent.
 
 The defense changes.
 
-That is the security regression.
-
-## What happens when I run it?
-
-```text
-./start.sh beedrill check
-        │
-        ▼
-     BeeAgent
-        │
-        ├── creates isolated Solana state
-        ├── runs the attack
-        ├── applies the defensive control
-        └── collects evidence
-                 │
-                 ▼
-              BeeDrill
-                 │
-                 ├── validates evidence
-                 ├── checks detection
-                 ├── checks containment
-                 ├── measures loss
-                 └── returns PASS / FAIL
-```
-
-BeeAgent owns execution.
-
-BeeDrill owns scenario semantics, evidence validation, metrics and verdicts.
+That difference is the security regression.
 
 ## Result
 
-A completed run returns one of three states:
+A run has three possible outcomes.
 
 | Result       | Meaning                                           |
 | ------------ | ------------------------------------------------- |
-| `PASS`       | all required security controls worked             |
+| `PASS`       | the security controls worked                      |
 | `FAIL`       | the test completed, but a security control failed |
 | `INCOMPLETE` | the test could not safely complete                |
 
@@ -201,19 +313,29 @@ Scenarios: passed=3 failed=0 incomplete=0
 Suite status: PASS
 ```
 
-A security regression is different from an infrastructure error.
+A security failure is not the same as a runtime error.
 
 ```text
-valid evidence + broken defense
-→ FAIL
-
-missing / invalid evidence
-→ INCOMPLETE
+valid evidence
++
+broken defense
+=
+FAIL
 ```
 
-Missing evidence never becomes PASS.
+```text
+missing / malformed evidence
+or
+timeout / runtime failure
+=
+INCOMPLETE
+```
 
-## What is measured?
+BeeDrill fails closed.
+
+Missing critical evidence can never become PASS.
+
+## What BeeDrill measures
 
 | Metric        | Meaning                                              |
 | ------------- | ---------------------------------------------------- |
@@ -226,11 +348,23 @@ Missing evidence never becomes PASS.
 | Capital saved | loss prevented by the control                        |
 | Verdict       | deterministic PASS / FAIL                            |
 
-The same validated evidence always produces the same result.
+Example:
+
+```text
+Attack executed      PASS
+Detection            PASS
+Containment          FAIL
+MTTD                  4 slots
+MTTC                  unavailable
+Residual loss         480000 units
+Final verdict         FAIL
+```
+
+The same validated evidence produces the same metrics and the same verdict.
 
 ## CI
 
-The same command is the CI gate:
+The local command is also the CI command:
 
 ```bash
 ./start.sh beedrill check
@@ -252,13 +386,15 @@ Example:
   run: ./start.sh beedrill check
 ```
 
-CI only needs the process exit code.
+CI does not need to parse console output.
+
+The exit code is the gate.
 
 ## Evidence
 
-Every run produces machine-readable evidence.
+BeeDrill keeps machine-readable evidence for every run.
 
-Individual drill results:
+Individual scenario results:
 
 ```text
 beeagent/storage/runs/<run-id>/module-beedrill/
@@ -271,8 +407,14 @@ beeagent/storage/runs/<suite-run-id>/module-beeagent/
 └── beedrill_security_regression.json
 ```
 
-This makes failures reproducible and inspectable instead of leaving only a
-console message.
+That makes a failure:
+
+```text
+visible
+→ inspectable
+→ reproducible
+→ replayable
+```
 
 ## Individual drills
 
@@ -282,25 +424,39 @@ Most users only need:
 ./start.sh beedrill check
 ```
 
-For debugging, a single drill can be run directly:
+Individual scenarios are available for debugging.
+
+Reference vault:
 
 ```bash
 ./start.sh beedrill run --scenario reference_target_containment_replay
 ```
 
+Oracle manipulation:
+
 ```bash
 ./start.sh beedrill run --scenario reference_oracle_manipulation_replay
 ```
+
+SPL Token containment:
 
 ```bash
 ./start.sh beedrill run --scenario spl_token_freeze_containment_replay
 ```
 
-These are additional CLI commands, not the primary product flow.
+These commands are additional CLI tools.
+
+The primary product flow remains:
+
+```bash
+./start.sh beedrill check
+```
 
 ## Safety
 
-BeeDrill runs against approved isolated environments.
+BeeDrill is designed for isolated security validation.
+
+Current boundaries:
 
 ```text
 mainnet mutation              prohibited
@@ -311,34 +467,26 @@ arbitrary transaction input  prohibited
 AI verdict authority         prohibited
 ```
 
-BeeDrill remains `READ_ONLY`.
+BeeDrill itself remains `READ_ONLY`.
 
-Critical PASS / FAIL results come only from validated machine evidence.
+Execution authority remains inside BeeAgent.
 
-## Architecture
+## AI boundary
+
+AI may assist with explanation or remediation in future iterations.
+
+AI does not decide:
 
 ```text
-BeeDrill
-scenarios
-evidence validation
-metrics
-verdicts
-    │
-    │ BeeSDK contracts
-    ▼
-BeeAgent
-runtime
-Surfpool
-Solana RPC
-execution
-artifacts
+Detection
+Containment
+MTTD
+MTTC
+Loss
+PASS / FAIL
 ```
 
-| Component | Responsibility                                |
-| --------- | --------------------------------------------- |
-| BeeDrill  | what is tested and whether the defense passed |
-| BeeAgent  | how bounded execution happens                 |
-| BeeSDK    | shared contracts                              |
+Critical security truth comes from validated machine evidence.
 
 ## Current status
 
@@ -358,25 +506,29 @@ Define
 Available now:
 
 - isolated Solana attack execution;
-- deterministic detection and containment checks;
+- reproducible attack scenarios;
+- machine-verifiable detection;
+- real containment controls;
 - economic loss measurement;
-- reproducible PASS / FAIL;
-- three security regression drills;
+- deterministic PASS / FAIL;
 - real SPL Token freeze containment;
-- machine-readable evidence;
-- aggregate regression gate;
+- aggregate security regression gate;
 - CI exit semantics;
+- replayable evidence;
 - fail-closed runtime behavior.
 
-BeeDrill is currently Solana-first and deliberately focused on
-**security-control validation**, not generic vulnerability scanning.
+BeeDrill is currently **Solana-first** and focused specifically on continuous
+security-control validation.
+
+It is not intended to be a generic vulnerability scanner, SIEM or generic
+blockchain execution framework.
 
 ## Documentation
 
-- [`docs/DEV_GUIDE.md`](docs/DEV_GUIDE.md) — toolchain and development setup
+- [`docs/DEV_GUIDE.md`](docs/DEV_GUIDE.md) — environment and toolchain setup
 - [`docs/SPEC.md`](docs/SPEC.md) — scenario and evidence contracts
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — BeeDrill / BeeAgent boundary
-- [`docs/SECURITY.md`](docs/SECURITY.md) — execution and safety rules
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — architecture boundaries
+- [`docs/SECURITY.md`](docs/SECURITY.md) — execution and safety model
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — product roadmap
 
 ## In one sentence
