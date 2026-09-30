@@ -1724,8 +1724,10 @@ _VALID_SPL_TOKEN_FREEZE_PAYLOAD = {
 }
 
 
-def _spl_token_evidence(condition: str) -> dict[str, object]:
-    broken = condition == "broken"
+def _spl_token_evidence(
+    condition: str, *, failed_control: bool = False
+) -> dict[str, object]:
+    broken = condition == "broken" or failed_control
     return {
         "target_id": "spl_token_freeze_containment",
         "initial_state_id": "spl_token_freeze_containment_canonical_v1",
@@ -1980,6 +1982,41 @@ def test_spl_token_freeze_rejects_missing_caller_and_malformed_envelope() -> Non
     assert result.data == {"capability_status": "invalid"}
 
 
+def test_spl_token_freeze_fixed_control_regression_is_completed_security_fail() -> None:
+    caller = _ContainmentCapabilityCaller(
+        [
+            CapabilityResult(
+                "solana.spl_token_freeze_containment",
+                CapabilityStatus.OK,
+                AuthorityLevel.EXECUTION_CAPABLE,
+                "completed",
+                _spl_token_evidence("broken"),
+            ),
+            CapabilityResult(
+                "solana.spl_token_freeze_containment",
+                CapabilityStatus.OK,
+                AuthorityLevel.EXECUTION_CAPABLE,
+                "completed",
+                _spl_token_evidence("fixed", failed_control=True),
+            ),
+        ]
+    )
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="spl_token_freeze_containment_replay",
+            module_id="beedrill",
+            payload=_VALID_SPL_TOKEN_FREEZE_PAYLOAD,
+            capability_caller=caller,
+        )
+    )
+
+    assert result.status == "ok"
+    assert result.data["fixed_verdict"] == "fail"
+    assert result.data["security_verdict"] == "fail"
+
+
 def test_spl_token_freeze_replay_is_deterministic() -> None:
     results = [
         BeeDrillModule().handle(
@@ -1996,15 +2033,9 @@ def test_spl_token_freeze_replay_is_deterministic() -> None:
     assert results[0] == results[1]
 
 
-@pytest.mark.parametrize(
-    ("requested_condition", "evidence_condition"),
-    [("fixed", "broken"), ("broken", "fixed")],
-)
-def test_spl_token_freeze_rejects_cross_labelled_phase_evidence(
-    requested_condition: str, evidence_condition: str
-) -> None:
-    evidence = _spl_token_evidence(evidence_condition)
-    evidence["defense_condition"] = requested_condition
+def test_spl_token_freeze_rejects_passing_broken_negative_control() -> None:
+    evidence = _spl_token_evidence("fixed")
+    evidence["defense_condition"] = "broken"
     caller = _ContainmentCapabilityCaller(
         [
             CapabilityResult(
@@ -2013,7 +2044,14 @@ def test_spl_token_freeze_rejects_cross_labelled_phase_evidence(
                 AuthorityLevel.EXECUTION_CAPABLE,
                 "completed",
                 evidence,
-            )
+            ),
+            CapabilityResult(
+                "solana.spl_token_freeze_containment",
+                CapabilityStatus.OK,
+                AuthorityLevel.EXECUTION_CAPABLE,
+                "completed",
+                _spl_token_evidence("fixed"),
+            ),
         ]
     )
     result = BeeDrillModule().handle(

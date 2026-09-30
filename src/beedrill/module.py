@@ -867,9 +867,6 @@ class BeeDrillModule:
             broken_evaluation.verdict.status.value != "fail"
             or broken_evaluation.metrics.containment_result
             is not ContainmentStatus.FAILED
-            or fixed_evaluation.verdict.status.value != "pass"
-            or fixed_evaluation.metrics.containment_result
-            is not ContainmentStatus.SUCCEEDED
         ):
             return self._spl_token_freeze_result(
                 context,
@@ -1490,27 +1487,23 @@ def _is_valid_spl_token_freeze_evidence(
         != values["initial_source_balance_units"]
     ):
         return False
-    if defense_condition == "broken":
-        return (
-            values["containment_status"] == "failed"
-            and containment_slot is None
-            and values["target_account_state"] == "initialized"
-            and values["second_transfer_status"] == "succeeded"
-            and values["final_source_balance_units"] == 800_000
-            and values["final_target_balance_units"] == 200_000
-            and values["residual_loss_units"] == 200_000
-        )
-    if defense_condition == "fixed":
-        return (
-            values["containment_status"] == "succeeded"
-            and containment_slot is not None
-            and values["target_account_state"] == "frozen"
-            and values["second_transfer_status"] == "rejected"
-            and values["final_source_balance_units"] == 900_000
-            and values["final_target_balance_units"] == 100_000
-            and values["residual_loss_units"] == 100_000
-        )
-    return False
+    return (
+        values["containment_status"] == "failed"
+        and containment_slot is None
+        and values["target_account_state"] == "initialized"
+        and values["second_transfer_status"] == "succeeded"
+        and values["final_source_balance_units"] == 800_000
+        and values["final_target_balance_units"] == 200_000
+        and values["residual_loss_units"] == 200_000
+    ) or (
+        values["containment_status"] == "succeeded"
+        and containment_slot is not None
+        and values["target_account_state"] == "frozen"
+        and values["second_transfer_status"] == "rejected"
+        and values["final_source_balance_units"] == 900_000
+        and values["final_target_balance_units"] == 100_000
+        and values["residual_loss_units"] == 100_000
+    )
 
 
 def _containment_evaluation(

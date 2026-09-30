@@ -415,7 +415,12 @@ cd <workspace>/beeagent
 ./start.sh beedrill run --scenario spl_token_freeze_containment_replay
 ```
 
-Expected security semantics are `broken → fail`, `fixed → pass`, and final `security_verdict → pass`. Program selection, Surfpool, RPC, transactions, ephemeral keys, timeout, and cleanup remain BeeAgent-owned. This validates one SPL Token freeze-containment pattern only.
+Expected baseline security semantics are `broken → fail`, `fixed → pass`, and
+final `security_verdict → pass`. A valid fixed-control regression instead
+completes with `security_verdict → fail`; malformed, contradictory, refused,
+timed-out, or erroneous evidence remains non-successful. Program selection,
+Surfpool, RPC, transactions, ephemeral keys, timeout, and cleanup remain
+BeeAgent-owned. This validates one SPL Token freeze-containment pattern only.
 
 ## Related repository environments
 

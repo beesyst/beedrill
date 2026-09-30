@@ -504,13 +504,18 @@ monitor and signal at an observed slot no earlier than the attack start.
 
 For `broken`, the target account remains `initialized`, containment has no slot,
 and the identical second transfer succeeds, leaving 200,000 target base units.
-For `fixed`, the host proves the target account is `frozen` after containment and
-the identical second transfer is rejected, leaving 100,000 target base units.
-The resulting artifact, `spl_token_freeze_containment_replay.json`, contains
-only validated bounded evidence, evaluator metrics and evaluator-derived
-verdicts: broken `fail`, then fixed `pass` when the valid evidence proves lower
-residual loss. It excludes host diagnostics, keys, credentials and raw runtime
-output.
+The expected fixed baseline proves the target account is `frozen` after
+containment and the identical second transfer is rejected, leaving 100,000
+target base units. The resulting artifact,
+`spl_token_freeze_containment_replay.json`, contains only validated bounded
+evidence, evaluator metrics and evaluator-derived verdicts: broken `fail`, then
+fixed `pass` when the baseline fixed evidence proves lower residual loss. A
+valid fixed-control regression with failed or ineffective containment instead
+completes with evaluator-derived fixed `fail` and `security_verdict: fail`; it
+is not a host or module error. Malformed, contradictory, refused, timed-out, or
+erroneous evidence remains non-successful and cannot produce a completed
+security verdict. The artifact excludes host diagnostics, keys, credentials and
+raw runtime output.
 
 To reproduce it, run the BeeAgent-owned `solana.spl_token_freeze_containment`
 capability through the BeeDrill case in the approved isolated environment. The
