@@ -74,9 +74,9 @@ execution, cleanup and artifacts.
 You do **not** need to manually run `uv`, start Surfpool separately, or launch
 BeeDrill as another service.
 
-# Quick start
+## Quick start
 
-## 1. Requirements
+### 1. Requirements
 
 You need:
 
@@ -93,7 +93,7 @@ BeeAgent bootstraps `uv` automatically when needed.
 For detailed toolchain setup, see
 [`docs/DEV_GUIDE.md`](docs/DEV_GUIDE.md).
 
-## 2. Install the workspace
+### 2. Install the workspace
 
 BeeDrill is a **BeeAgent module**, not a standalone runtime.
 
@@ -121,7 +121,7 @@ Why sibling repositories?
 BeeAgent currently uses local editable module sources during the MVP.
 BeeDrill does not run its own process or maintain a second runtime.
 
-## 3. Enable BeeDrill
+### 3. Enable BeeDrill
 
 Open:
 
@@ -159,7 +159,7 @@ That is the BeeDrill installation switch inside BeeAgent.
 
 You do not install or start BeeDrill separately.
 
-## 4. Run the security regression suite
+### 4. Run the security regression suite
 
 Go to BeeAgent:
 
@@ -191,7 +191,7 @@ or:
 Suite status: INCOMPLETE
 ```
 
-# What does `beedrill check` run?
+## What does `beedrill check` run?
 
 Today BeeDrill contains three approved security regressions.
 
@@ -230,7 +230,7 @@ The defense changes.
 
 That is the regression test.
 
-# What happens when I run it?
+## What happens when I run it?
 
 ```text
 ./start.sh beedrill check
@@ -262,7 +262,7 @@ BeeAgent owns **execution**.
 
 BeeDrill owns **security meaning and verdicts**.
 
-# What is measured?
+## What is measured?
 
 BeeDrill evaluates observable evidence.
 
@@ -295,11 +295,11 @@ BeeDrill deliberately does **not** produce subjective results such as:
 Security score: 82/100
 ```
 
-# PASS, FAIL and INCOMPLETE
+## PASS, FAIL and INCOMPLETE
 
 These states have different meanings.
 
-### PASS
+#### PASS
 
 ```text
 attack executed
@@ -311,7 +311,7 @@ security control worked
 PASS
 ```
 
-### FAIL
+#### FAIL
 
 ```text
 attack executed
@@ -327,7 +327,7 @@ A FAIL is a **completed security test**.
 
 It is not an infrastructure error.
 
-### INCOMPLETE
+#### INCOMPLETE
 
 ```text
 runtime unavailable
@@ -343,7 +343,7 @@ INCOMPLETE
 
 BeeDrill fails closed: missing evidence never silently becomes PASS.
 
-# CI usage
+## CI usage
 
 The same command can be used as a CI security gate:
 
@@ -371,7 +371,7 @@ Example:
 
 No stdout parsing is required.
 
-# Evidence
+## Evidence
 
 BeeDrill does not return only a green/red console line.
 
@@ -403,7 +403,7 @@ inspectable
 CI-visible
 ```
 
-# Optional CLI
+## Optional CLI
 
 Most users only need:
 
@@ -413,19 +413,19 @@ Most users only need:
 
 Individual drills are available for debugging or development.
 
-### Reference vault
+#### Reference vault
 
 ```bash
 ./start.sh beedrill run --scenario reference_target_containment_replay
 ```
 
-### Oracle manipulation
+#### Oracle manipulation
 
 ```bash
 ./start.sh beedrill run --scenario reference_oracle_manipulation_replay
 ```
 
-### SPL Token freeze containment
+#### SPL Token freeze containment
 
 ```bash
 ./start.sh beedrill run --scenario spl_token_freeze_containment_replay
@@ -439,7 +439,7 @@ The normal product flow remains:
 ./start.sh beedrill check
 ```
 
-# Why BeeDrill?
+## Why BeeDrill?
 
 | Traditional security | BeeDrill |
 | - | |
@@ -465,7 +465,7 @@ BeeDrill
 → if an attack happens, do our defenses actually stop it?
 ```
 
-# Safety model
+## Safety model
 
 BeeDrill is designed for isolated security validation.
 
@@ -501,7 +501,7 @@ BeeAgent owns:
 
 BeeDrill cannot turn scenario input into unrestricted host execution.
 
-# AI
+## AI
 
 Critical security truth is deterministic.
 
@@ -520,7 +520,7 @@ AI may later help explain evidence or suggest remediation.
 
 The deterministic verdict remains authoritative.
 
-# Architecture in one picture
+## Architecture in one picture
 
 There are only three pieces to understand:
 
@@ -547,7 +547,7 @@ artifacts
 
 **BeeSDK provides the shared contract between them.**
 
-# Current status
+## Current status
 
 The complete MVP security-regression loop works:
 
@@ -594,7 +594,7 @@ deterministic regression testing
 BeeDrill is not trying to become a generic scanner, generic pentest agent,
 SIEM, SOC platform or multi-chain framework.
 
-# Repository layout
+## Repository layout
 
 BeeDrill is part of the Bee ecosystem:
 
@@ -610,7 +610,7 @@ For normal use, start from BeeAgent and run BeeDrill through:
 ./start.sh beedrill check
 ```
 
-# Documentation
+## Documentation
 
 The README is intentionally focused on using and understanding the product.
 
@@ -623,7 +623,7 @@ For implementation details:
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — delivery roadmap
 - [`docs/SUBMISSION.md`](docs/SUBMISSION.md) — demo and submission material
 
-# The idea in one sentence
+## The idea in one sentence
 
 > **Run the attack before an attacker does, prove your defenses work, and keep that proof as a regression test.**
 
