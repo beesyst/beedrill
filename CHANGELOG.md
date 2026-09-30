@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.12.0...beedrill-v0.13.0) (2026-09-30)
+
+
+### Features
+
+* preserve completed verdict for ineffective containment ([#41](https://github.com/beesyst/beedrill/issues/41)) ([7c94885](https://github.com/beesyst/beedrill/commit/7c948853d699b83feedfbd39854ca0a0745d9fe8))
+
 ## [0.12.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.11.1...beedrill-v0.12.0) (2026-09-24)
 
 
