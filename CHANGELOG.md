@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.13.0...beedrill-v0.14.0) (2026-10-02)
+
+
+### Features
+
+* expose bounded explanation facts ([#44](https://github.com/beesyst/beedrill/issues/44)) ([6fe924d](https://github.com/beesyst/beedrill/commit/6fe924d1d14ec34f3832d655b6f33e176758ee41))
+
 ## [0.13.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.12.0...beedrill-v0.13.0) (2026-09-30)
 
 
