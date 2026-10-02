@@ -1,5 +1,9 @@
 # DEV_GUIDE — BeeDrill development and BeeAgent integration
 
+## Explanation-facts compatibility
+
+When changing completed regression outputs, preserve the stable bounded `explanation_facts` projection. Add only explicitly allowlisted scenario-owned control facts; never include logs, signatures, credentials, private keys, RPC secrets, or environment values. Verify that incomplete and invalid-evidence outcomes omit the projection.
+
 ## Purpose
 
 This document explains:

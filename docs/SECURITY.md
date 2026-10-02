@@ -1,5 +1,9 @@
 # SECURITY — BeeDrill
 
+## Explanation-facts boundary
+
+`explanation_facts` is a deterministic completed-result projection, not raw evidence or execution authority. It must remain allowlisted, bounded, and free of signatures, credentials, private keys, RPC secrets, environment values, and logs. It is omitted for unvalidated or incomplete outcomes.
+
 ## Purpose
 
 This document defines practical security rules for `beedrill`.
