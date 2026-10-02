@@ -2121,10 +2121,9 @@ git diff --check
 
 BeeDrill behaves as a real security regression product: one host-owned command runs every approved drill, a genuine defense regression becomes a deterministic CI-visible failure, infrastructure problems fail closed as incomplete, and execution authority remains entirely BeeAgent-owned.
 
-
 ## Iteration 16 — Evidence-grounded AI explanation and remediation assist
 
-**Status:** PLANNED
+**Status:** DONE
 
 ### Goal
 
