@@ -1,5 +1,9 @@
 # SPEC — BeeDrill
 
+## Completed-result explanation facts
+
+Completed validated regression results may include additive `ModuleResult.data["explanation_facts"]`. This bounded deterministic projection contains scenario identity, deterministic verdict, detection and containment status/timing, economic metrics, and scenario-owned allowlisted control facts. Incomplete, refused, timeout, error, and invalid-evidence outcomes do not expose it. Canonical scenario artifacts remain the evidence source.
+
 ## 0. Terms
 
 - Repository: `beedrill`

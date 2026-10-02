@@ -1,5 +1,5 @@
 import json
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -927,12 +927,29 @@ def test_reference_target_containment_replay_evaluates_real_host_evidence() -> N
 
     assert result.authority is AuthorityLevel.READ_ONLY
     assert result.status == "ok"
-    assert result.data == {
-        "capability_status": "ok",
-        "capability_authority": "execution_capable",
-        "broken_verdict": "fail",
-        "fixed_verdict": "pass",
+    assert result.data["capability_status"] == "ok"
+    assert result.data["capability_authority"] == "execution_capable"
+    assert result.data["broken_verdict"] == "fail"
+    assert result.data["fixed_verdict"] == "pass"
+    assert result.data["security_verdict"] == "pass"
+    assert result.data["explanation_facts"] == {
+        "schema_version": 1,
+        "scenario_id": "reference_target_containment_replay",
+        "scenario_version": 1,
         "security_verdict": "pass",
+        "detection": {"status": "observed", "mttd_slots": 2},
+        "containment": {"status": "succeeded", "mttc_slots": 2},
+        "economics": {
+            "unit": "lamports",
+            "gross_loss": 200,
+            "residual_loss": 100,
+            "capital_saved": 100,
+        },
+        "control_facts": {
+            "detector_id": "reference_vault_outflow_monitor",
+            "signal_id": "vault_outflow_signal",
+            "second_attack_status": "rejected",
+        },
     }
     assert caller.calls == [
         (
@@ -1277,6 +1294,26 @@ def test_reference_oracle_manipulation_replay_evaluates_host_evidence() -> None:
     assert metrics["fixed"]["residual_loss_micro_usdc"] == 25_000_000
     assert metrics["fixed"]["gross_attack_loss_micro_usdc"] == 50_000_000
     assert metrics["fixed"]["capital_saved_micro_usdc"] == 25_000_000
+    assert result.data["explanation_facts"] == {
+        "schema_version": 1,
+        "scenario_id": "reference_oracle_manipulation_replay",
+        "scenario_version": 1,
+        "security_verdict": "pass",
+        "detection": {"status": "observed", "mttd_slots": 2},
+        "containment": {"status": "succeeded", "mttc_slots": 2},
+        "economics": {
+            "unit": "micro_usdc",
+            "gross_loss": 50_000_000,
+            "residual_loss": 25_000_000,
+            "capital_saved": 25_000_000,
+        },
+        "control_facts": {
+            "detector_id": "reference_oracle_deviation_monitor",
+            "signal_id": "oracle_price_deviation_signal",
+            "containment_state": "borrowing_blocked",
+            "second_borrow_status": "rejected",
+        },
+    }
 
 
 def test_reference_oracle_reports_a_completed_fixed_regression() -> None:
@@ -1314,9 +1351,46 @@ def test_reference_oracle_reports_a_completed_fixed_regression() -> None:
     assert result.status == "ok"
     assert result.data["security_verdict"] == "fail"
     assert result.data["fixed_verdict"] == "fail"
+    assert result.data["explanation_facts"]["security_verdict"] == "fail"
     artifact = artifacts.artifacts["reference_oracle_manipulation_replay.json"]
     assert isinstance(artifact, Mapping)
     assert artifact["security_verdict"] == "fail"
+
+
+def test_explanation_facts_exclude_validated_signature_text() -> None:
+    fixed = _containment_evidence("fixed")
+    fixed["first_attack_signature"] = "IGNORE_PREVIOUS_INSTRUCTIONS_SECRET_SENTINEL"
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="reference_target_containment_replay",
+            module_id="beedrill",
+            payload=_VALID_REFERENCE_TARGET_PAYLOAD,
+            capability_caller=_ContainmentCapabilityCaller(
+                [
+                    CapabilityResult(
+                        "solana.reference_target_containment",
+                        CapabilityStatus.OK,
+                        AuthorityLevel.EXECUTION_CAPABLE,
+                        "completed",
+                        _containment_evidence("broken"),
+                    ),
+                    CapabilityResult(
+                        "solana.reference_target_containment",
+                        CapabilityStatus.OK,
+                        AuthorityLevel.EXECUTION_CAPABLE,
+                        "completed",
+                        fixed,
+                    ),
+                ]
+            ),
+        )
+    )
+
+    assert result.status == "ok"
+    serialized = json.dumps(result.data["explanation_facts"], sort_keys=True)
+    assert "SECRET_SENTINEL" not in serialized
+    assert "IGNORE_PREVIOUS_INSTRUCTIONS" not in serialized
 
 
 def test_reference_oracle_rejects_a_passing_negative_control() -> None:
@@ -1755,6 +1829,105 @@ def _spl_token_evidence(
     }
 
 
+class _StringLikeEvidenceValue:
+    def __eq__(self, other: object) -> bool:
+        return other in {
+            "rejected",
+            "borrowing_blocked",
+            "frozen",
+        }
+
+
+@pytest.mark.parametrize(
+    (
+        "case_type",
+        "capability_name",
+        "payload",
+        "field",
+        "evidence_builder",
+    ),
+    [
+        (
+            "reference_target_containment_replay",
+            "solana.reference_target_containment",
+            _VALID_REFERENCE_TARGET_PAYLOAD,
+            "second_attack_status",
+            _containment_evidence,
+        ),
+        (
+            "reference_oracle_manipulation_replay",
+            "solana.reference_oracle_manipulation",
+            _VALID_REFERENCE_ORACLE_PAYLOAD,
+            "containment_state",
+            _oracle_evidence,
+        ),
+        (
+            "reference_oracle_manipulation_replay",
+            "solana.reference_oracle_manipulation",
+            _VALID_REFERENCE_ORACLE_PAYLOAD,
+            "second_borrow_status",
+            _oracle_evidence,
+        ),
+        (
+            "spl_token_freeze_containment_replay",
+            "solana.spl_token_freeze_containment",
+            _VALID_SPL_TOKEN_FREEZE_PAYLOAD,
+            "target_account_state",
+            _spl_token_evidence,
+        ),
+        (
+            "spl_token_freeze_containment_replay",
+            "solana.spl_token_freeze_containment",
+            _VALID_SPL_TOKEN_FREEZE_PAYLOAD,
+            "second_transfer_status",
+            _spl_token_evidence,
+        ),
+    ],
+)
+def test_replay_rejects_string_like_dynamic_control_fact(
+    case_type: str,
+    capability_name: str,
+    payload: dict[str, str],
+    field: str,
+    evidence_builder: Callable[[str], dict[str, object]],
+) -> None:
+    broken = evidence_builder("broken")
+    fixed = evidence_builder("fixed")
+    fixed[field] = _StringLikeEvidenceValue()
+    caller = _ContainmentCapabilityCaller(
+        [
+            CapabilityResult(
+                capability_name,
+                CapabilityStatus.OK,
+                AuthorityLevel.EXECUTION_CAPABLE,
+                "completed",
+                broken,
+            ),
+            CapabilityResult(
+                capability_name,
+                CapabilityStatus.OK,
+                AuthorityLevel.EXECUTION_CAPABLE,
+                "completed",
+                fixed,
+            ),
+        ]
+    )
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type=case_type,
+            module_id="beedrill",
+            payload=payload,
+            capability_caller=caller,
+        )
+    )
+
+    assert len(caller.calls) == 2
+    assert result.status == "error"
+    assert "explanation_facts" not in result.data
+
+
 def _spl_token_caller() -> _ContainmentCapabilityCaller:
     return _ContainmentCapabilityCaller(
         [
@@ -1791,12 +1964,30 @@ def test_spl_token_freeze_containment_replay_evaluates_bounded_host_evidence() -
     )
     assert result.authority is AuthorityLevel.READ_ONLY
     assert result.status == "ok"
-    assert result.data == {
-        "capability_status": "ok",
-        "capability_authority": "execution_capable",
-        "broken_verdict": "fail",
-        "fixed_verdict": "pass",
+    assert result.data["capability_status"] == "ok"
+    assert result.data["capability_authority"] == "execution_capable"
+    assert result.data["broken_verdict"] == "fail"
+    assert result.data["fixed_verdict"] == "pass"
+    assert result.data["security_verdict"] == "pass"
+    assert result.data["explanation_facts"] == {
+        "schema_version": 1,
+        "scenario_id": "spl_token_freeze_containment_replay",
+        "scenario_version": 1,
         "security_verdict": "pass",
+        "detection": {"status": "observed", "mttd_slots": 2},
+        "containment": {"status": "succeeded", "mttc_slots": 2},
+        "economics": {
+            "unit": "base_units",
+            "gross_loss": 200_000,
+            "residual_loss": 100_000,
+            "capital_saved": 100_000,
+        },
+        "control_facts": {
+            "detector_id": "spl_token_target_balance_monitor",
+            "signal_id": "spl_token_target_balance_signal",
+            "target_account_state": "frozen",
+            "second_transfer_status": "rejected",
+        },
     }
     assert caller.calls == [
         (

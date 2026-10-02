@@ -1,5 +1,9 @@
 # ARCHITECTURE — BeeDrill
 
+## Explanation boundary
+
+BeeDrill owns the bounded deterministic `explanation_facts` projection for completed validated results. BeeAgent may consume that public projection for downstream assistance, but must not parse canonical scenario artifacts to recreate BeeDrill semantics. Provider selection, credentials, egress, prompts, and host artifacts remain BeeAgent-owned.
+
 ## Idea
 
 `beedrill` is a focused Python package for continuous security-control validation

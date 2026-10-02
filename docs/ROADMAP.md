@@ -2121,13 +2121,14 @@ git diff --check
 
 BeeDrill behaves as a real security regression product: one host-owned command runs every approved drill, a genuine defense regression becomes a deterministic CI-visible failure, infrastructure problems fail closed as incomplete, and execution authority remains entirely BeeAgent-owned.
 
+
 ## Iteration 16 — Evidence-grounded AI explanation and remediation assist
 
 **Status:** PLANNED
 
 ### Goal
 
-Add optional AI assistance after deterministic BeeDrill evaluation so a developer can understand why a drill failed, what evidence supports the failure and what bounded remediation should be investigated, while preserving deterministic BeeDrill verdicts as the sole security truth.
+Add optional evidence-grounded AI assistance after deterministic BeeDrill evaluation so a developer can understand what the drill proved, why a security control failed and what bounded remediation should be investigated, while preserving deterministic BeeDrill verdicts as the sole security truth.
 
 Target principle:
 
@@ -2140,60 +2141,80 @@ BeeDrill verifies.
 
 Included:
 
-- optional BeeDrill AI-assist configuration owned and validated by BeeAgent;
-- AI disabled by default;
-- explicit one-run CLI opt-in for the regression suite;
-- target operator surface:
+- preserve one canonical product command:
 
 ```text
 ./start.sh beedrill check
-./start.sh beedrill check --ai
 ```
 
-- reuse of BeeAgent-owned AI provider/profile infrastructure where compatible;
+- BeeAgent owns and validates BeeDrill AI-assist configuration;
+- AI assistance is disabled by default;
+- configuration target:
+
+```yaml
+beedrill:
+  ai_assist:
+    enabled: false
+    timeout: 20
+    input_chars_max: 6000
+    output_chars_max: 4000
+    prompt_key: "beedrill.result_explanation"
+```
+
+- `beedrill.ai_assist.enabled=false` guarantees zero AI provider calls;
+- `beedrill.ai_assist.enabled=true` enables downstream AI assistance after the deterministic suite has completed;
+- no separate BeeDrill AI CLI flag is introduced in this iteration;
+- BeeAgent reuses its existing `ai.profiles` and `ai.prompts` infrastructure for provider/model/prompt selection;
 - provider credentials remain BeeAgent-owned;
-- AI execution occurs only after the deterministic scenario result exists;
-- deterministic scenario/suite verdict and process exit code are finalized independently of AI;
-- bounded sanitized AI input derived only from approved BeeDrill artifacts;
-- AI context may contain:
+- BeeDrill exposes a bounded additive `explanation_facts` projection for completed deterministic scenario results;
+- `explanation_facts` is derived only after existing scenario evidence validation and deterministic evaluation;
+- BeeAgent consumes this projection without interpreting scenario-specific raw artifacts;
+- bounded explanation facts may contain:
+  - schema version;
   - scenario identity/version;
-  - deterministic verdict;
-  - detector result;
-  - containment result;
+  - deterministic security verdict;
+  - detection status;
+  - containment status;
   - MTTD/MTTC;
+  - economic unit;
   - gross loss;
   - residual loss;
   - capital saved;
-  - bounded validated failure evidence;
-- AI output is structured and schema-validated;
-- AI result may contain:
-  - concise failure explanation;
-  - evidence references;
-  - remediation hypothesis;
-  - control/configuration areas to inspect;
+  - a small scenario-owned whitelist of validated control facts;
+- deterministic scenario verdicts, suite result, deterministic suite artifact and process exit semantics remain independent of AI;
+- AI runs only for a completed suite;
+- `INCOMPLETE`, refused, timeout or runtime-error suite outcomes make zero AI provider calls;
+- at most one AI provider request is made per completed regression suite;
+- completed `FAIL` receives evidence-grounded explanation and bounded remediation hypotheses;
+- completed `PASS` may receive a concise summary of what was validated;
+- AI output is bounded and schema-validated;
+- AI output may contain:
+  - concise explanation;
+  - deterministic evidence references;
+  - remediation hypothesis for failed controls;
+  - configuration/control areas to inspect;
   - recommended BeeDrill replay;
-  - explicit statement that the recommendation remains unverified;
-- one bounded AI-assist artifact linked to the deterministic run/suite;
-- provider timeout/error/invalid output degrades AI assistance only and preserves the deterministic result;
-- positive PASS runs may be summarized, but remediation generation should primarily target FAIL/incomplete cases.
+  - explicit statement that generated remediation remains unverified;
+- one bounded BeeAgent-owned AI-assist artifact is linked to the deterministic suite and source scenario runs;
+- provider timeout/error/refusal/invalid output degrades AI assistance only;
+- provider/model identity may be recorded, but credentials must never be persisted.
 
 Ownership:
 
 ```text
 BeeDrill
 → deterministic evidence
-→ metrics
-→ security verdict
-→ bounded domain facts suitable for explanation
+→ deterministic metrics
+→ deterministic security verdict
+→ bounded explanation_facts
 
 BeeAgent
-→ AI enable/disable config
-→ CLI --ai override
+→ beedrill.ai_assist configuration
 → provider/model selection
+→ prompt selection
 → credentials
 → provider call
-→ timeout/retry
-→ secret handling
+→ timeout / bounded response handling
 → AI artifact lifecycle
 
 AI
@@ -2207,32 +2228,59 @@ AI != execution authority
 
 ### Excluded
 
+- `beedrill check --ai`;
+- CLI precedence rules for AI enable/disable;
 - AI-generated PASS/FAIL;
 - AI override of BeeDrill evidence, metrics or verdict;
+- AI recalculation of security metrics;
+- AI analysis of incomplete/unvalidated scenario results;
 - AI-controlled Solana execution;
 - AI-selected RPC targets;
 - AI-generated arbitrary transactions;
+- capability/tool access by the model;
 - autonomous remediation;
-- automatic code modification;
+- automatic source-code modification;
 - automatic production response;
 - unrestricted repository/file access;
-- arbitrary tool calling;
-- generic multi-agent framework;
-- vulnerability scanner;
-- automatic protocol onboarding;
-- scenario-generation framework;
+- raw log forwarding;
+- raw environment forwarding;
+- arbitrary BeeDrill artifact parsing by BeeAgent;
+- hidden fallback providers;
+- generic agent/provider framework;
+- new attack classes;
+- new Solana capabilities;
+- new verdict vocabulary;
+- new BeeSDK AI contract;
 - Web UI;
-- new attack classes.
+- production/mainnet mutation.
 
 ### Deliverable
 
-A developer may optionally run:
+With:
 
-```text
-./start.sh beedrill check --ai
+```yaml
+beedrill:
+  ai_assist:
+    enabled: false
 ```
 
-and receive the exact same deterministic regression result as normal `check`, plus a bounded evidence-grounded explanation and remediation hypothesis for failed drills.
+the existing command:
+
+```text
+./start.sh beedrill check
+```
+
+remains the deterministic regression gate and performs zero provider calls.
+
+With:
+
+```yaml
+beedrill:
+  ai_assist:
+    enabled: true
+```
+
+the same command first completes the deterministic regression suite and then, only for a completed suite, produces a bounded evidence-grounded explanation artifact.
 
 Example:
 
@@ -2247,72 +2295,87 @@ Deterministic evidence:
 
 AI analysis:
 The detector observed the first transfer, but the expected containment
-did not change the target account into the required frozen state before
+did not place the target account into the required frozen state before
 the second equivalent transfer.
 
 Suggested investigation:
-Verify that the freeze authority invokes the expected SPL Token freeze
-path after detection and before the second transfer.
+Verify the freeze-authority path between detection and the second
+transfer.
 
 Verification:
 This recommendation is unverified until the same BeeDrill scenario is
-replayed and produces deterministic PASS.
+replayed and deterministically passes.
 ```
+
+The process still exits according to the already finalized deterministic BeeDrill suite result.
 
 ### Acceptance criteria
 
-- AI is disabled by default;
-- normal `beedrill check` performs zero AI provider calls;
-- explicit AI enablement is required through approved BeeAgent configuration or CLI override;
-- AI execution occurs only after deterministic evaluation;
-- enabling/disabling AI never changes scenario verdict, suite verdict or security exit semantics;
-- AI receives only bounded sanitized validated evidence;
-- no credentials, private keys, raw environment values, unrestricted logs or unrelated artifacts are included in provider input;
+- AI assistance is disabled by default;
+- `beedrill.ai_assist.enabled=false` performs zero provider calls;
+- no `--ai` CLI flag is required or added;
+- `beedrill.ai_assist.enabled=true` activates AI assistance through the existing `beedrill check` command;
+- BeeAgent remains the sole owner of AI configuration, provider/model selection, credentials and external AI egress;
+- BeeDrill contains no provider credentials or provider-specific runtime configuration;
+- BeeDrill exposes bounded deterministic `explanation_facts` only for completed validated security results;
+- identical validated scenario evidence produces identical `explanation_facts`;
+- incomplete/refused/timeout/error results do not expose facts suitable for AI analysis;
+- BeeAgent does not parse scenario-specific raw evidence to reconstruct BeeDrill semantics;
+- deterministic evaluation completes before any provider call;
+- deterministic suite artifact and exit semantics do not depend on AI success;
+- an incomplete suite makes zero provider calls;
+- one completed suite makes at most one provider call;
+- AI receives only bounded sanitized validated facts;
+- credentials, private keys, environment values, unrestricted logs and unrelated artifacts are excluded;
+- prompt-injection-shaped evidence is treated as data rather than instruction;
 - AI output is bounded and schema-validated;
-- AI output clearly distinguishes observed evidence from generated analysis;
-- every remediation proposal is marked unverified until deterministic replay;
-- provider timeout/error/refusal/invalid output preserves the deterministic BeeDrill result;
-- AI cannot invoke a BeeAgent capability or request Solana execution;
-- AI cannot change scenario selection;
+- AI output has no authoritative AI security-verdict field;
+- generated remediation is explicitly marked unverified until deterministic replay;
+- provider timeout/error/refusal/invalid output preserves deterministic BeeDrill results and exit status;
+- AI cannot invoke capabilities or request Solana execution;
+- AI cannot alter scenario selection;
 - no hidden fallback provider is used;
 - provider/model identity is recorded without credentials;
-- AI artifact links back to source scenario/run evidence;
-- tests prove identical security result with AI enabled and disabled;
-- BeeDrill remains usable with no AI provider configured.
+- AI artifact contains provenance back to the deterministic suite/scenario runs;
+- BeeDrill remains usable when no AI provider is configured.
 
 ### Checks
 
 ```text
-AI disabled -> zero provider calls
-CLI AI opt-in
-configured AI enablement
-bounded request projection
+AI config disabled -> zero provider calls
+AI config enabled -> completed suite AI call
+AI enabled + incomplete suite -> zero provider calls
+bounded explanation_facts projection
+projection determinism
 secret-sentinel exclusion
-valid structured response
-invalid schema
+prompt-injection-shaped evidence treated as data
+valid structured AI response
+invalid response schema
 provider timeout
 provider error
 provider refusal
-oversized output
-prompt-injection-shaped evidence treated as data
-same verdict with AI on/off
-same exit code with AI on/off
-FAIL remediation output
-PASS explanation behavior
-artifact provenance
+oversized response
+same scenario verdict with AI enabled/disabled
+same suite result with AI enabled/disabled
+same exit code with AI enabled/disabled
+FAIL explanation/remediation
+PASS concise explanation
+AI artifact provenance
+existing deterministic suite artifact regression
 BeeDrill full tests
+BeeDrill build/import smoke
 BeeAgent targeted/full tests
-real deterministic suite without AI
-controlled AI provider smoke
+real three-scenario deterministic suite smoke
+controlled AI-provider smoke
 SAST
-SCA only if dependency surface changes
-secret-leak review
+SCA only when dependency files change
+secret/artifact inspection
 git diff --check
 ```
 
 ### DoD
 
-BeeDrill remains a deterministic security-control validator while BeeAgent can optionally turn its validated evidence into useful developer-facing explanations and remediation hypotheses; AI failure or disagreement can never change security truth, execution authority or regression-gate behavior.
+BeeDrill remains the deterministic security-control authority while BeeAgent can optionally turn completed validated BeeDrill facts into developer-facing explanations and remediation hypotheses through the same `beedrill check` command; disabling AI produces zero provider calls, and AI availability or failure can never change security truth or execution authority.
 
 ---
 

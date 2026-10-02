@@ -1,3 +1,5 @@
+from typing import cast
+
 from beesdk.artifacts import ArtifactPort
 from beesdk.capabilities import CapabilityCaller, CapabilityResult, CapabilityStatus
 from beesdk.modules import AuthorityLevel, ModuleContext, ModuleResult
@@ -602,6 +604,17 @@ class BeeDrillModule:
                 "broken_verdict": broken_evaluation.verdict.status.value,
                 "fixed_verdict": fixed_evaluation.verdict.status.value,
                 "security_verdict": fixed_evaluation.verdict.status.value,
+                "explanation_facts": _explanation_facts(
+                    _REFERENCE_TARGET_CONTAINMENT_SCENARIO,
+                    fixed_evaluation,
+                    {
+                        "detector_id": "reference_vault_outflow_monitor",
+                        "signal_id": "vault_outflow_signal",
+                        "second_attack_status": cast(
+                            str, fixed["second_attack_status"]
+                        ),
+                    },
+                ),
             },
             {
                 "scenario": _REFERENCE_TARGET_CONTAINMENT_SCENARIO,
@@ -746,6 +759,18 @@ class BeeDrillModule:
                 "broken_verdict": broken_evaluation.verdict.status.value,
                 "fixed_verdict": fixed_evaluation.verdict.status.value,
                 "security_verdict": fixed_evaluation.verdict.status.value,
+                "explanation_facts": _explanation_facts(
+                    _REFERENCE_ORACLE_SCENARIO,
+                    fixed_evaluation,
+                    {
+                        "detector_id": "reference_oracle_deviation_monitor",
+                        "signal_id": "oracle_price_deviation_signal",
+                        "containment_state": cast(str, fixed["containment_state"]),
+                        "second_borrow_status": cast(
+                            str, fixed["second_borrow_status"]
+                        ),
+                    },
+                ),
             },
             {
                 "scenario": _REFERENCE_ORACLE_SCENARIO,
@@ -887,6 +912,20 @@ class BeeDrillModule:
                 "broken_verdict": broken_evaluation.verdict.status.value,
                 "fixed_verdict": fixed_evaluation.verdict.status.value,
                 "security_verdict": fixed_evaluation.verdict.status.value,
+                "explanation_facts": _explanation_facts(
+                    _SPL_TOKEN_FREEZE_SCENARIO,
+                    fixed_evaluation,
+                    {
+                        "detector_id": "spl_token_target_balance_monitor",
+                        "signal_id": "spl_token_target_balance_signal",
+                        "target_account_state": cast(
+                            str, fixed["target_account_state"]
+                        ),
+                        "second_transfer_status": cast(
+                            str, fixed["second_transfer_status"]
+                        ),
+                    },
+                ),
             },
             {
                 "scenario": _SPL_TOKEN_FREEZE_SCENARIO,
@@ -1309,6 +1348,7 @@ def _is_valid_reference_target_containment_evidence(
         or values["economic_unit"] != "lamports"
         or values["defense_condition"] != defense_condition
         or values["attack_sequence_id"] != "reference_vault_unsafe_withdraw_twice_v1"
+        or type(values["second_attack_status"]) is not str
         or values["initial_vault_lamports"] != 1_000_000
         or values["first_attack_vault_lamports"] != 999_900
         or values["first_attack_unsafe_withdraw_count"] != 1
@@ -1395,6 +1435,8 @@ def _is_valid_reference_oracle_evidence(
         or values["defense_condition"] != defense_condition
         or values["attack_sequence_id"]
         != "reference_oracle_manipulation_borrow_twice_v1"
+        or type(values["containment_state"]) is not str
+        or type(values["second_borrow_status"]) is not str
         or values["canonical_oracle_price_micro_usd"] != 1_000_000
         or values["manipulated_oracle_price_micro_usd"] != 2_000_000
         or values["collateral_units"] != 100
@@ -1474,6 +1516,8 @@ def _is_valid_spl_token_freeze_evidence(
         or values["program_id"] != "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         or values["defense_condition"] != defense_condition
         or values["attack_sequence_id"] != "spl_token_transfer_twice_v1"
+        or type(values["target_account_state"]) is not str
+        or type(values["second_transfer_status"]) is not str
         or values["initial_source_balance_units"] != 1_000_000
         or values["initial_target_balance_units"] != 0
         or values["first_transfer_source_balance_units"] != 900_000
@@ -1578,6 +1622,41 @@ def _evaluation_to_dict(evaluation: DrillEvaluation) -> dict[str, object]:
         "gross_attack_loss_lamports": metrics.gross_attack_loss.amount,
         "residual_loss_lamports": metrics.residual_loss.amount,
         "capital_saved_lamports": metrics.capital_saved.amount,
+    }
+
+
+def _explanation_facts(
+    scenario: dict[str, object],
+    evaluation: DrillEvaluation,
+    control_facts: dict[str, str],
+) -> dict[str, object]:
+    metrics = evaluation.metrics
+    if (
+        metrics.gross_attack_loss is None
+        or metrics.residual_loss is None
+        or metrics.capital_saved is None
+    ):
+        raise ValueError("explanation facts require completed evaluation metrics")
+    return {
+        "schema_version": 1,
+        "scenario_id": scenario["scenario_id"],
+        "scenario_version": scenario["version"],
+        "security_verdict": evaluation.verdict.status.value,
+        "detection": {
+            "status": metrics.detection_result.value,
+            "mttd_slots": metrics.mttd_slots,
+        },
+        "containment": {
+            "status": metrics.containment_result.value,
+            "mttc_slots": metrics.mttc_slots,
+        },
+        "economics": {
+            "unit": metrics.gross_attack_loss.unit,
+            "gross_loss": metrics.gross_attack_loss.amount,
+            "residual_loss": metrics.residual_loss.amount,
+            "capital_saved": metrics.capital_saved.amount,
+        },
+        "control_facts": control_facts,
     }
 
 
