@@ -1,6 +1,6 @@
 # BeeDrill final review
 
-Use only Bee Dev MCP.
+Use only BeeMCP.
 
 Read:
 

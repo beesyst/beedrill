@@ -635,7 +635,7 @@ Follow the instruction and evidence precedence defined in `AGENTS.md`.
 
 The implementation report is supporting evidence, not the source of truth.
 
-Bee Dev MCP cannot execute tests.
+BeeMCP cannot execute tests.
 
 Treat supplied command output as reported evidence.
 
@@ -903,7 +903,7 @@ Then provide:
    - wait for CI;
    - squash merge after approval.
 
-Do not claim Bee Dev MCP ran tests.
+Do not claim BeeMCP ran tests.
 
 ### CHANGES REQUIRED
 
@@ -965,7 +965,7 @@ Do not prepare a final PR body while blockers remain.
 
 The correction prompt is an executor prompt for Copilot or Codex.
 
-It is not a continuation of the Bee Dev MCP review.
+It is not a continuation of the BeeMCP review.
 
 Select and name the executor:
 
@@ -983,7 +983,7 @@ inside the exact target worktree using its available local tools.
 
 Do not copy reviewer-only restrictions into the correction prompt, including:
 
-- `Use only Bee Dev MCP`;
+- `Use only BeeMCP`;
 - read-only mode;
 - MCP target identifiers;
 - MCP review mode.

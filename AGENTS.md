@@ -47,7 +47,7 @@ agent.
 When producing a prompt for another agent, do not copy the current agent's tool
 restrictions unless they are explicitly required for that executor.
 
-Planning, prompt-preparation and final-review tasks may use Bee Dev MCP in
+Planning, prompt-preparation and final-review tasks may use BeeMCP in
 read-only mode.
 
 Implementation and correction prompts are executed by Copilot or Codex.
@@ -57,20 +57,20 @@ available repository tools.
 
 They must not require:
 
-- Bee Dev MCP;
+- BeeMCP;
 - MCP target identifiers;
 - MCP Mode;
 - review mode;
 - read-only behavior.
 
-## Bee Dev MCP rules
+## BeeMCP rules
 
-These rules apply only when the current task explicitly selects Bee Dev MCP for
+These rules apply only when the current task explicitly selects BeeMCP for
 read-only planning, prompt preparation or review.
 
-Bee Dev MCP is read-only.
+BeeMCP is read-only.
 
-Available Bee Dev MCP tools include:
+Available BeeMCP tools include:
 
 - `list_projects`;
 - `list_worktrees`;
@@ -717,7 +717,7 @@ Use only checks justified by:
 - actual change level;
 - current security surface.
 
-Review agents using Bee Dev MCP cannot execute commands.
+Review agents using BeeMCP cannot execute commands.
 
 They may use supplied command output as evidence but must:
 

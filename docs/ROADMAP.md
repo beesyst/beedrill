@@ -670,13 +670,13 @@ New architecture or broad product scope during the buffer requires an explicit G
 
 ## Product phases
 
-| Phase                                                       | Status  | What it means                                                                                                                                           |
-| ----------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Phase A — Repository, module and domain foundation**      | DONE    | BeeDrill exists as an independent package, consumes BeeSDK module contracts, runs under BeeAgent and has deterministic local domain contracts/fixtures. |
-| **Phase B — End-to-end falsification prototype**            | PLANNED | Prove that a real isolated Solana attack can produce real detection/containment evidence, deterministic metrics and a reproducible FAIL → PASS result.  |
-| **Phase C — Security regression product**                   | PLANNED | Prove the architecture generalizes to a second attack class and expose a repeatable CI/regression entry point.                                          |
-| **Phase D — Hardening, external validation and submission** | PLANNED | Harden the execution boundary, validate against something non-toy and freeze the judge-ready MVP.                                                       |
-| **Submission buffer**                                       | PLANNED | Stabilization, testing, feedback, demo and submission only; no planned major scope.                                                                     |
+| Phase                                                       | Status      | What it means                                                                                                                                           |
+| ----------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Phase A — Repository, module and domain foundation**      | DONE        | BeeDrill exists as an independent package, consumes BeeSDK module contracts, runs under BeeAgent and has deterministic local domain contracts/fixtures. |
+| **Phase B — End-to-end falsification prototype**            | DONE        | Prove that a real isolated Solana attack can produce real detection/containment evidence, deterministic metrics and a reproducible FAIL → PASS result.  |
+| **Phase C — Security regression product**                   | DONE        | Prove the architecture generalizes to a second attack class and expose a repeatable CI/regression entry point.                                          |
+| **Phase D — Hardening, external validation and submission** | DONE        | Harden the execution boundary, validate against something non-toy and freeze the judge-ready MVP.                                                       |
+| **Submission buffer**                                       | IN PROGRESS | Stabilization, testing, feedback, demo and submission only; no planned major scope.                                                                     |
 
 ### Stages
 
@@ -2556,13 +2556,13 @@ real attack
 
 Any future UI integration requires a separate product need.
 
-### Bee Dev MCP
+### BeeMCP
 
-Bee Dev MCP remains a development/review tool.
+BeeMCP remains a development/review tool.
 
 BeeDrill is registered as an independent project so planning and review can operate against the actual repository.
 
-Bee Dev MCP is not a BeeDrill runtime dependency.
+BeeMCP is not a BeeDrill runtime dependency.
 
 ## Future roadmap rule
 

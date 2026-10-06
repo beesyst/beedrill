@@ -1,6 +1,6 @@
 ---
 name: beedrill-plan-iteration
-description: Inspect the current BeeDrill implementation through Bee Dev MCP, critically validate task necessity, product fit and repository ownership, reconcile the correct roadmap, and prepare a compact roadmap item or standalone task plus complete copy-ready Issues without modifying repositories.
+description: Inspect the current BeeDrill implementation through BeeMCP, critically validate task necessity, product fit and repository ownership, reconcile the correct roadmap, and prepare a compact roadmap item or standalone task plus complete copy-ready Issues without modifying repositories.
 ---
 
 # BeeDrill iteration planning workflow
@@ -37,7 +37,7 @@ Planning must determine:
 
 This workflow is read-only.
 
-Use only Bee Dev MCP for repository inspection.
+Use only BeeMCP for repository inspection.
 
 Do not:
 
@@ -55,7 +55,7 @@ Read and follow `AGENTS.md`.
 
 `AGENTS.md` owns stable repository-wide rules, including:
 
-- Bee Dev MCP usage;
+- BeeMCP usage;
 - exact target resolution;
 - complete reading;
 - BeeDrill product boundary;
@@ -93,7 +93,7 @@ The external prompt `.agents/prompts/01-planning.md` provides:
 
 Treat paths, project names, branches, modes and repository roles as exact input values.
 
-Pass `MODE` unchanged to applicable Bee Dev MCP calls.
+Pass `MODE` unchanged to applicable BeeMCP calls.
 
 Do not silently substitute another:
 
@@ -1541,7 +1541,7 @@ Keep:
 
 Keep analysis concise and avoid repeating the same evidence across sections.
 
-Do not claim Bee Dev MCP ran tests.
+Do not claim BeeMCP ran tests.
 
 ## Planning handoff
 
