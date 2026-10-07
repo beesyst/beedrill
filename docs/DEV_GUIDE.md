@@ -49,10 +49,23 @@ Primary repository:
 beedrill
 ```
 
-## Clean workspace reproducibility
+## Normal reproduction and contributor workspace
 
-The current development configuration uses local editable sibling repositories.
-Create this layout under any `<workspace>` directory:
+Normal users and judges use the release-backed BeeAgent bootstrap:
+
+```bash
+git clone https://github.com/beesyst/beeagent.git
+cd beeagent
+./start.sh beedrill check
+```
+
+It resolves the pinned BeeSDK and BeeDrill releases automatically. It does not
+require sibling repositories, ROP setup, production credentials, an AI provider,
+or manual BeeDrill installation. Rust, Solana CLI, `cargo-build-sbf`, and
+Surfpool remain required local prerequisites.
+
+The local sibling layout below is contributor-only source development, not the
+normal product or judge setup. Create it under any `<workspace>` directory:
 
 ```text
 <workspace>/
@@ -62,10 +75,9 @@ Create this layout under any `<workspace>` directory:
 └── beesdk/
 ```
 
-Use these compatible releases: `beedrill 0.12.0`, `beesdk 0.2.0`,
-`beeagent-rop 0.19.8`, and `beeagent 0.68.0`. `beeagent-rop` is required as a
-sibling because BeeAgent uses an editable source. No production credentials,
-RPC URL, wallet, or `.env` value is needed for the isolated replays.
+Use the checked-out sources when coordinating changes across repositories. No
+production credentials, RPC URL, wallet, or `.env` value is needed for isolated
+replays.
 
 ```bash
 mkdir <workspace>
@@ -75,24 +87,11 @@ git clone https://github.com/beesyst/beedrill.git beedrill
 git clone https://github.com/beesyst/beeagent-rop.git beeagent-rop
 git clone https://github.com/beesyst/beeagent.git beeagent
 git -C beesdk checkout beesdk-v0.2.0
-git -C beedrill checkout beedrill-v0.12.0
-git -C beeagent-rop checkout beeagent-rop-v0.19.8
-git -C beeagent checkout beeagent-v0.68.0
 cd beedrill
 uv sync
 uv run pytest -q
 uv build
 uv run python -c "import beedrill; print(beedrill.__file__)"
-```
-
-BeeAgent `0.68.0` validates its unrelated enabled ROP and Bitrix settings
-before dispatching a BeeDrill replay. The replays do not call either service, but
-clean startup needs these explicitly non-secret placeholders; do not substitute
-production values:
-
-```bash
-export OPENAI_API_KEY=not-used-by-beedrill
-export BITRIX_WRITEBACK_WEBHOOK_URL=https://example.invalid/
 ```
 
 From the same sibling layout, execute the host-owned regressions:
@@ -412,7 +411,7 @@ If BeeDrill requires a host capability that does not exist:
 
 Do not add the host implementation to BeeDrill as a shortcut.
 
-For the bounded SPL Token freeze-containment replay from the sibling workspace, run:
+For the bounded SPL Token freeze-containment replay, run:
 
 ```bash
 cd <workspace>/beeagent

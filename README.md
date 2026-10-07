@@ -1,8 +1,10 @@
 # BeeDrill — Security Regression Testing for Solana
 
-**BeeDrill runs reproducible attacks and verifies that your security controls actually stop them.**
+# You regression-test your code. BeeDrill regression-tests your defenses.
 
-> Audits test your code. BeeDrill tests your defenses.
+BeeDrill is for Solana protocol and security teams. It replays approved attacks
+against an isolated local environment and deterministically verifies whether
+detection and containment still limit loss.
 
 ```text
 Attack → Detect → Contain → Measure → PASS / FAIL
@@ -70,7 +72,11 @@ BeeDrill
 → If an attack happens, do the defenses actually stop it?
 ```
 
-## Quick start
+## Judge quickstart: reproducibility proof
+
+This is a proof/reproduction path for judges, not the usual end-user workflow.
+Teams run BeeDrill after security-sensitive changes, in PR/CI, nightly, before
+a release or deploy, and after remediation to replay the exact attack.
 
 BeeDrill is a module for [BeeAgent](https://github.com/beesyst/beeagent).
 
@@ -96,84 +102,18 @@ BeeAgent bootstraps `uv` automatically.
 Detailed toolchain setup is documented in
 [`docs/DEV_GUIDE.md`](docs/DEV_GUIDE.md).
 
-### 2. Create the workspace
-
-The current MVP uses three sibling repositories:
-
-```text
-workspace/
-├── beeagent/
-├── beedrill/
-└── beesdk/
-```
-
-Create them with one copy/paste command:
+### 2. Clone BeeAgent and run
 
 ```bash
-mkdir beedrill-workspace && cd beedrill-workspace && \
-git clone https://github.com/beesyst/beeagent.git && \
-git clone https://github.com/beesyst/beedrill.git && \
-git clone https://github.com/beesyst/beesdk.git
-```
-
-Why three repositories?
-
-| Repository | Purpose                         |
-| ---------- | ------------------------------- |
-| `beeagent` | runtime and execution           |
-| `beedrill` | security scenarios and verdicts |
-| `beesdk`   | shared module contracts         |
-
-BeeUI is a normal BeeAgent dependency and is installed automatically.
-
-BeeSDK currently uses a local sibling source, so `../beesdk` must exist in the
-workspace.
-
-You do **not** need `beeagent-rop` to use BeeDrill.
-
-### 3. Enable BeeDrill
-
-Open:
-
-```text
-beeagent/config/settings.yml
-```
-
-Enable BeeDrill:
-
-```yaml
-- id: "beedrill"
-  package: "beedrill.module"
-  entry: "BeeDrillModule"
-  enabled: true
-  install_extra: "beedrill"
-```
-
-If this workspace is only for BeeDrill, disable the unrelated ROP module:
-
-```yaml
-- id: "beeagent-rop"
-  package: "beeagent_rop"
-  entry: "RopModule"
-  enabled: false
-  install_extra: "rop"
-```
-
-That is enough.
-
-There is no separate BeeDrill install command.
-
-When BeeDrill is enabled, BeeAgent resolves the BeeDrill module during its normal
-bootstrap.
-
-### 4. Run
-
-From BeeAgent:
-
-```bash
+git clone https://github.com/beesyst/beeagent.git
 cd beeagent
 ./start.sh beedrill check
 ```
+
+The tracked BeeAgent configuration already enables the `beedrill` extra. Its
+normal bootstrap resolves pinned BeeSDK and BeeDrill release revisions; no
+sibling `beesdk`, `beedrill`, or `beeagent-rop` checkout, manual `pip install`,
+or separate BeeDrill installer is required.
 
 This is the primary BeeDrill command.
 
@@ -186,6 +126,12 @@ You do not need to manually:
 - run `uv`;
 - start Surfpool separately;
 - start another BeeDrill process.
+
+### Contributor source development
+
+Clone BeeDrill and BeeSDK as sibling repositories only when changing their
+source. The normal judge/user quickstart above deliberately does not use that
+layout. See [`docs/DEV_GUIDE.md`](docs/DEV_GUIDE.md) for the contributor setup.
 
 ## How it works
 
@@ -473,7 +419,9 @@ Execution authority remains inside BeeAgent.
 
 ## AI boundary
 
-AI may assist with explanation or remediation in future iterations.
+BeeAgent may optionally request an AI explanation for completed validated
+BeeDrill facts. It is disabled by default; the deterministic core works without
+an AI provider and no provider call is required for the judge command.
 
 AI does not decide:
 
@@ -487,6 +435,24 @@ PASS / FAIL
 ```
 
 Critical security truth comes from validated machine evidence.
+
+## Current limitation and next direction
+
+The current executable corpus is the three approved built-in security
+regressions. BeeDrill does not claim arbitrary developer-owned protocol,
+arbitrary RPC, or generic adapter compatibility.
+
+Developer-owned protocol integration is a post-hackathon direction:
+
+```text
+YOUR PROTOCOL
+→ project-owned BeeDrill integration
+→ same security-regression engine
+```
+
+No external developer dogfood session has been recorded for this release. When
+one is available, its time-to-first-result, blockers, and confusing steps will
+be recorded as evidence rather than inferred.
 
 ## Current status
 
