@@ -59,13 +59,9 @@ cd beeagent
 ./start.sh beedrill check
 ```
 
-It resolves the pinned BeeSDK and BeeDrill releases automatically. It does not
-require sibling repositories, ROP setup, production credentials, an AI provider,
-or manual BeeDrill installation. Rust, Solana CLI, `cargo-build-sbf`, and
-Surfpool remain required local prerequisites.
+It resolves the pinned BeeSDK and BeeDrill releases automatically. It does not require sibling repositories, ROP setup, production credentials, an AI provider, or manual BeeDrill installation. Rust, Solana CLI, `cargo-build-sbf`, and Surfpool remain required local prerequisites.
 
-The local sibling layout below is contributor-only source development, not the
-normal product or judge setup. Create it under any `<workspace>` directory:
+The local sibling layout below is contributor-only source development, not the normal product or judge setup. Create it under any `<workspace>` directory:
 
 ```text
 <workspace>/
@@ -75,9 +71,7 @@ normal product or judge setup. Create it under any `<workspace>` directory:
 └── beesdk/
 ```
 
-Use the checked-out sources when coordinating changes across repositories. No
-production credentials, RPC URL, wallet, or `.env` value is needed for isolated
-replays.
+Use the checked-out sources when coordinating changes across repositories. No production credentials, RPC URL, wallet, or `.env` value is needed for isolated replays.
 
 ```bash
 mkdir <workspace>
@@ -103,10 +97,7 @@ cd <workspace>/beeagent
 ./start.sh beedrill run --scenario spl_token_freeze_containment_replay
 ```
 
-Each command prints a JSON summary. A successful fixed replay exits `0` with
-`security_verdict: "pass"`; scenario artifacts are stored under
-`storage/runs/<run-id>/module-beedrill/`. Run IDs and Solana slots vary. Inspect
-the scenario artifact, not logs, for bounded broken/fixed evidence and metrics.
+Each command prints a JSON summary. A successful fixed replay exits `0` with `security_verdict: "pass"`; scenario artifacts are stored under `storage/runs/<run-id>/module-beedrill/`. Run IDs and Solana slots vary. Inspect the scenario artifact, not logs, for bounded broken/fixed evidence and metrics.
 
 Python distribution:
 
@@ -168,8 +159,7 @@ Rules:
 
 - keep dependencies minimal;
 - add dependencies only for a demonstrated implementation need;
-- update `pyproject.toml` and `uv.lock` together when an approved dependency
-  change occurs;
+- update `pyproject.toml` and `uv.lock` together when an approved dependency change occurs;
 - do not run or require `uv lock --check`;
 - do not modify dependency surface during unrelated work.
 
@@ -179,8 +169,7 @@ The bootstrap package may start with:
 runtime dependencies = []
 ```
 
-BeeSDK should be added only through an approved and actually available package
-source.
+BeeSDK should be added only through an approved and actually available package source.
 
 Do not invent a BeeSDK version or dependency source.
 
@@ -249,8 +238,7 @@ BeeDrill should not implement generic:
 
 ## Module integration
 
-BeeDrill should use shared BeeSDK contracts when the approved BeeSDK dependency
-is available.
+BeeDrill should use shared BeeSDK contracts when the approved BeeSDK dependency is available.
 
 Import those contracts only from their explicit public contract modules:
 
@@ -282,8 +270,7 @@ read_only
 
 This does not mean the overall drill can never cause bounded test execution.
 
-It means the BeeDrill module itself does not receive autonomous execution
-authority.
+It means the BeeDrill module itself does not receive autonomous execution authority.
 
 Execution remains host-controlled.
 
@@ -322,13 +309,11 @@ expected outcome
 
 Scenario data must not be treated as unrestricted execution instructions.
 
-Do not place arbitrary shell commands, arbitrary RPC endpoints or credentials
-inside scenario contracts.
+Do not place arbitrary shell commands, arbitrary RPC endpoints or credentials inside scenario contracts.
 
 ## Fixture-driven development
 
-BeeDrill should use fixtures or equivalent deterministic test inputs for
-scenario and verdict behavior.
+BeeDrill should use fixtures or equivalent deterministic test inputs for scenario and verdict behavior.
 
 A useful scenario fixture should make this relationship inspectable:
 
@@ -340,8 +325,7 @@ initial state
 → verdict
 ```
 
-When a rule changes, a regression test or fixture should explain the intended
-behavior.
+When a rule changes, a regression test or fixture should explain the intended behavior.
 
 Avoid large synthetic fixture frameworks before real scenarios exist.
 
@@ -399,8 +383,7 @@ BeeAgent owns:
 - storage;
 - artifacts.
 
-BeeDrill integration should use public/shared contracts rather than importing
-private BeeAgent implementation details.
+BeeDrill integration should use public/shared contracts rather than importing private BeeAgent implementation details.
 
 If BeeDrill requires a host capability that does not exist:
 
@@ -418,12 +401,7 @@ cd <workspace>/beeagent
 ./start.sh beedrill run --scenario spl_token_freeze_containment_replay
 ```
 
-Expected baseline security semantics are `broken → fail`, `fixed → pass`, and
-final `security_verdict → pass`. A valid fixed-control regression instead
-completes with `security_verdict → fail`; malformed, contradictory, refused,
-timed-out, or erroneous evidence remains non-successful. Program selection,
-Surfpool, RPC, transactions, ephemeral keys, timeout, and cleanup remain
-BeeAgent-owned. This validates one SPL Token freeze-containment pattern only.
+Expected baseline security semantics are `broken → fail`, `fixed → pass`, and final `security_verdict → pass`. A valid fixed-control regression instead completes with `security_verdict → fail`; malformed, contradictory, refused, timed-out, or erroneous evidence remains non-successful. Program selection, Surfpool, RPC, transactions, ephemeral keys, timeout, and cleanup remain BeeAgent-owned. This validates one SPL Token freeze-containment pattern only.
 
 ## Related repository environments
 
@@ -438,11 +416,9 @@ uv run pytest -q
 uv build
 ```
 
-Do not use another repository's `.venv` as evidence that BeeDrill works
-independently.
+Do not use another repository's `.venv` as evidence that BeeDrill works independently.
 
-Cross-repository integration checks should be run separately in the relevant
-repository.
+Cross-repository integration checks should be run separately in the relevant repository.
 
 ## Surfpool integration
 
@@ -454,15 +430,13 @@ BeeAgent owns the Surfpool runtime lifecycle.
 
 BeeDrill must not add its own generic Surfpool process manager.
 
-Do not invent a BeeDrill-local start/stop command unless a future approved
-architecture explicitly gives that responsibility to BeeDrill.
+Do not invent a BeeDrill-local start/stop command unless a future approved architecture explicitly gives that responsibility to BeeDrill.
 
 ## Solana RPC integration
 
 Solana RPC execution is host-controlled.
 
-BeeDrill should describe bounded drill intent rather than arbitrary endpoint
-selection.
+BeeDrill should describe bounded drill intent rather than arbitrary endpoint selection.
 
 When an iteration adds RPC-backed behavior, verify:
 
@@ -517,11 +491,9 @@ When changing verdict logic, test:
 
 ## Economic metrics
 
-When an iteration introduces or changes economic metrics, define the formula in
-the relevant contract and test it with deterministic values.
+When an iteration introduces or changes economic metrics, define the formula in the relevant contract and test it with deterministic values.
 
-Avoid heuristic "risk scores" when the product can measure an objective
-economic result instead.
+Avoid heuristic "risk scores" when the product can measure an objective economic result instead.
 
 ## Tests
 
@@ -602,8 +574,7 @@ from beedrill.domain import Scenario
 from beedrill.module import BeeDrillModule
 ```
 
-`src/beedrill/__init__.py` is byte-empty and is not a re-export layer. Do not
-publish every internal domain helper.
+`src/beedrill/__init__.py` is byte-empty and is not a re-export layer. Do not publish every internal domain helper.
 
 When a public contract changes:
 
@@ -679,8 +650,7 @@ ROADMAP
 → release process when applicable
 ```
 
-For truly trivial low-risk maintenance, the lighter path defined in
-`docs/SDLC.md` may be used.
+For truly trivial low-risk maintenance, the lighter path defined in `docs/SDLC.md` may be used.
 
 ## What not to do
 
@@ -747,5 +717,4 @@ deterministic verdict
 correct host boundary
 ```
 
-The repository should not become a second BeeAgent runtime merely to make the
-first implementation easier.
+The repository should not become a second BeeAgent runtime merely to make the first implementation easier.

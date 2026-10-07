@@ -7,8 +7,7 @@ description: Implement one approved BeeDrill Issue in the exact target worktree 
 
 ## Purpose
 
-Use this workflow after a BeeDrill Issue has been approved and a dedicated
-target worktree and branch have been prepared.
+Use this workflow after a BeeDrill Issue has been approved and a dedicated target worktree and branch have been prepared.
 
 This workflow may modify the target repository and run local checks.
 
@@ -20,8 +19,7 @@ Do not:
 - expand BeeDrill into a second BeeAgent runtime;
 - move BeeAgent-owned execution into BeeDrill for implementation convenience;
 - move BeeDrill domain semantics into BeeSDK;
-- create production/mainnet mutation paths unless an approved future Issue
-  explicitly changes that boundary;
+- create production/mainnet mutation paths unless an approved future Issue explicitly changes that boundary;
 - commit, push, create a PR or merge;
 - change package version unless the Issue is explicitly release-related.
 
@@ -38,18 +36,15 @@ Obtain:
 - roadmap context;
 - planning constraints;
 - related repository contracts when explicitly supplied;
-- additional implementation targets only when the approved Issue explicitly
-  requires cross-repository work.
+- additional implementation targets only when the approved Issue explicitly requires cross-repository work.
 
 ## Working contract
 
 Before proposing or applying a change, read every declared file completely.
 
-Keep a file inventory. When another file becomes necessary, add it to the
-inventory and read it completely before editing it.
+Keep a file inventory. When another file becomes necessary, add it to the inventory and read it completely before editing it.
 
-Map the work to the supplied current roadmap iteration and stay inside its
-approved scope.
+Map the work to the supplied current roadmap iteration and stay inside its approved scope.
 
 Before editing, determine:
 
@@ -72,11 +67,8 @@ Do not:
 - run formatters over unrelated content;
 - remove an existing check without an explicit task-specific reason;
 - add speculative framework layers;
-- create abstractions for future chains, protocols, runners or integrations
-  without current evidence;
-- add first-party production/test comments, explanatory docstrings, `TODO`,
-  `FIXME`, `NOTE` or decorative separators unless the repository explicitly
-  requires them.
+- create abstractions for future chains, protocols, runners or integrations without current evidence;
+- add first-party production/test comments, explanatory docstrings, `TODO`, `FIXME`, `NOTE` or decorative separators unless the repository explicitly requires them.
 
 Preserve required:
 
@@ -89,8 +81,7 @@ Use proportional tests for Acceptance Criteria and public behavior.
 
 Prefer existing test files and helpers.
 
-Create a new file, helper, model or abstraction only when demonstrably required
-by the approved task.
+Create a new file, helper, model or abstraction only when demonstrably required by the approved task.
 
 Keep ownership explicit:
 
@@ -122,15 +113,11 @@ BeeSDK
 → proven reusable shared contracts only
 ```
 
-If implementation evidence shows that required behavior belongs to another
-repository, do not copy that responsibility into BeeDrill.
+If implementation evidence shows that required behavior belongs to another repository, do not copy that responsibility into BeeDrill.
 
-Report the ownership gap unless the approved Issue explicitly includes the
-other repository as an implementation target.
+Report the ownership gap unless the approved Issue explicitly includes the other repository as an implementation target.
 
-Before reporting completion, inspect the final diff and remove every newly
-introduced prohibited comment, unrelated formatting change and out-of-scope
-change.
+Before reporting completion, inspect the final diff and remove every newly introduced prohibited comment, unrelated formatting change and out-of-scope change.
 
 ## Target safety gate
 
@@ -190,8 +177,7 @@ Read related repository files only when required to verify:
 - host compatibility;
 - cross-repository integration explicitly required by the Issue.
 
-Do not modify a related repository unless the approved Issue explicitly assigns
-work to it.
+Do not modify a related repository unless the approved Issue explicitly assigns work to it.
 
 ## Change classification
 
@@ -219,15 +205,13 @@ Typical BeeDrill security-sensitive changes include:
 - execution timeouts;
 - dependency additions affecting the execution surface.
 
-If the actual implementation requires a higher change level than the Issue
-declares, report the mismatch before continuing.
+If the actual implementation requires a higher change level than the Issue declares, report the mismatch before continuing.
 
 Do not silently downgrade the change level to reduce required verification.
 
 ## Architecture boundary
 
-Preserve the current BeeDrill architecture unless the approved Issue explicitly
-changes it.
+Preserve the current BeeDrill architecture unless the approved Issue explicitly changes it.
 
 Canonical boundary:
 
@@ -279,8 +263,7 @@ Otherwise stop and report the dependency.
 
 ## Security invariants
 
-The following invariants apply unless an approved future Issue explicitly
-changes them.
+The following invariants apply unless an approved future Issue explicitly changes them.
 
 ### No scenario-controlled authority
 
@@ -296,8 +279,7 @@ Scenario or module-controlled input must not grant or override:
 
 ### Isolation
 
-Hackathon attack execution must remain restricted to explicitly approved
-isolated environments.
+Hackathon attack execution must remain restricted to explicitly approved isolated environments.
 
 Production/mainnet mutation is outside the current MVP boundary.
 
@@ -322,8 +304,7 @@ It must not grant new runtime authority.
 
 ### Fail closed
 
-Missing, malformed or inconsistent critical evidence must not silently produce
-PASS.
+Missing, malformed or inconsistent critical evidence must not silently produce PASS.
 
 Use explicit:
 
@@ -347,8 +328,7 @@ Do not place production credentials, private keys or unrelated secrets in:
 
 ## Implementation
 
-Implement the smallest complete solution satisfying Scope and Acceptance
-Criteria.
+Implement the smallest complete solution satisfying Scope and Acceptance Criteria.
 
 Requirements:
 
@@ -360,18 +340,14 @@ Requirements:
 - do not introduce hidden defaults for required behavior;
 - do not create a second source of truth;
 - do not duplicate existing contracts or logic;
-- do not hardcode values that belong in an existing contract or configuration
-  source of truth;
+- do not hardcode values that belong in an existing contract or configuration source of truth;
 - do not turn fixture data into unrestricted executable instructions;
 - preserve deterministic behavior where the product contract requires it;
 - preserve fail-closed behavior on security boundaries;
 - follow PEP 8;
-- keep public identifiers, package metadata, scenario fields and artifacts in
-  English;
-- preserve compatibility unless the Issue explicitly permits a breaking
-  change;
-- keep `pyproject.toml.version` unchanged for ordinary feature, fix, docs and
-  chore work.
+- keep public identifiers, package metadata, scenario fields and artifacts in English;
+- preserve compatibility unless the Issue explicitly permits a breaking change;
+- keep `pyproject.toml.version` unchanged for ordinary feature, fix, docs and chore work.
 
 Do not add:
 
@@ -416,8 +392,7 @@ Add or update only tests proportional to the approved Issue.
 
 Prefer existing test files, fixtures and helpers.
 
-Do not create a new test file or helper unless the required behavior cannot be
-covered cleanly in the existing structure.
+Do not create a new test file or helper unless the required behavior cannot be covered cleanly in the existing structure.
 
 Run every check required by the actual change level and Acceptance Criteria.
 
@@ -451,8 +426,7 @@ As applicable:
 
 Use `uv run` for Python commands when applicable.
 
-For a security-sensitive execution path, verify negative behavior in addition to
-the happy path.
+For a security-sensitive execution path, verify negative behavior in addition to the happy path.
 
 Examples where applicable:
 
@@ -467,8 +441,7 @@ scenario cannot select arbitrary executable
 scenario cannot override authority
 ```
 
-For deterministic scenario/verdict work, verify replay behavior when required by
-the Issue.
+For deterministic scenario/verdict work, verify replay behavior when required by the Issue.
 
 Record:
 
@@ -518,8 +491,7 @@ Before reporting completion:
 - confirm dependency and version changes match approved scope;
 - confirm security boundaries remain intact.
 
-If the final state differs materially from the approved Issue, report the
-difference instead of silently expanding the task.
+If the final state differs materially from the approved Issue, report the difference instead of silently expanding the task.
 
 ## Implementation report
 
@@ -545,8 +517,7 @@ Return one report containing:
 18. `Recommended Conventional Commit`
 19. `Version status`
 
-For cross-repository implementation, clearly separate changed files, tests and
-evidence by repository.
+For cross-repository implementation, clearly separate changed files, tests and evidence by repository.
 
 For every substantive correction made during implementation, describe:
 
@@ -557,8 +528,7 @@ For every substantive correction made during implementation, describe:
 
 Do not include a full diff.
 
-Do not claim completion when required Acceptance Criteria or required checks are
-still missing.
+Do not claim completion when required Acceptance Criteria or required checks are still missing.
 
 End with:
 

@@ -2,8 +2,7 @@
 
 ## Purpose
 
-This document defines the lightweight software delivery lifecycle used in
-`beedrill`.
+This document defines the lightweight software delivery lifecycle used in `beedrill`.
 
 The process exists to:
 
@@ -167,8 +166,7 @@ The Issue defines:
 
 One implementation repository should normally have one Issue.
 
-Cross-repository implementation should use separate Issues in the owning
-repositories.
+Cross-repository implementation should use separate Issues in the owning repositories.
 
 ## Branch
 
@@ -235,8 +233,7 @@ Security-sensitive execution changes should include negative behavior tests.
 
 ## Runtime evidence
 
-Some BeeDrill iterations require runtime/integration evidence in addition to
-unit tests.
+Some BeeDrill iterations require runtime/integration evidence in addition to unit tests.
 
 Examples:
 
@@ -248,8 +245,7 @@ Examples:
 - replay;
 - residual-loss calculation.
 
-Runtime evidence must be bounded and reproducible enough to support the
-Acceptance Criteria.
+Runtime evidence must be bounded and reproducible enough to support the Acceptance Criteria.
 
 ## Artifacts
 
@@ -266,8 +262,7 @@ Relevant outputs may include:
 
 Host-persisted production artifacts remain owned by BeeAgent.
 
-Generated build outputs are verification evidence and normally are not
-committed.
+Generated build outputs are verification evidence and normally are not committed.
 
 ## Pull Request
 
@@ -428,8 +423,7 @@ Check:
 
 ### DAST
 
-Use only when the actual change creates or modifies a meaningful externally
-reachable runtime surface.
+Use only when the actual change creates or modifies a meaningful externally reachable runtime surface.
 
 Do not require DAST for pure domain logic.
 
@@ -448,8 +442,7 @@ Consider when BeeDrill introduces:
 - structured untrusted-input validator;
 - complex normalization of attacker-controlled data.
 
-Simple dataclasses or deterministic arithmetic do not automatically require
-fuzzing.
+Simple dataclasses or deterministic arithmetic do not automatically require fuzzing.
 
 ## Deterministic behavior checks
 
@@ -461,8 +454,7 @@ same valid evidence
 → same verdict
 ```
 
-When replay is part of the task, verify equivalent starting state and equivalent
-scenario produce equivalent security meaning.
+When replay is part of the task, verify equivalent starting state and equivalent scenario produce equivalent security meaning.
 
 ## Isolation checks
 
@@ -579,8 +571,7 @@ Release-please owns release PR/version/changelog/tag lifecycle.
 
 It is not an implementation diary.
 
-Do not manually append entries for every local change unless the release process
-explicitly requires it.
+Do not manually append entries for every local change unless the release process explicitly requires it.
 
 ## ROADMAP update rules
 

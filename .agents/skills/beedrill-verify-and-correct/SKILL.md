@@ -7,8 +7,7 @@ description: Independently verify an implemented BeeDrill Issue, apply only nece
 
 ## Purpose
 
-Use this workflow after initial implementation or after a read-only final review
-has returned blocking findings.
+Use this workflow after initial implementation or after a read-only final review has returned blocking findings.
 
 The executor may:
 
@@ -18,8 +17,7 @@ The executor may:
 
 Use this workflow once for independent post-implementation verification.
 
-Reuse it only to address explicit blocking findings returned by a completed final
-review.
+Reuse it only to address explicit blocking findings returned by a completed final review.
 
 Do not:
 
@@ -31,8 +29,7 @@ Do not:
 - move BeeAgent-owned runtime behavior into BeeDrill;
 - move BeeDrill-specific domain semantics into BeeSDK;
 - weaken execution, isolation or authority boundaries;
-- create production/mainnet mutation paths outside explicitly approved future
-  scope;
+- create production/mainnet mutation paths outside explicitly approved future scope;
 - commit, push, create a PR or merge;
 - change package version unless the Issue is explicitly release-related.
 
@@ -134,8 +131,7 @@ Use proportional tests for:
 
 Prefer existing test files, fixtures and helpers.
 
-Create a new file, helper, class or abstraction only when demonstrably necessary
-to satisfy the current approved task or valid review blocker.
+Create a new file, helper, class or abstraction only when demonstrably necessary to satisfy the current approved task or valid review blocker.
 
 Preserve repository ownership:
 
@@ -166,8 +162,7 @@ BeeSDK
 → proven reusable shared contracts only
 ```
 
-When required behavior belongs to another repository, do not implement a local
-workaround that violates ownership merely to close the BeeDrill task.
+When required behavior belongs to another repository, do not implement a local workaround that violates ownership merely to close the BeeDrill task.
 
 Before reporting completion, inspect the final diff and remove:
 
@@ -288,8 +283,7 @@ not verifiable
 not applicable
 ```
 
-Do not assume an Acceptance Criterion is satisfied because the implementation
-report says so.
+Do not assume an Acceptance Criterion is satisfied because the implementation report says so.
 
 Verify it from:
 
@@ -355,8 +349,7 @@ Determine the actual change level from:
 - `docs/SECURITY.md`;
 - actual changed behavior.
 
-Do not rely only on the change level written in the Issue if the implementation
-has become more security-sensitive.
+Do not rely only on the change level written in the Issue if the implementation has become more security-sensitive.
 
 ## BeeDrill architecture verification
 
@@ -373,8 +366,7 @@ BeeDrill
 → security-control-validation domain behavior
 ```
 
-Verify that the implementation does not create a second BeeAgent runtime inside
-BeeDrill.
+Verify that the implementation does not create a second BeeAgent runtime inside BeeDrill.
 
 BeeDrill may own:
 
@@ -402,15 +394,13 @@ BeeDrill must not silently take ownership of:
 If such behavior is required and not already supplied by BeeAgent:
 
 - report the repository ownership gap;
-- do not hide it behind BeeDrill-local implementation unless the approved task
-  explicitly authorizes that architecture change.
+- do not hide it behind BeeDrill-local implementation unless the approved task explicitly authorizes that architecture change.
 
 ## Security verification
 
 ### Scenario input is untrusted
 
-Treat scenario, fixture and drill configuration input as untrusted unless the
-repository contract explicitly states otherwise.
+Treat scenario, fixture and drill configuration input as untrusted unless the repository contract explicitly states otherwise.
 
 Verify that scenario-controlled data cannot directly grant:
 
@@ -425,8 +415,7 @@ Verify that scenario-controlled data cannot directly grant:
 
 ### Host-owned execution
 
-Where execution exists, verify that actual authority remains within the approved
-host/runtime boundary.
+Where execution exists, verify that actual authority remains within the approved host/runtime boundary.
 
 A pattern equivalent to:
 
@@ -435,8 +424,7 @@ scenario data
 → arbitrary subprocess
 ```
 
-is blocking unless the approved architecture explicitly permits and constrains
-that exact mechanism.
+is blocking unless the approved architecture explicitly permits and constrains that exact mechanism.
 
 ### Isolation
 
@@ -447,8 +435,7 @@ production/mainnet mutation
 = excluded
 ```
 
-Verify where applicable that attack execution is restricted to approved isolated
-environments.
+Verify where applicable that attack execution is restricted to approved isolated environments.
 
 Unexpected mainnet mutation capability is blocking.
 
@@ -480,8 +467,7 @@ AI must not become the final authority for a deterministic security verdict.
 
 ### Fail-closed behavior
 
-Missing, malformed, incomplete or inconsistent critical evidence must not
-silently produce PASS.
+Missing, malformed, incomplete or inconsistent critical evidence must not silently produce PASS.
 
 Verify the approved explicit behavior, such as:
 
@@ -540,8 +526,7 @@ uv lock --check
 
 Do not treat unrelated lockfile noise as an independent finding.
 
-Do not change package version unless the approved Issue is explicitly
-release-related.
+Do not change package version unless the approved Issue is explicitly release-related.
 
 ## Corrections
 
@@ -575,19 +560,15 @@ Corrections must be:
 - PEP 8 compliant;
 - free of newly introduced comments.
 
-Do not create a preventive patch merely because a theoretical problem might
-appear later.
+Do not create a preventive patch merely because a theoretical problem might appear later.
 
-Do not introduce a new requirement because it may be useful after the
-hackathon.
+Do not introduce a new requirement because it may be useful after the hackathon.
 
-If a new function or class is necessary, identify its exact insertion location
-in the final report.
+If a new function or class is necessary, identify its exact insertion location in the final report.
 
 ## Cross-repository correction rule
 
-If verification proves that a required correction belongs to another
-repository:
+If verification proves that a required correction belongs to another repository:
 
 ```text
 BeeDrill domain/product defect
@@ -600,8 +581,7 @@ stable reusable shared-contract defect
 → BeeSDK, only when proven
 ```
 
-Do not implement another repository's responsibility locally merely to satisfy
-the current test.
+Do not implement another repository's responsibility locally merely to satisfy the current test.
 
 If the approved task explicitly includes multiple implementation repositories:
 
@@ -611,8 +591,7 @@ If the approved task explicitly includes multiple implementation repositories:
 4. run repository-specific checks;
 5. verify the final integration.
 
-If cross-repository work is necessary but was not approved, stop and report the
-blocking dependency.
+If cross-repository work is necessary but was not approved, stop and report the blocking dependency.
 
 ## Tests and checks
 
@@ -662,8 +641,7 @@ Do not invent irrelevant verification requirements.
 
 ### Security-sensitive execution checks
 
-For an execution-related security-sensitive change, verify negative behavior as
-applicable:
+For an execution-related security-sensitive change, verify negative behavior as applicable:
 
 ```text
 approved isolated target succeeds
@@ -692,9 +670,7 @@ missing critical evidence
 
 ### Replay checks
 
-For scenario/verdict changes where reproducibility is part of the contract,
-verify that equivalent initial state plus equivalent scenario produces
-equivalent expected outcome.
+For scenario/verdict changes where reproducibility is part of the contract, verify that equivalent initial state plus equivalent scenario produces equivalent expected outcome.
 
 Record exact:
 
@@ -724,8 +700,7 @@ Before reporting completion:
 11. verify package version matches approved scope;
 12. verify repository ownership remains intact.
 
-When correcting review blockers, also verify that no correction regressed
-already-correct behavior within the approved task.
+When correcting review blockers, also verify that no correction regressed already-correct behavior within the approved task.
 
 ## Final readiness
 
@@ -744,8 +719,7 @@ not ready for final read-only review
 Use `ready for final read-only review` only when:
 
 - required corrections are complete;
-- required tests/checks have been executed successfully or explicitly accounted
-  for;
+- required tests/checks have been executed successfully or explicitly accounted for;
 - no known current-scope blocker remains;
 - changed-file inventory is clean with respect to the task;
 - no unresolved security-boundary problem remains.

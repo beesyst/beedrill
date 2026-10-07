@@ -25,8 +25,7 @@ Do not:
 - push;
 - create or merge a PR.
 
-The review must determine whether the actual target is ready to become the
-accepted implementation of the approved BeeDrill task.
+The review must determine whether the actual target is ready to become the accepted implementation of the approved BeeDrill task.
 
 Review only the approved scope.
 
@@ -67,8 +66,7 @@ When another file becomes necessary:
 2. read it completely;
 3. only then evaluate it.
 
-Map the review to the supplied roadmap iteration and evaluate only its approved
-scope.
+Map the review to the supplied roadmap iteration and evaluate only its approved scope.
 
 Determine the actual change level:
 
@@ -178,8 +176,7 @@ When the approved Issue input contains a GitHub Issue URL:
 2. read the Issue title;
 3. read the complete Issue body;
 4. read all available Issue comments;
-5. use explicit accepted clarifications from comments when establishing the
-   approved scope.
+5. use explicit accepted clarifications from comments when establishing the approved scope.
 
 When the current PR input contains a GitHub Pull Request URL:
 
@@ -212,8 +209,7 @@ The PR does not override:
 
 When pasted content and a URL are supplied together, consider both.
 
-If they materially conflict, report the conflict instead of silently choosing
-one source.
+If they materially conflict, report the conflict instead of silently choosing one source.
 
 If required GitHub context cannot be read completely, return:
 
@@ -228,8 +224,7 @@ Do not continue to a code verdict from incomplete required GitHub context.
 ## Phase 1 — Resolve the exact target
 
 1. Call `list_worktrees` for the project.
-2. Find the entry whose `path` exactly matches the expected target worktree
-   path.
+2. Find the entry whose `path` exactly matches the expected target worktree path.
 3. Use the returned MCP `target`.
 4. Call `get_project_context` for that target and supplied mode.
 5. Verify:
@@ -304,8 +299,7 @@ The manifest is the authoritative changed-file inventory.
    - `next_cursor=null`;
    - `truncated=false`.
 
-Do not use compatibility `get_review_bundle` as a substitute for the paginated
-review flow.
+Do not use compatibility `get_review_bundle` as a substitute for the paginated review flow.
 
 If:
 
@@ -330,8 +324,7 @@ Read from the primary target:
 - `AGENTS.md`;
 - `.agents/skills/beedrill-review-and-close/SKILL.md`.
 
-If they are absent because the feature worktree predates their introduction,
-use the explicitly supplied canonical BeeDrill instruction worktree.
+If they are absent because the feature worktree predates their introduction, use the explicitly supplied canonical BeeDrill instruction worktree.
 
 Expected normal canonical instruction source:
 
@@ -351,11 +344,9 @@ When fallback is required:
    - `.agents/skills/beedrill-review-and-close/SKILL.md`;
 
 5. use them only as review instructions;
-6. continue reviewing implementation exclusively from the original target
-   worktree.
+6. continue reviewing implementation exclusively from the original target worktree.
 
-The absence of newer instructions from a legacy target worktree is not itself a
-finding.
+The absence of newer instructions from a legacy target worktree is not itself a finding.
 
 Do not silently select another instruction source.
 
@@ -384,8 +375,7 @@ Read completely:
 - package/public API contracts where applicable;
 - every changed and untracked text file;
 - relevant tests;
-- directly related unchanged contracts and implementation required to interpret
-  the changes correctly.
+- directly related unchanged contracts and implementation required to interpret the changes correctly.
 
 Read as applicable:
 
@@ -451,9 +441,7 @@ When an additional repository is explicitly supplied:
 5. do not broaden the primary review unnecessarily;
 6. do not include unrelated repository state in the primary verdict.
 
-If the primary BeeDrill implementation depends on code or a contract absent
-from the expected related branch, report a blocking cross-repository dependency
-when that dependency is required by the approved Issue.
+If the primary BeeDrill implementation depends on code or a contract absent from the expected related branch, report a blocking cross-repository dependency when that dependency is required by the approved Issue.
 
 ### BeeDrill ownership
 
@@ -512,8 +500,7 @@ BeeSDK must not gain BeeDrill-specific:
 
 BeeUI owns generic presentation behavior when explicitly in scope.
 
-Do not make BeeUI part of BeeDrill implementation merely because visualization
-would be useful.
+Do not make BeeUI part of BeeDrill implementation merely because visualization would be useful.
 
 ### BeeScan ownership
 
@@ -525,8 +512,7 @@ Do not move BeeScan implementation into BeeDrill.
 
 ## Phase 6 — BeeDrill security and architecture review
 
-For changes affecting BeeDrill security behavior, explicitly verify the
-applicable boundaries.
+For changes affecting BeeDrill security behavior, explicitly verify the applicable boundaries.
 
 ### Scenario-controlled authority
 
@@ -546,8 +532,7 @@ A violation is blocking.
 
 ### Host-owned execution
 
-When execution is required, verify that BeeAgent or another explicitly approved
-host-owned boundary remains responsible for execution.
+When execution is required, verify that BeeAgent or another explicitly approved host-owned boundary remains responsible for execution.
 
 Do not accept:
 
@@ -556,13 +541,11 @@ BeeDrill domain model
 → arbitrary subprocess
 ```
 
-as an implementation shortcut unless the approved architecture explicitly
-authorizes that exact boundary.
+as an implementation shortcut unless the approved architecture explicitly authorizes that exact boundary.
 
 ### Isolation
 
-For the current hackathon MVP, verify where applicable that attack execution
-remains limited to explicitly approved isolated environments.
+For the current hackathon MVP, verify where applicable that attack execution remains limited to explicitly approved isolated environments.
 
 Unexpected production/mainnet mutation capability is blocking.
 
@@ -708,8 +691,7 @@ Check as applicable:
 - version declarations;
 - required tests/build/smoke/security evidence.
 
-`Not verifiable` is blocking only when the approved Issue, SDLC or security
-rules require that evidence for merge readiness.
+`Not verifiable` is blocking only when the approved Issue, SDLC or security rules require that evidence for merge readiness.
 
 ---
 
@@ -938,8 +920,7 @@ Why:
 For code, configuration or contract blockers:
 
 - include the exact bounded current fragment;
-- include the complete bounded replacement or insertion when it can be stated
-  safely from inspected evidence.
+- include the complete bounded replacement or insertion when it can be stated safely from inspected evidence.
 
 For behavior-only blockers:
 
@@ -970,8 +951,7 @@ It is not a continuation of the BeeMCP review.
 Select and name the executor:
 
 - **Copilot** for localized, clearly specified corrections;
-- **Codex** for broader diagnosis, multi-contract changes, cross-repository
-  corrections or security-sensitive corrections.
+- **Codex** for broader diagnosis, multi-contract changes, cross-repository corrections or security-sensitive corrections.
 
 The correction prompt must authorize the executor to:
 
@@ -1075,8 +1055,7 @@ version not changed
 Do not commit, push, create or update a PR, or merge.
 ```
 
-The correction prompt must include every blocking finding from the completed
-review.
+The correction prompt must include every blocking finding from the completed review.
 
 Do not copy:
 
@@ -1103,8 +1082,7 @@ If a blocker belongs to another repository:
 
 - identify the owning repository;
 - do not instruct the BeeDrill executor to implement it in BeeDrill;
-- require a separate target/worktree/Issue flow where the approved scope allows
-  that correction;
+- require a separate target/worktree/Issue flow where the approved scope allows that correction;
 - preserve one implementation repository per Issue/branch/PR.
 
 Examples:
@@ -1120,9 +1098,7 @@ BeeDrill scenario/verdict defect
 → BeeDrill
 ```
 
-Do not hide cross-repository implementation inside one correction prompt unless
-the approved Issue explicitly defined coordinated multi-repository work and the
-prompt contains the exact worktree for every implementation target.
+Do not hide cross-repository implementation inside one correction prompt unless the approved Issue explicitly defined coordinated multi-repository work and the prompt contains the exact worktree for every implementation target.
 
 ---
 
@@ -1154,8 +1130,7 @@ A previous blocker that is resolved must not remain in the new blocker list.
 
 When approved, prepare the PR body using the actual repository template.
 
-The PR body must reflect actual reviewed implementation rather than planning
-intent.
+The PR body must reflect actual reviewed implementation rather than planning intent.
 
 Include only template-required content and relevant reviewed evidence.
 
@@ -1199,8 +1174,7 @@ fix: fail closed on incomplete drill evidence
 docs: align BeeDrill security boundaries
 ```
 
-Do not recommend a version bump unless the approved Issue is explicitly
-release-related.
+Do not recommend a version bump unless the approved Issue is explicitly release-related.
 
 ---
 

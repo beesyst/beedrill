@@ -6,13 +6,11 @@ BeeDrill owns the bounded deterministic `explanation_facts` projection for compl
 
 ## Idea
 
-`beedrill` is a focused Python package for continuous security-control validation
-of Solana protocols.
+`beedrill` is a focused Python package for continuous security-control validation of Solana protocols.
 
 BeeDrill answers a narrower question than an audit or vulnerability scanner:
 
-> When a reproducible attack occurs, do the protocol's actual defenses detect
-> it, contain it, and limit economic damage?
+> When a reproducible attack occurs, do the protocol's actual defenses detect it, contain it, and limit economic damage?
 
 The target product flow is:
 
@@ -44,8 +42,7 @@ BeeDrill
 
 Main rule:
 
-> BeeDrill defines what a security drill means. BeeAgent owns how bounded
-> execution happens.
+> BeeDrill defines what a security drill means. BeeAgent owns how bounded execution happens.
 
 ## Core principle
 
@@ -70,8 +67,7 @@ BeeDrill
   returns deterministic verdict
 ```
 
-BeeDrill must not bypass BeeAgent merely because direct subprocess or RPC access
-would be easier to implement.
+BeeDrill must not bypass BeeAgent merely because direct subprocess or RPC access would be easier to implement.
 
 ## Product boundary
 
@@ -112,8 +108,7 @@ This includes:
 - scenario fixtures and regression corpus;
 - BeeDrill-specific result and report semantics.
 
-Concrete domain contracts should be introduced only by the roadmap iteration
-that needs them.
+Concrete domain contracts should be introduced only by the roadmap iteration that needs them.
 
 Do not prebuild an abstract scenario framework before real scenarios require it.
 
@@ -142,9 +137,7 @@ BeeDrill must not own:
 
 Rule:
 
-> If code grants authority, starts generic infrastructure, owns credentials,
-> performs generic execution, or manages host lifecycle, it probably belongs in
-> BeeAgent rather than BeeDrill.
+> If code grants authority, starts generic infrastructure, owns credentials, performs generic execution, or manages host lifecycle, it probably belongs in BeeAgent rather than BeeDrill.
 
 ## Ownership
 
@@ -185,8 +178,7 @@ BeeAgent owns:
 
 ### BeeSDK owns
 
-BeeSDK owns only reusable public contracts proven to be shared across Bee
-consumers.
+BeeSDK owns only reusable public contracts proven to be shared across Bee consumers.
 
 Examples include:
 
@@ -235,8 +227,7 @@ beesdk
 
 BeeSDK must never depend on BeeDrill.
 
-BeeAgent may also depend on BeeSDK as the host implementation of shared
-contracts.
+BeeAgent may also depend on BeeSDK as the host implementation of shared contracts.
 
 Conceptually:
 
@@ -259,8 +250,7 @@ Host integration should use public contracts and bounded host interfaces.
 
 BeeDrill should reuse BeeSDK contracts rather than copying platform contracts.
 
-Expected shared concepts include, when available from the approved BeeSDK
-baseline:
+Expected shared concepts include, when available from the approved BeeSDK baseline:
 
 ```text
 ModuleContext
@@ -279,16 +269,13 @@ from beesdk.artifacts import ArtifactPort
 from beesdk.modules import AuthorityLevel, ModuleContext, ModuleContract, ModuleResult
 ```
 
-The exact package dependency must use an actually available and approved BeeSDK
-source.
+The exact package dependency must use an actually available and approved BeeSDK source.
 
-Do not invent a future BeeSDK package version or dependency source merely to
-complete repository bootstrap.
+Do not invent a future BeeSDK package version or dependency source merely to complete repository bootstrap.
 
 ## Module boundary
 
-BeeDrill is expected to expose a minimal module compatible with the shared
-module contract.
+BeeDrill is expected to expose a minimal module compatible with the shared module contract.
 
 Initial identity:
 
@@ -302,8 +289,7 @@ Initial authority:
 read_only
 ```
 
-The initial authority deliberately does not grant execution rights to the
-module.
+The initial authority deliberately does not grant execution rights to the module.
 
 Execution authority remains host-owned.
 
@@ -409,11 +395,9 @@ A scenario should describe domain intent such as:
 
 A scenario must not function as an unrestricted execution script.
 
-Concrete scenario fields belong to the iteration that introduces the domain
-contract.
+Concrete scenario fields belong to the iteration that introduces the domain contract.
 
-Do not build a generic DSL until multiple real scenarios prove that it is
-necessary.
+Do not build a generic DSL until multiple real scenarios prove that it is necessary.
 
 ## Evidence architecture
 
@@ -466,13 +450,10 @@ residual capital loss
 Where applicable:
 
 - MTTD measures time from attack start to valid detection;
-- MTTC measures time from attack start or detection reference point to valid
-  containment according to the approved contract;
-- residual capital loss measures remaining economic damage after the evaluated
-  controls act.
+- MTTC measures time from attack start or detection reference point to valid containment according to the approved contract;
+- residual capital loss measures remaining economic damage after the evaluated controls act.
 
-Exact formulas belong to the approved domain contract and must remain
-deterministic.
+Exact formulas belong to the approved domain contract and must remain deterministic.
 
 ## Verdict architecture
 
@@ -501,8 +482,7 @@ It must not replace deterministic evaluation.
 
 Critical missing or invalid evidence must not silently become PASS.
 
-Depending on the approved contract, the result should explicitly represent a
-state such as:
+Depending on the approved contract, the result should explicitly represent a state such as:
 
 ```text
 FAIL
@@ -519,8 +499,7 @@ The important invariant is:
 
 ## Artifact boundary
 
-BeeDrill should produce structured drill evidence through the host-owned artifact
-boundary when artifacts are required.
+BeeDrill should produce structured drill evidence through the host-owned artifact boundary when artifacts are required.
 
 Correct model:
 
@@ -542,8 +521,7 @@ BeeDrill does not own:
 - operator access;
 - storage layout.
 
-Artifacts should contain bounded structured evidence, not raw secrets or
-unrestricted execution data.
+Artifacts should contain bounded structured evidence, not raw secrets or unrestricted execution data.
 
 ## Isolation
 
@@ -557,8 +535,7 @@ production/mainnet mutation = out of scope
 
 Drills must execute only against explicitly approved isolated targets.
 
-A future production validation mode would require a separate architecture and
-security decision.
+A future production validation mode would require a separate architecture and security decision.
 
 ## Secrets and credentials
 
@@ -613,11 +590,9 @@ from beedrill.domain import Scenario
 from beedrill.module import BeeDrillModule
 ```
 
-`src/beedrill/__init__.py` remains byte-empty and is not a re-export layer. Do
-not publish every internal domain helper.
+`src/beedrill/__init__.py` remains byte-empty and is not a re-export layer. Do not publish every internal domain helper.
 
-Keep the public surface small by making only documented modules stable public
-boundaries.
+Keep the public surface small by making only documented modules stable public boundaries.
 
 ## Repository structure
 
@@ -660,8 +635,7 @@ logs/
 config/
 ```
 
-unless a future approved architecture explicitly gives BeeDrill ownership of
-such state.
+unless a future approved architecture explicitly gives BeeDrill ownership of such state.
 
 ## Versioning
 
@@ -688,8 +662,7 @@ A new BeeDrill abstraction is justified when at least one is true:
 1. multiple real scenarios need the same semantic boundary;
 2. duplicated domain behavior is causing measurable drift;
 3. a stable testable contract is required for BeeAgent integration;
-4. the current simple structure can no longer represent a verified product
-   requirement clearly.
+4. the current simple structure can no longer represent a verified product requirement clearly.
 
 Insufficient reasons:
 
@@ -776,8 +749,7 @@ flowchart TD
 
 The diagram is conceptual.
 
-Host-owned policy and execution remain authoritative even when BeeDrill defines
-the scenario semantics.
+Host-owned policy and execution remain authoritative even when BeeDrill defines the scenario semantics.
 
 ## Summary
 

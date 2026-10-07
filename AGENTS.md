@@ -2,8 +2,7 @@
 
 ## Purpose
 
-This file contains stable repository-wide rules for AI agents working with
-`beedrill`.
+This file contains stable repository-wide rules for AI agents working with `beedrill`.
 
 Task-specific requirements belong in the approved Issue.
 
@@ -19,8 +18,7 @@ Prompts should normally contain only:
 
 BeeDrill is a Solana security-control validation module for BeeAgent.
 
-Its primary product responsibility is to validate whether technical defenses
-actually detect and contain reproducible attacks under controlled conditions.
+Its primary product responsibility is to validate whether technical defenses actually detect and contain reproducible attacks under controlled conditions.
 
 BeeDrill is not a second BeeAgent runtime.
 
@@ -34,26 +32,21 @@ Use this order:
 4. Current repository contracts and documentation.
 5. Implementation reports and previous comments as supporting evidence only.
 
-The actual target worktree, current files, diff, tests, package metadata,
-runtime evidence and integration evidence take precedence over stale reports.
+The actual target worktree, current files, diff, tests, package metadata, runtime evidence and integration evidence take precedence over stale reports.
 
 When instructions materially conflict, stop and report the conflict.
 
 ## Agent role separation
 
-Tool, authority and read-only restrictions apply only to the current task and
-agent.
+Tool, authority and read-only restrictions apply only to the current task and agent.
 
-When producing a prompt for another agent, do not copy the current agent's tool
-restrictions unless they are explicitly required for that executor.
+When producing a prompt for another agent, do not copy the current agent's tool restrictions unless they are explicitly required for that executor.
 
-Planning, prompt-preparation and final-review tasks may use BeeMCP in
-read-only mode.
+Planning, prompt-preparation and final-review tasks may use BeeMCP in read-only mode.
 
 Implementation and correction prompts are executed by Copilot or Codex.
 
-They must instruct the executor to work in the exact local worktree using its
-available repository tools.
+They must instruct the executor to work in the exact local worktree using its available repository tools.
 
 They must not require:
 
@@ -65,8 +58,7 @@ They must not require:
 
 ## BeeMCP rules
 
-These rules apply only when the current task explicitly selects BeeMCP for
-read-only planning, prompt preparation or review.
+These rules apply only when the current task explicitly selects BeeMCP for read-only planning, prompt preparation or review.
 
 BeeMCP is read-only.
 
@@ -95,8 +87,7 @@ Do not repeatedly call `get_review_bundle` expecting pagination.
 
 ### GitHub context resolution
 
-When any supplied input contains a supported GitHub Issue or Pull Request URL,
-call `get_github_context` before interpreting that input.
+When any supplied input contains a supported GitHub Issue or Pull Request URL, call `get_github_context` before interpreting that input.
 
 For an Issue, read and consider:
 
@@ -112,21 +103,17 @@ For a Pull Request, read and consider:
 - reviews;
 - inline review comments.
 
-A GitHub URL is an instruction to load its complete available context, not
-merely a reference to include in the output.
+A GitHub URL is an instruction to load its complete available context, not merely a reference to include in the output.
 
 When pasted content and a GitHub URL are supplied together, consider both.
 
-If they materially conflict, report the conflict instead of silently choosing
-one.
+If they materially conflict, report the conflict instead of silently choosing one.
 
 Comments provide context and do not automatically expand the approved scope.
 
 Explicit accepted clarifications may refine the Issue or PR contract.
 
-If mandatory GitHub context is unavailable, incomplete or reported as
-truncated, return the applicable incomplete-workflow result instead of
-proceeding from partial context.
+If mandatory GitHub context is unavailable, incomplete or reported as truncated, return the applicable incomplete-workflow result instead of proceeding from partial context.
 
 ### Exact target resolution
 
@@ -138,8 +125,7 @@ Before planning or review:
 4. call `get_project_context`;
 5. verify project, path, branch, HEAD and dirty state.
 
-For final review, verify the expected base branch from the complete review
-manifest.
+For final review, verify the expected base branch from the complete review manifest.
 
 Do not infer a target from a branch name.
 
@@ -154,14 +140,11 @@ Repository inspection is incomplete while required data is:
 - omitted;
 - accompanied by continuation metadata.
 
-For manifests and diffs, continue with the exact `next_cursor` while
-`has_more=true`.
+For manifests and diffs, continue with the exact `next_cursor` while `has_more=true`.
 
-For files, continue with the exact `next_line` and `next_column` until both are
-null.
+For files, continue with the exact `next_line` and `next_column` until both are null.
 
-Read required files listed under `omitted_files` or `related_omitted_files`
-directly with `read_project_file`.
+Read required files listed under `omitted_files` or `related_omitted_files` directly with `read_project_file`.
 
 Treat `truncated=true` as incomplete review data.
 
@@ -249,8 +232,7 @@ BeeDrill is not primarily:
 - a generic workflow engine;
 - a multi-chain framework.
 
-Do not expand the product into adjacent categories without an approved product
-and roadmap decision.
+Do not expand the product into adjacent categories without an approved product and roadmap decision.
 
 ## Architecture boundary
 
@@ -343,8 +325,7 @@ BeeSDK must not acquire BeeDrill-specific:
 - generic layouts;
 - generic UI/session/presentation behavior.
 
-BeeUI integration is not required merely because a visual dashboard would be
-useful.
+BeeUI integration is not required merely because a visual dashboard would be useful.
 
 ### BeeScan owns
 
@@ -354,8 +335,7 @@ useful.
 - security-tool execution;
 - BeeScan-specific workflows.
 
-BeeDrill does not depend on BeeScan for the hackathon MVP unless an approved
-future contract explicitly requires it.
+BeeDrill does not depend on BeeScan for the hackathon MVP unless an approved future contract explicitly requires it.
 
 ## Architecture prohibitions
 
@@ -392,8 +372,7 @@ Host/module integration must preserve architecture ownership.
 
 Do not introduce circular dependencies merely to simplify integration.
 
-A related repository is not an implementation target unless the approved Issue
-explicitly assigns changes to it.
+A related repository is not an implementation target unless the approved Issue explicitly assigns changes to it.
 
 ## Sources of truth
 
@@ -449,15 +428,11 @@ Rules:
 - scenario data is not execution authority;
 - evidence is not execution authority;
 - runtime identity and policy remain host-owned;
-- preserve compatibility unless the approved Issue explicitly permits a
-  breaking change.
+- preserve compatibility unless the approved Issue explicitly permits a breaking change.
 
 ## First-party package initializers
 
-All first-party Python `__init__.py` files must remain byte-empty. They contain
-no imports or re-exports, `__all__`, version constants, registration or
-initialization logic, side effects or package metadata. Stable public imports
-use explicit public modules such as `beedrill.domain` and `beedrill.module`.
+All first-party Python `__init__.py` files must remain byte-empty. They contain no imports or re-exports, `__all__`, version constants, registration or initialization logic, side effects or package metadata. Stable public imports use explicit public modules such as `beedrill.domain` and `beedrill.module`.
 
 ## Implementation rules
 
@@ -468,8 +443,7 @@ use explicit public modules such as `beedrill.domain` and `beedrill.module`.
 - Do not add speculative architecture.
 - Reuse existing contracts and implementation before creating new abstractions.
 - Do not duplicate existing contracts or logic.
-- Do not create generic frameworks for future scenarios, chains or providers
-  without demonstrated current need.
+- Do not create generic frameworks for future scenarios, chains or providers without demonstrated current need.
 - Preserve BeeDrill/BeeAgent/BeeSDK ownership boundaries.
 - Follow PEP 8.
 - Keep public identifiers, data fields, artifacts and documentation in English.
@@ -477,11 +451,9 @@ use explicit public modules such as `beedrill.domain` and `beedrill.module`.
 - Keep security-sensitive authority explicit.
 - Preserve deterministic behavior where required by the product contract.
 - Fail closed when critical security evidence is missing or invalid.
-- Do not change `pyproject.toml.version` for ordinary feature, fix, docs or
-  chore work.
+- Do not change `pyproject.toml.version` for ordinary feature, fix, docs or chore work.
 
-When a requested behavior actually belongs to BeeAgent or BeeSDK, do not create
-a BeeDrill-local workaround merely to avoid cross-repository ownership.
+When a requested behavior actually belongs to BeeAgent or BeeSDK, do not create a BeeDrill-local workaround merely to avoid cross-repository ownership.
 
 ## KISS rules
 
@@ -537,8 +509,32 @@ When public fields, signatures, exports or artifact formats change:
 - verify exports where applicable;
 - verify affected BeeAgent/BeeSDK compatibility when required by the Issue.
 
-Implementation convenience is not sufficient reason to broaden a public
-contract.
+Implementation convenience is not sufficient reason to broaden a public contract.
+
+## Markdown formatting
+
+For Markdown documentation, use one logical prose paragraph per physical line.
+
+Rules:
+
+- one prose paragraph = one physical line;
+- one list item = one physical line;
+- do not hard-wrap prose at 80/88/100/120 columns;
+- keep line breaks only when they are structurally meaningful;
+- preserve headings, blank-line paragraph boundaries, lists, tables, blockquotes, fenced code blocks, Mermaid, YAML/TOML/JSON/shell/Python examples and other structured Markdown;
+- do not reflow or wrap prose automatically;
+- when editing existing Markdown, preserve this formatting policy in changed sections.
+
+Example:
+
+```text
+Wrong:
+Sibling repositories are needed only when changing BeeDrill, BeeSDK or related
+source together.
+
+Correct:
+Sibling repositories are needed only when changing BeeDrill, BeeSDK or related source together.
+```
 
 ## Determinism rules
 
@@ -587,8 +583,7 @@ Evidence must not grant:
 - new RPC permissions;
 - new process permissions.
 
-Missing, malformed, incomplete or inconsistent critical evidence must not
-silently produce PASS.
+Missing, malformed, incomplete or inconsistent critical evidence must not silently produce PASS.
 
 Use the explicit behavior defined by the relevant contract, such as:
 
@@ -608,8 +603,7 @@ production/mainnet mutation
 = out of scope
 ```
 
-Attack execution must be restricted to explicitly approved isolated
-environments.
+Attack execution must be restricted to explicitly approved isolated environments.
 
 Scenario or module-controlled input must not directly grant or override:
 
@@ -631,8 +625,7 @@ scenario input
 → arbitrary subprocess
 ```
 
-is prohibited unless an explicitly approved future architecture defines and
-secures that exact boundary.
+is prohibited unless an explicitly approved future architecture defines and secures that exact boundary.
 
 ## Dependency and lockfile policy
 
@@ -734,8 +727,7 @@ Missing verification is blocking only when required by:
 
 ## Security
 
-- Never expose secrets, tokens, passwords, private keys or complete environment
-  dumps.
+- Never expose secrets, tokens, passwords, private keys or complete environment dumps.
 - Do not place production credentials or private keys in fixtures.
 - Treat scenario/configuration input as untrusted.
 - Keep runtime authority host-owned.
@@ -745,15 +737,13 @@ Missing verification is blocking only when required by:
 - Restrict attack execution to approved isolated environments.
 - Keep RPC targets bounded where execution is involved.
 - Keep process execution bounded where execution is involved.
-- Require timeout and cleanup for security-sensitive process execution when
-  applicable.
+- Require timeout and cleanup for security-sensitive process execution when applicable.
 - Do not allow arbitrary filesystem paths from untrusted scenario input.
 - Do not leak secrets into artifacts, logs or tests.
 - Missing critical evidence must not silently become PASS.
 - Keep critical verdicts deterministic.
 - Preserve dependency direction and repository ownership.
-- External execution or egress requires explicit approved scope and security
-  review.
+- External execution or egress requires explicit approved scope and security review.
 
 ## Cross-repository work
 
@@ -797,9 +787,7 @@ generic presentation primitive
 → BeeUI
 ```
 
-Do not hide several repository implementations inside one BeeDrill Issue unless
-the approved task explicitly defines coordinated work and separate repository
-targets.
+Do not hide several repository implementations inside one BeeDrill Issue unless the approved task explicitly defines coordinated work and separate repository targets.
 
 ## Review rules
 
@@ -854,10 +842,8 @@ Use:
 
 - `.agents/skills/beedrill-plan-iteration/SKILL.md` for planning;
 - `.agents/skills/beedrill-implement-issue/SKILL.md` for implementation;
-- `.agents/skills/beedrill-verify-and-correct/SKILL.md` for independent
-  verification and correction;
-- `.agents/skills/beedrill-review-and-close/SKILL.md` for final review and PR
-  preparation.
+- `.agents/skills/beedrill-verify-and-correct/SKILL.md` for independent verification and correction;
+- `.agents/skills/beedrill-review-and-close/SKILL.md` for final review and PR preparation.
 
 ## Required implementation evidence
 

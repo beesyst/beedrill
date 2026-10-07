@@ -22,70 +22,29 @@ Completed validated regression results may include additive `ModuleResult.data["
 - MTTD: Mean/Measured Time To Detect for the evaluated drill contract
 - MTTC: Mean/Measured Time To Contain for the evaluated drill contract
 - Residual loss: economic damage remaining after evaluated controls act
-- Verdict: deterministic security-control outcome derived from validated
-  evidence
+- Verdict: deterministic security-control outcome derived from validated evidence
 - Authority: permission level assigned and enforced by the host
 - Artifact: structured output persisted through a host-owned artifact boundary
-- Replay: repeat execution/evaluation intended to preserve equivalent security
-  meaning
-- Production/mainnet: non-isolated real environment, outside current MVP attack
-  execution scope
+- Replay: repeat execution/evaluation intended to preserve equivalent security meaning
+- Production/mainnet: non-isolated real environment, outside current MVP attack execution scope
 
 ## 1. Goal
 
 BeeDrill provides continuous security-control validation for Solana protocols.
 
-For `isolated_solana_smoke`, BeeDrill supplies only the fixed
-`surfpool_local` intent through the BeeSDK `CapabilityCaller`. BeeAgent owns
-the isolated process, local RPC, policy, authority and cleanup. Returned
-capability evidence never upgrades BeeDrill's `READ_ONLY` authority.
+For `isolated_solana_smoke`, BeeDrill supplies only the fixed `surfpool_local` intent through the BeeSDK `CapabilityCaller`. BeeAgent owns the isolated process, local RPC, policy, authority and cleanup. Returned capability evidence never upgrades BeeDrill's `READ_ONLY` authority.
 
-For `reference_target_baseline`, BeeDrill supplies only the fixed
-`surfpool_local` and `reference_vault` intent. The package-owned
-`reference_target/reference_vault.json` resource defines the stable logical
-target identity, canonical initial state and integer lamport baseline. BeeAgent
-resolves that resource, owns the isolated lifecycle and returns bounded
-evidence; malformed or incomplete evidence is refused by the module.
+For `reference_target_baseline`, BeeDrill supplies only the fixed `surfpool_local` and `reference_vault` intent. The package-owned `reference_target/reference_vault.json` resource defines the stable logical target identity, canonical initial state and integer lamport baseline. BeeAgent resolves that resource, owns the isolated lifecycle and returns bounded evidence; malformed or incomplete evidence is refused by the module.
 
-For `reference_target_attack`, BeeDrill supplies that same fixed intent through
-the BeeSDK `CapabilityCaller`. BeeAgent alone owns the isolated target and
-transaction execution. A successful response must provide the exact bounded
-economic evidence contract in section 17; BeeDrill emits it as an artifact only
-after strict validation and remains `READ_ONLY`.
+For `reference_target_attack`, BeeDrill supplies that same fixed intent through the BeeSDK `CapabilityCaller`. BeeAgent alone owns the isolated target and transaction execution. A successful response must provide the exact bounded economic evidence contract in section 17; BeeDrill emits it as an artifact only after strict validation and remains `READ_ONLY`.
 
-For `reference_target_detection`, BeeDrill supplies only that same fixed intent
-to `solana.reference_target_detection`. BeeAgent owns the fixed monitor, its
-RPC observation, attack execution, timeout and cleanup. BeeDrill accepts only
-the exact detection evidence contract in section 17.2, writes it through
-`ArtifactPort`, and keeps completed `not_observed` separate from host refusal,
-timeout and error.
+For `reference_target_detection`, BeeDrill supplies only that same fixed intent to `solana.reference_target_detection`. BeeAgent owns the fixed monitor, its RPC observation, attack execution, timeout and cleanup. BeeDrill accepts only the exact detection evidence contract in section 17.2, writes it through `ArtifactPort`, and keeps completed `not_observed` separate from host refusal, timeout and error.
 
-For `reference_target_containment_replay`, BeeDrill makes two fresh calls only
-to `solana.reference_target_containment`, first with the host-bounded `broken`
-condition and then with `fixed`. It validates each complete host evidence shape,
-uses the measured broken residual loss as the comparable gross-loss baseline,
-and evaluates both phases with `evaluate_drill(...)`. The completed module
-result and replay artifact expose the fixed-phase evaluator result as
-`security_verdict`, independently of host completion status. A valid fixed
-phase may therefore report `fail`; a passing broken-phase negative control is
-an inconsistent calibration and cannot report `pass`. BeeDrill remains
-`READ_ONLY`; it neither selects execution parameters nor authors a verdict.
+For `reference_target_containment_replay`, BeeDrill makes two fresh calls only to `solana.reference_target_containment`, first with the host-bounded `broken` condition and then with `fixed`. It validates each complete host evidence shape, uses the measured broken residual loss as the comparable gross-loss baseline, and evaluates both phases with `evaluate_drill(...)`. The completed module result and replay artifact expose the fixed-phase evaluator result as `security_verdict`, independently of host completion status. A valid fixed phase may therefore report `fail`; a passing broken-phase negative control is an inconsistent calibration and cannot report `pass`. BeeDrill remains `READ_ONLY`; it neither selects execution parameters nor authors a verdict.
 
-For `reference_oracle_manipulation_replay`, BeeDrill supplies only the fixed
-`surfpool_local` and `reference_oracle_market` intent. It makes one bounded
-host call for each `broken` and `fixed` defense condition to
-`solana.reference_oracle_manipulation`, validates the canonical and manipulated
-integer price, collateral, LTV, debt, reserve, detector, containment and
-second-borrow evidence, and uses the broken 50,000,000 micro-USDC residual as
-the gross-loss baseline for both existing evaluator calls. The completed
-module result and replay artifact expose the fixed-phase evaluator result as
-`security_verdict`, independently of host completion status. A valid fixed
-phase may therefore report `fail`; a passing broken-phase negative control is
-an inconsistent calibration and cannot report `pass`. BeeAgent owns the
-isolated target and all execution; BeeDrill remains `READ_ONLY`.
+For `reference_oracle_manipulation_replay`, BeeDrill supplies only the fixed `surfpool_local` and `reference_oracle_market` intent. It makes one bounded host call for each `broken` and `fixed` defense condition to `solana.reference_oracle_manipulation`, validates the canonical and manipulated integer price, collateral, LTV, debt, reserve, detector, containment and second-borrow evidence, and uses the broken 50,000,000 micro-USDC residual as the gross-loss baseline for both existing evaluator calls. The completed module result and replay artifact expose the fixed-phase evaluator result as `security_verdict`, independently of host completion status. A valid fixed phase may therefore report `fail`; a passing broken-phase negative control is an inconsistent calibration and cannot report `pass`. BeeAgent owns the isolated target and all execution; BeeDrill remains `READ_ONLY`.
 
-The product goal is to verify that defenses actually work under reproducible
-attack conditions.
+The product goal is to verify that defenses actually work under reproducible attack conditions.
 
 BeeDrill is built around this distinction:
 
@@ -155,8 +114,7 @@ BeeDrill is not responsible for generic:
 
 ## 4. MVP boundary
 
-The MVP focuses on proving one complete security-control validation loop on
-Solana.
+The MVP focuses on proving one complete security-control validation loop on Solana.
 
 The required product behavior is:
 
@@ -241,8 +199,7 @@ beedrill -> beesdk
 
 BeeSDK must not depend on BeeDrill.
 
-BeeDrill should not import private BeeAgent internals when an approved
-public/shared contract is available.
+BeeDrill should not import private BeeAgent internals when an approved public/shared contract is available.
 
 Cross-repository runtime integration must preserve repository ownership.
 
@@ -266,8 +223,7 @@ BeeDrill does not grant itself authority.
 
 ## 9. Module contract
 
-BeeDrill should conform to the approved shared module contract when the BeeSDK
-baseline is available.
+BeeDrill should conform to the approved shared module contract when the BeeSDK baseline is available.
 
 Conceptually the module supports:
 
@@ -306,14 +262,11 @@ artifact/storage implementation
 external execution and egress
 ```
 
-BeeDrill owns the drill-specific meaning of the evidence returned by those
-capabilities.
+BeeDrill owns the drill-specific meaning of the evidence returned by those capabilities.
 
 ## 11. Scenario contract
 
-A scenario represents one complete, reproducible security-control validation
-case. The BD-3 public domain contract is available from `beedrill` and is
-implemented in `beedrill.domain`.
+A scenario represents one complete, reproducible security-control validation case. The BD-3 public domain contract is available from `beedrill` and is implemented in `beedrill.domain`.
 
 `Scenario` contains these required immutable values:
 
@@ -330,17 +283,11 @@ evidence: EvidenceCompleteness(required, present, missing)
 verdict: DrillVerdict(status)
 ```
 
-`scenario_id`, all contract identifiers and all references are stable lowercase
-identifiers. `version` is an explicit positive integer. No model derives an
-identifier, version, verdict or evidence state from a clock, UUID, process or
-environment value. Attack steps are semantic descriptions only: their bounded
-fields do not carry an executable, command, script, code, process arguments,
-RPC destination, filesystem path or credentials.
+`scenario_id`, all contract identifiers and all references are stable lowercase identifiers. `version` is an explicit positive integer. No model derives an identifier, version, verdict or evidence state from a clock, UUID, process or environment value. Attack steps are semantic descriptions only: their bounded fields do not carry an executable, command, script, code, process arguments, RPC destination, filesystem path or credentials.
 
 Collections are immutable tuples in the model and are bounded to 32 values.
 
-This is a concrete contract for one Solana-first drill domain, not a generic
-scenario language or YAML DSL.
+This is a concrete contract for one Solana-first drill domain, not a generic scenario language or YAML DSL.
 
 ## 12. Scenario safety
 
@@ -361,52 +308,33 @@ host authority
 policy override
 ```
 
-The host remains responsible for translating approved bounded intent into
-execution.
+The host remains responsible for translating approved bounded intent into execution.
 
 ## 13. Target contract
 
-`Target` and `InitialState` describe the logical protocol and its known starting
-state. They are not runtime target selection, an RPC endpoint, an authority
-grant or an instruction to create state. A future host must resolve any
-execution target through its own approved isolated-environment policy.
+`Target` and `InitialState` describe the logical protocol and its known starting state. They are not runtime target selection, an RPC endpoint, an authority grant or an instruction to create state. A future host must resolve any execution target through its own approved isolated-environment policy.
 
 Production/mainnet mutation remains outside this data contract.
 
 ## 14. Attack contract
 
-Each `AttackStep` carries an attack identifier, a bounded attack type and the
-expected observable effect. It represents the adversarial condition, not how to
-execute it. BeeAgent retains execution mechanism, process/RPC lifecycle,
-timeouts, cleanup and authority.
+Each `AttackStep` carries an attack identifier, a bounded attack type and the expected observable effect. It represents the adversarial condition, not how to execute it. BeeAgent retains execution mechanism, process/RPC lifecycle, timeouts, cleanup and authority.
 
 ## 15. Detector contract
 
-`ExpectedControl` has one of two types: `detector` or `containment`. A detector
-must explicitly expect `observed`; a containment control must explicitly expect
-`succeeded`. An `Observation` explicitly records `observed`, `not_observed` or
-`missing` for an attack or expected control. Detector integration details are
-not part of BD-3.
+`ExpectedControl` has one of two types: `detector` or `containment`. A detector must explicitly expect `observed`; a containment control must explicitly expect `succeeded`. An `Observation` explicitly records `observed`, `not_observed` or `missing` for an attack or expected control. Detector integration details are not part of BD-3.
 
 ## 16. Containment contract
 
-`ContainmentResult` references a declared containment control and explicitly
-states `succeeded`, `failed` or `missing`; no request or prose is treated as
-proof of containment. Containment execution is outside BD-3.
+`ContainmentResult` references a declared containment control and explicitly states `succeeded`, `failed` or `missing`; no request or prose is treated as proof of containment. Containment execution is outside BD-3.
 
 ## 17. Evidence contract
 
-`EvidenceCompleteness` explicitly lists required, present and missing evidence
-identifiers. Present and missing values must be unique, disjoint and together
-partition required values. `EconomicDelta` carries an uppercase asset symbol, a
-unit identifier and explicit integer `before` and `after` values. Integer units
-are authoritative; floats are rejected.
+`EvidenceCompleteness` explicitly lists required, present and missing evidence identifiers. Present and missing values must be unique, disjoint and together partition required values. `EconomicDelta` carries an uppercase asset symbol, a unit identifier and explicit integer `before` and `after` values. Integer units are authoritative; floats are rejected.
 
 ### 17.1 Reference-target attack evidence
 
-The `reference_target_attack` capability has one fixed request:
-`{"target_profile": "surfpool_local", "target_id": "reference_vault"}`. Its
-successful evidence has exactly these fields and no others:
+The `reference_target_attack` capability has one fixed request: `{"target_profile": "surfpool_local", "target_id": "reference_vault"}`. Its successful evidence has exactly these fields and no others:
 
 - `target_id`: `reference_vault`;
 - `initial_state_id`: `reference_vault_canonical_v1`;
@@ -419,132 +347,43 @@ successful evidence has exactly these fields and no others:
 - `unsafe_withdraw_count_after`: `1`;
 - `gross_loss_lamports`: `100`.
 
-BeeDrill accepts the evidence only when the integer loss equals `before - after`
-and the complete state transition matches this fixed isolated reference target.
-It writes one `reference_target_attack.json` artifact containing the bounded
-evidence. Refused, timeout, error and invalid host results remain non-successful
-module results; this evidence is neither a detector result nor a verdict.
+BeeDrill accepts the evidence only when the integer loss equals `before - after` and the complete state transition matches this fixed isolated reference target. It writes one `reference_target_attack.json` artifact containing the bounded evidence. Refused, timeout, error and invalid host results remain non-successful module results; this evidence is neither a detector result nor a verdict.
 
 ### 17.2 Reference-target detection evidence
 
-The `reference_target_detection` capability has the same sole fixed request as
-the attack capability. Successful evidence identifies only
-`reference_vault_outflow_monitor` and `vault_outflow_signal`, includes a
-non-negative `attack_start_slot`, and has no unknown fields. For
-`detection_status: observed`, it additionally has a non-negative
-`first_detection_slot` that is not earlier than `attack_start_slot`. For
-`detection_status: not_observed`, that field is absent. BeeDrill rejects all
-other identities, status values, field shapes and timing relations. It writes
-the validated bounded evidence to `reference_target_detection.json`; host
-refusal, timeout and error remain distinct non-successful module results.
+The `reference_target_detection` capability has the same sole fixed request as the attack capability. Successful evidence identifies only `reference_vault_outflow_monitor` and `vault_outflow_signal`, includes a non-negative `attack_start_slot`, and has no unknown fields. For `detection_status: observed`, it additionally has a non-negative `first_detection_slot` that is not earlier than `attack_start_slot`. For `detection_status: not_observed`, that field is absent. BeeDrill rejects all other identities, status values, field shapes and timing relations. It writes the validated bounded evidence to `reference_target_detection.json`; host refusal, timeout and error remain distinct non-successful module results.
 
 ### 17.3 Reference-target containment replay evidence
 
-The containment replay has one fixed BeeDrill request identity and two fixed
-host payloads: `{"target_profile": "surfpool_local", "target_id":
-"reference_vault", "defense_condition": "broken"}` and the equivalent
-`fixed` payload. Each successful host response has exactly bounded target,
-state, timing, detector, containment, two-attempt and integer-lamport fields.
+The containment replay has one fixed BeeDrill request identity and two fixed host payloads: `{"target_profile": "surfpool_local", "target_id": "reference_vault", "defense_condition": "broken"}` and the equivalent `fixed` payload. Each successful host response has exactly bounded target, state, timing, detector, containment, two-attempt and integer-lamport fields.
 
-For `broken`, the second unsafe withdrawal must succeed, containment has no
-slot, and the final residual loss is 200 lamports. For `fixed`, the second
-unsafe withdrawal must be rejected by the target, containment has a slot not
-earlier than detection, and the final residual loss is 100 lamports. Both start
-from the canonical 1,000,000-lamport state and use the identical two-attempt
-attack sequence. The comparison artifact records validated host evidence,
-metrics, and evaluator-derived `fail` then `pass` verdicts. Missing,
-contradictory, refused, timed-out, or erroneous host evidence cannot produce a
-PASS result.
+For `broken`, the second unsafe withdrawal must succeed, containment has no slot, and the final residual loss is 200 lamports. For `fixed`, the second unsafe withdrawal must be rejected by the target, containment has a slot not earlier than detection, and the final residual loss is 100 lamports. Both start from the canonical 1,000,000-lamport state and use the identical two-attempt attack sequence. The comparison artifact records validated host evidence, metrics, and evaluator-derived `fail` then `pass` verdicts. Missing, contradictory, refused, timed-out, or erroneous host evidence cannot produce a PASS result.
 
 ### 17.4 Reference oracle-manipulation replay evidence
 
-The oracle-manipulation replay has one fixed BeeDrill request identity and two
-fixed host payloads: `{"target_profile": "surfpool_local", "target_id":
-"reference_oracle_market", "defense_condition": "broken"}` and the
-equivalent `fixed` payload. The package-owned
-`reference_target/reference_oracle_market.json` resource defines canonical
-integer economics: 1,000,000 micro-USD oracle price, 2,000,000 micro-USD
-manipulated price, 100 collateral units, 5,000 bps LTV, 50,000,000 micro-USDC
-canonical debt limit, 50,000,000 micro-USDC initial debt, and a fixed
-25,000,000 micro-USDC borrow increment. Its fixed isolated program source is
-`reference_target/oracle_market/src/lib.rs`; the host selects its build and
-deployment path without accepting one from BeeDrill input.
+The oracle-manipulation replay has one fixed BeeDrill request identity and two fixed host payloads: `{"target_profile": "surfpool_local", "target_id": "reference_oracle_market", "defense_condition": "broken"}` and the equivalent `fixed` payload. The package-owned `reference_target/reference_oracle_market.json` resource defines canonical integer economics: 1,000,000 micro-USD oracle price, 2,000,000 micro-USD manipulated price, 100 collateral units, 5,000 bps LTV, 50,000,000 micro-USDC canonical debt limit, 50,000,000 micro-USDC initial debt, and a fixed 25,000,000 micro-USDC borrow increment. Its fixed isolated program source is `reference_target/oracle_market/src/lib.rs`; the host selects its build and deployment path without accepting one from BeeDrill input.
 
-Successful host evidence has exactly bounded identity, price, debt, reserve,
-detector, containment, slot and second-borrow fields. It must prove the first
-borrow changed debt from 50,000,000 to 75,000,000 micro-USDC and reserve from
-100,000,000 to 75,000,000 micro-USDC after the fixed manipulation. Detection
-must independently identify `reference_oracle_deviation_monitor` and
-`oracle_price_deviation_signal`. Broken containment must leave borrowing open,
-allow the second borrow and finish with 100,000,000 micro-USDC debt and
-50,000,000 micro-USDC residual bad debt. Fixed containment must prove the
-target state blocks borrowing, reject the same second borrow and retain
-75,000,000 micro-USDC debt with 25,000,000 micro-USDC residual bad debt.
+Successful host evidence has exactly bounded identity, price, debt, reserve, detector, containment, slot and second-borrow fields. It must prove the first borrow changed debt from 50,000,000 to 75,000,000 micro-USDC and reserve from 100,000,000 to 75,000,000 micro-USDC after the fixed manipulation. Detection must independently identify `reference_oracle_deviation_monitor` and `oracle_price_deviation_signal`. Broken containment must leave borrowing open, allow the second borrow and finish with 100,000,000 micro-USDC debt and 50,000,000 micro-USDC residual bad debt. Fixed containment must prove the target state blocks borrowing, reject the same second borrow and retain 75,000,000 micro-USDC debt with 25,000,000 micro-USDC residual bad debt.
 
-Residual loss is `max(0, observed_debt - canonical_debt_limit)`. Both evaluator
-calls use the broken 50,000,000 micro-USDC residual as gross loss. The
-comparison artifact contains validated bounded host evidence, computed metrics,
-and the existing evaluator's `fail` then `pass` verdicts. Missing,
-contradictory, refused, timed-out, or erroneous host evidence cannot produce a
-PASS result.
+Residual loss is `max(0, observed_debt - canonical_debt_limit)`. Both evaluator calls use the broken 50,000,000 micro-USDC residual as gross loss. The comparison artifact contains validated bounded host evidence, computed metrics, and the existing evaluator's `fail` then `pass` verdicts. Missing, contradictory, refused, timed-out, or erroneous host evidence cannot produce a PASS result.
 
 ### 17.5 SPL Token freeze-containment replay evidence
 
-`spl_token_freeze_containment_replay` is BeeDrill's one external-target validation
-case. Its sole request is `{"target_profile": "surfpool_local", "target_id":
-"spl_token_freeze_containment"}`. BeeDrill issues only the two bounded variants
-with `defense_condition` set to `broken` and `fixed`; it cannot supply a program
-ID, RPC endpoint, account address, executable, transaction, credential or
-execution authority.
+`spl_token_freeze_containment_replay` is BeeDrill's one external-target validation case. Its sole request is `{"target_profile": "surfpool_local", "target_id": "spl_token_freeze_containment"}`. BeeDrill issues only the two bounded variants with `defense_condition` set to `broken` and `fixed`; it cannot supply a program ID, RPC endpoint, account address, executable, transaction, credential or execution authority.
 
-The external target is the canonical SPL Token program, whose fixed program ID
-is `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`. BeeAgent resolves and verifies
-that identity host-side in its isolated Surfpool environment; BeeDrill accepts
-only returned evidence containing that exact identity. The host creates fresh,
-equivalent ephemeral state for each phase: 1,000,000 source base units and zero
-target base units. The fixed attack is two transfers of 100,000 base units; the
-first succeeds in both phases. Detection must identify the bounded target-balance
-monitor and signal at an observed slot no earlier than the attack start.
+The external target is the canonical SPL Token program, whose fixed program ID is `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`. BeeAgent resolves and verifies that identity host-side in its isolated Surfpool environment; BeeDrill accepts only returned evidence containing that exact identity. The host creates fresh, equivalent ephemeral state for each phase: 1,000,000 source base units and zero target base units. The fixed attack is two transfers of 100,000 base units; the first succeeds in both phases. Detection must identify the bounded target-balance monitor and signal at an observed slot no earlier than the attack start.
 
-For `broken`, the target account remains `initialized`, containment has no slot,
-and the identical second transfer succeeds, leaving 200,000 target base units.
-The expected fixed baseline proves the target account is `frozen` after
-containment and the identical second transfer is rejected, leaving 100,000
-target base units. The resulting artifact,
-`spl_token_freeze_containment_replay.json`, contains only validated bounded
-evidence, evaluator metrics and evaluator-derived verdicts: broken `fail`, then
-fixed `pass` when the baseline fixed evidence proves lower residual loss. A
-valid fixed-control regression with failed or ineffective containment instead
-completes with evaluator-derived fixed `fail` and `security_verdict: fail`; it
-is not a host or module error. Malformed, contradictory, refused, timed-out, or
-erroneous evidence remains non-successful and cannot produce a completed
-security verdict. The artifact excludes host diagnostics, keys, credentials and
-raw runtime output.
+For `broken`, the target account remains `initialized`, containment has no slot, and the identical second transfer succeeds, leaving 200,000 target base units. The expected fixed baseline proves the target account is `frozen` after containment and the identical second transfer is rejected, leaving 100,000 target base units. The resulting artifact, `spl_token_freeze_containment_replay.json`, contains only validated bounded evidence, evaluator metrics and evaluator-derived verdicts: broken `fail`, then fixed `pass` when the baseline fixed evidence proves lower residual loss. A valid fixed-control regression with failed or ineffective containment instead completes with evaluator-derived fixed `fail` and `security_verdict: fail`; it is not a host or module error. Malformed, contradictory, refused, timed-out, or erroneous evidence remains non-successful and cannot produce a completed security verdict. The artifact excludes host diagnostics, keys, credentials and raw runtime output.
 
-To reproduce it, run the BeeAgent-owned `solana.spl_token_freeze_containment`
-capability through the BeeDrill case in the approved isolated environment. The
-host owns Surfpool, RPC, the canonical program resolution, transactions,
-timeouts and cleanup. A completed host capability alone is not a security
-verdict, and refused, timeout, error or malformed evidence remains distinct from
-a successful evaluation.
+To reproduce it, run the BeeAgent-owned `solana.spl_token_freeze_containment` capability through the BeeDrill case in the approved isolated environment. The host owns Surfpool, RPC, the canonical program resolution, transactions, timeouts and cleanup. A completed host capability alone is not a security verdict, and refused, timeout, error or malformed evidence remains distinct from a successful evaluation.
 
-This validates one real SPL Token account-freeze containment pattern; it does
-not establish arbitrary-protocol compatibility, generic SPL Token adapter
-support, production/mainnet mutation safety or coverage of controls beyond this
-specific two-transfer replay.
+This validates one real SPL Token account-freeze containment pattern; it does not establish arbitrary-protocol compatibility, generic SPL Token adapter support, production/mainnet mutation safety or coverage of controls beyond this specific two-transfer replay.
 
 ## 18. Evidence validity
 
-Critical invalid data is rejected, including unknown fields, missing required
-fields, invalid identifiers/enums/integers, duplicate identifiers and
-inconsistent evidence partitioning. A scenario with missing evidence cannot
-carry a `pass` verdict.
+Critical invalid data is rejected, including unknown fields, missing required fields, invalid identifiers/enums/integers, duplicate identifiers and inconsistent evidence partitioning. A scenario with missing evidence cannot carry a `pass` verdict.
 
-At the capability boundary, BeeDrill accepts only type-valid fixed-name envelope
-fields and exact dictionary data and diagnostics; malformed envelopes are explicit
-non-successful outcomes. Every security-relevant integer must be non-boolean,
-non-negative and no greater than 1,000,000,000 before evaluator construction or
-arithmetic.
+At the capability boundary, BeeDrill accepts only type-valid fixed-name envelope fields and exact dictionary data and diagnostics; malformed envelopes are explicit non-successful outcomes. Every security-relevant integer must be non-boolean, non-negative and no greater than 1,000,000,000 before evaluator construction or arithmetic.
 
 ## 19. Evidence is not authority
 
@@ -562,26 +401,13 @@ scenario != runtime identity
 
 ## 19.1 JSON conversion and verdict values
 
-`scenario_from_dict`, `scenario_from_json`, `scenario_to_dict` and
-`scenario_to_json` are the only BD-3 conversion functions. Input objects are
-strict: every object rejects unknown fields. This bounded schema therefore also
-rejects execution-shaped fields without attempting to interpret ordinary prose.
+`scenario_from_dict`, `scenario_from_json`, `scenario_to_dict` and `scenario_to_json` are the only BD-3 conversion functions. Input objects are strict: every object rejects unknown fields. This bounded schema therefore also rejects execution-shaped fields without attempting to interpret ordinary prose.
 
-Canonical JSON uses sorted keys, compact separators and UTF-8-compatible text;
-the same valid model always produces byte-identical JSON and conversion adds no
-timestamps, random values or environment state.
+Canonical JSON uses sorted keys, compact separators and UTF-8-compatible text; the same valid model always produces byte-identical JSON and conversion adds no timestamps, random values or environment state.
 
-`tests/fixtures/failed_containment_drill.json` is the sanitized deterministic
-baseline: the attack and detector are observed, containment fails, and explicit
-USDC integer-unit before/after evidence records damage of 480,000,000 units.
-All required evidence is present and its supplied verdict is an expected test
-oracle only. It contains no execution instructions, private keys, seed phrases
-or credentials.
+`tests/fixtures/failed_containment_drill.json` is the sanitized deterministic baseline: the attack and detector are observed, containment fails, and explicit USDC integer-unit before/after evidence records damage of 480,000,000 units. All required evidence is present and its supplied verdict is an expected test oracle only. It contains no execution instructions, private keys, seed phrases or credentials.
 
-`DrillVerdict.status` is a required typed value: `pass`, `fail` or
-`incomplete`. Scenario or fixture values are expected test oracles, not runtime
-verdict authority. Runtime/product verdicts are created only by
-`evaluate_drill` from `DrillEvidence`.
+`DrillVerdict.status` is a required typed value: `pass`, `fail` or `incomplete`. Scenario or fixture values are expected test oracles, not runtime verdict authority. Runtime/product verdicts are created only by `evaluate_drill` from `DrillEvidence`.
 
 ## 20. Deterministic evaluator
 
@@ -591,18 +417,9 @@ verdict authority. Runtime/product verdicts are created only by
 from beedrill.evaluator import DrillEvidence, evaluate_drill
 ```
 
-`DrillEvidence` combines validated evidence completeness, detection and
-containment results, Solana slot references, gross loss and residual loss.
-`evaluate_drill` returns `DrillEvaluation(metrics, verdict)` and never reads a
-scenario or fixture verdict. The evaluator performs no I/O, starts no runtime,
-changes no authority and has no AI/LLM input.
+`DrillEvidence` combines validated evidence completeness, detection and containment results, Solana slot references, gross loss and residual loss. `evaluate_drill` returns `DrillEvaluation(metrics, verdict)` and never reads a scenario or fixture verdict. The evaluator performs no I/O, starts no runtime, changes no authority and has no AI/LLM input.
 
-`EconomicLoss(asset, unit, economic_basis, amount)` uses non-negative integer
-amounts. Gross and residual loss comparisons require exactly equal asset, unit
-and economic basis. The evaluator computes
-`capital_saved = gross_attack_loss - residual_loss` in the same integer unit.
-Residual loss greater than gross loss, or non-zero residual loss when gross loss
-is zero, is contradictory evidence and is rejected.
+`EconomicLoss(asset, unit, economic_basis, amount)` uses non-negative integer amounts. Gross and residual loss comparisons require exactly equal asset, unit and economic basis. The evaluator computes `capital_saved = gross_attack_loss - residual_loss` in the same integer unit. Residual loss greater than gross loss, or non-zero residual loss when gross loss is zero, is contradictory evidence and is rejected.
 
 ## 21. MTTD
 
@@ -622,9 +439,7 @@ The evaluator defines the exact reference points and unit:
 MTTD slots = first_detection_slot - attack_start_slot
 ```
 
-Both values are non-negative integer Solana slots. Observed detection requires
-`first_detection_slot >= attack_start_slot`. Missing or `not_observed`
-detection has no MTTD; it cannot manufacture a metric.
+Both values are non-negative integer Solana slots. Observed detection requires `first_detection_slot >= attack_start_slot`. Missing or `not_observed` detection has no MTTD; it cannot manufacture a metric.
 
 MTTD must be derived deterministically from validated evidence.
 
@@ -638,14 +453,11 @@ The evaluator uses only:
 MTTC slots = first_containment_slot - first_detection_slot
 ```
 
-Successful containment requires observed detection and
-`first_containment_slot >= first_detection_slot`. Missing or unsuccessful
-containment has no MTTC. Slot metrics do not imply a wall-clock duration.
+Successful containment requires observed detection and `first_containment_slot >= first_detection_slot`. Missing or unsuccessful containment has no MTTC. Slot metrics do not imply a wall-clock duration.
 
 ## 23. Residual loss
 
-Residual loss represents measurable economic damage remaining after the tested
-controls act.
+Residual loss represents measurable economic damage remaining after the tested controls act.
 
 The calculation must:
 
@@ -655,9 +467,7 @@ The calculation must:
 - define missing-input behavior;
 - avoid subjective AI scoring.
 
-Gross attack loss and residual loss use equivalent asset, unit and economic
-basis. `capital_saved` is their deterministic integer difference. A positive
-capital-saved value with positive residual loss represents partial containment.
+Gross attack loss and residual loss use equivalent asset, unit and economic basis. `capital_saved` is their deterministic integer difference. A positive capital-saved value with positive residual loss represents partial containment.
 
 ## 24. Verdict contract
 
@@ -682,20 +492,11 @@ AI may explain a verdict.
 
 AI does not determine the critical verdict.
 
-The evaluator produces `INCOMPLETE` when critical evidence is missing, including
-missing slots for an observed detection or successful containment, missing loss
-values, missing evidence identifiers, or `missing` detection/containment
-results. It produces `FAIL` for completed valid evidence with
-`detection_status: not_observed` or `containment_status: failed`. For positive
-gross loss, `PASS` requires observed detection, successful containment and
-`residual_loss < gross_attack_loss`; equal residual loss is `FAIL`. For zero
-gross loss, residual loss must be zero and observed detection plus successful
-containment produces `PASS`.
+The evaluator produces `INCOMPLETE` when critical evidence is missing, including missing slots for an observed detection or successful containment, missing loss values, missing evidence identifiers, or `missing` detection/containment results. It produces `FAIL` for completed valid evidence with `detection_status: not_observed` or `containment_status: failed`. For positive gross loss, `PASS` requires observed detection, successful containment and `residual_loss < gross_attack_loss`; equal residual loss is `FAIL`. For zero gross loss, residual loss must be zero and observed detection plus successful containment produces `PASS`.
 
 ## 25. PASS semantics
 
-PASS means the approved scenario's required controls and outcome thresholds were
-satisfied by valid evidence.
+PASS means the approved scenario's required controls and outcome thresholds were satisfied by valid evidence.
 
 PASS must not mean merely:
 
@@ -728,8 +529,7 @@ The invariant is:
 
 ## 27. Replay contract
 
-Replay is used to confirm that a control change improves the outcome under an
-equivalent scenario.
+Replay is used to confirm that a control change improves the outcome under an equivalent scenario.
 
 A valid replay should preserve:
 
@@ -756,13 +556,11 @@ scenario fixture
 → expected verdict
 ```
 
-Real runtime drills may supplement fixture tests but do not replace deterministic
-domain tests.
+Real runtime drills may supplement fixture tests but do not replace deterministic domain tests.
 
 ## 29. Artifact contract
 
-BeeDrill may produce structured drill artifacts through the host-provided
-artifact boundary.
+BeeDrill may produce structured drill artifacts through the host-provided artifact boundary.
 
 Artifact content may include:
 
@@ -789,9 +587,7 @@ from beedrill.evaluator import DrillEvidence, DrillEvaluation, evaluate_drill
 from beedrill.module import BeeDrillModule
 ```
 
-`src/beedrill/__init__.py` is byte-empty and is not a re-export layer. Do not
-publish speculative domain types before their contracts are introduced by
-roadmap work.
+`src/beedrill/__init__.py` is byte-empty and is not a re-export layer. Do not publish speculative domain types before their contracts are introduced by roadmap work.
 
 ## 31. Package guarantees
 
@@ -808,11 +604,9 @@ BeeDrill should remain:
 
 Dependency additions must be explicit and justified.
 
-BeeDrill should not add a dependency merely because the dependency is common in
-larger security frameworks.
+BeeDrill should not add a dependency merely because the dependency is common in larger security frameworks.
 
-When BeeSDK becomes an actual package dependency, the declaration must refer to
-an approved available source.
+When BeeSDK becomes an actual package dependency, the declaration must refer to an approved available source.
 
 Do not invent future package versions.
 
@@ -872,8 +666,7 @@ BeeDrill
 
 BeeDrill does not depend on BeeScan for the MVP.
 
-Shared integration may be considered later only if a concrete product need is
-proven.
+Shared integration may be considered later only if a concrete product need is proven.
 
 ## 36. BeeUI relationship
 
@@ -963,18 +756,15 @@ documentation
 tests required for bootstrap
 ```
 
-Domain contracts, Surfpool execution, attack scenarios, metrics and additional
-integrations are added by their corresponding roadmap iterations.
+Domain contracts, Surfpool execution, attack scenarios, metrics and additional integrations are added by their corresponding roadmap iterations.
 
-Do not implement later iterations during bootstrap merely because their eventual
-shape is described in this specification.
+Do not implement later iterations during bootstrap merely because their eventual shape is described in this specification.
 
 ## Summary
 
 BeeDrill answers one product question:
 
-> Under a reproducible Solana attack, did the real security controls detect the
-> attack, contain it, and limit economic damage?
+> Under a reproducible Solana attack, did the real security controls detect the attack, contain it, and limit economic damage?
 
 The implementation should remain centered on:
 

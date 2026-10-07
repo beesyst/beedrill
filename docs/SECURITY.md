@@ -8,9 +8,7 @@
 
 This document defines practical security rules for `beedrill`.
 
-BeeDrill intentionally works with adversarial scenarios and security-control
-validation, so its security boundary is stricter than that of a normal domain
-library.
+BeeDrill intentionally works with adversarial scenarios and security-control validation, so its security boundary is stricter than that of a normal domain library.
 
 BeeDrill itself does not own generic execution infrastructure.
 
@@ -25,8 +23,7 @@ BeeAgent remains responsible for:
 - external egress;
 - storage implementation.
 
-BeeDrill is responsible for ensuring its domain inputs and outputs cannot be used
-to bypass those host controls.
+BeeDrill is responsible for ensuring its domain inputs and outputs cannot be used to bypass those host controls.
 
 Use this document with:
 
@@ -170,8 +167,7 @@ scenario.command
 subprocess.run(...)
 ```
 
-unless a future approved architecture defines a narrowly constrained and
-security-reviewed execution contract.
+unless a future approved architecture defines a narrowly constrained and security-reviewed execution contract.
 
 ## Surfpool isolation
 
@@ -183,8 +179,7 @@ Current rule:
 production/mainnet mutation = prohibited
 ```
 
-A drill must fail closed or refuse execution when the host cannot establish an
-approved isolated target.
+A drill must fail closed or refuse execution when the host cannot establish an approved isolated target.
 
 Do not silently fall back to another RPC environment.
 
@@ -192,8 +187,7 @@ Do not silently fall back to another RPC environment.
 
 RPC target selection is host-controlled.
 
-Scenario input must not be able to replace an approved RPC endpoint with an
-arbitrary endpoint.
+Scenario input must not be able to replace an approved RPC endpoint with an arbitrary endpoint.
 
 Where RPC execution exists, verify:
 
@@ -218,8 +212,7 @@ Host implementations should provide bounded:
 
 BeeDrill must not widen those controls through scenario payload.
 
-Unexpected process failure must not leave an unmanaged long-running test process
-when the host contract requires cleanup.
+Unexpected process failure must not leave an unmanaged long-running test process when the host contract requires cleanup.
 
 ## Credentials and private keys
 
@@ -238,8 +231,7 @@ Fixtures and examples must use synthetic values.
 
 Host/runtime is responsible for credential injection.
 
-Scenario and evidence objects should refer to bounded identities where necessary
-without containing production secret material.
+Scenario and evidence objects should refer to bounded identities where necessary without containing production secret material.
 
 ## Evidence is not authority
 
@@ -326,8 +318,7 @@ AI is not the final security authority.
 
 BeeDrill may define what detector signal is required.
 
-Detector execution or connection belongs to the approved integration/host
-boundary.
+Detector execution or connection belongs to the approved integration/host boundary.
 
 When detector evidence is required:
 
@@ -342,11 +333,9 @@ BeeDrill may define expected containment behavior.
 
 Actual control invocation must remain within an approved host/runtime path.
 
-Containment evidence must identify enough state to verify that the intended
-control actually acted.
+Containment evidence must identify enough state to verify that the intended control actually acted.
 
-A planned or requested pause is not equivalent to a confirmed containment
-effect.
+A planned or requested pause is not equivalent to a confirmed containment effect.
 
 ## Economic outcome integrity
 
@@ -354,8 +343,7 @@ Residual-loss calculations influence security verdicts.
 
 Inputs must be explicit and deterministic.
 
-Do not replace measurable economic outcome with a subjective risk score when the
-required state is available.
+Do not replace measurable economic outcome with a subjective risk score when the required state is available.
 
 Boundary and arithmetic cases should be tested.
 
@@ -397,8 +385,7 @@ Examples:
 
 Validation should be proportional to the contract.
 
-If BeeDrill introduces a parser or complex deserializer, the change becomes
-security-sensitive.
+If BeeDrill introduces a parser or complex deserializer, the change becomes security-sensitive.
 
 ## External execution and egress
 
@@ -411,8 +398,7 @@ BeeDrill must not silently introduce:
 - package installation;
 - remote code loading.
 
-Any new execution or egress path requires explicit approved scope and security
-review.
+Any new execution or egress path requires explicit approved scope and security review.
 
 ## Dependency direction
 
@@ -467,8 +453,7 @@ Host/runtime configuration belongs to BeeAgent.
 
 ## Logging
 
-Do not introduce a dedicated logging framework unless real BeeDrill behavior
-requires it.
+Do not introduce a dedicated logging framework unless real BeeDrill behavior requires it.
 
 If diagnostics are added:
 
@@ -547,8 +532,7 @@ Check:
 
 ### DAST
 
-Use only if the actual approved change introduces or modifies an externally
-reachable runtime surface.
+Use only if the actual approved change introduces or modifies an externally reachable runtime surface.
 
 Pure BeeDrill domain logic does not require DAST.
 
@@ -660,8 +644,7 @@ missing critical evidence
 → cannot PASS
 ```
 
-Do not add artificial tests that do not correspond to the actual implementation
-surface.
+Do not add artificial tests that do not correspond to the actual implementation surface.
 
 ## Minimal developer security checklist
 
