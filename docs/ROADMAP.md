@@ -2376,162 +2376,221 @@ git diff --check
 
 BeeDrill remains the deterministic security-control authority while BeeAgent can optionally turn completed validated BeeDrill facts into developer-facing explanations and remediation hypotheses through the same `beedrill check` command; disabling AI produces zero provider calls, and AI availability or failure can never change security truth or execution authority.
 
-### Iteration 17 — Developer-owned protocol integration proof
+### Iteration 17 — Judge-ready product proof and onboarding
 
 **Status:** PLANNED
 
-#### Goal
+### Goal
 
-Prove that a Solana developer can connect one developer-owned protocol to BeeDrill without modifying BeeDrill or BeeAgent core and turn one real security control into a repeatable local/CI security regression.
+Freeze the hackathon product around one independently reproducible story:
 
-Target product flow:
+> You regression-test your code. BeeDrill regression-tests your defenses.
+
+Prove that a Colosseum judge or Solana developer who did not build BeeDrill can:
+
+1. understand what security problem BeeDrill solves;
+2. reproduce the existing real Solana security-regression engine;
+3. inspect deterministic machine evidence;
+4. understand where BeeDrill belongs in a real development/CI workflow.
+
+Target judge flow after the companion BeeAgent bootstrap work:
 
 ```text
-developer-owned Solana protocol
-→ small project-owned BeeDrill integration
-→ BeeAgent-owned isolated execution
-→ reproducible attack
+clone BeeAgent
+→ normal BeeAgent bootstrap resolves BeeSDK/BeeDrill
+→ ./start.sh beedrill check
+→ real isolated Solana attacks
 → detection
 → containment
-→ bounded evidence
-→ BeeDrill deterministic PASS / FAIL
-→ ./start.sh beedrill check
+→ economic evidence
+→ deterministic PASS / FAIL / INCOMPLETE
+→ inspect artifacts
 ```
 
-The iteration must answer:
+Target product story:
 
-> Can a protocol team use BeeDrill for its own defenses rather than only run > BeeDrill's built-in reference scenarios?
+```text
+security-sensitive code/control change
+→ replay known attack
+→ observe detector
+→ exercise containment
+→ repeat malicious action
+→ measure resulting loss
+→ deterministic PASS / FAIL
+→ block or allow PR/release
+```
 
-#### Scope
+### Scope
 
 Included:
 
-- define the smallest explicit BeeDrill protocol-integration contract;
-- keep protocol-specific integration code/configuration owned by the developer's project rather than BeeDrill or BeeAgent core;
-- provide one explicit configuration path for enabling the developer integration;
-- integrate one developer-owned/sample Solana protocol through that boundary;
-- reuse the existing BeeAgent-owned isolated execution boundary;
-- preserve BeeAgent ownership of:
-  - Surfpool lifecycle;
-  - build/deploy execution;
-  - Solana RPC;
-  - process lifecycle;
-  - runtime identity;
-  - credentials;
-  - timeout and cleanup;
-- preserve BeeDrill ownership of:
-  - scenario semantics;
-  - expected control behavior;
-  - evidence validation;
-  - security metrics;
-  - deterministic verdict;
-- define one reproducible attack/control regression for the integrated protocol;
-- demonstrate a broken-control completed `FAIL`;
-- demonstrate the corrected control producing `PASS` when feasible;
-- make the configured protocol regression available through the normal developer/CI workflow;
-- document the minimum developer onboarding path;
-- provide one minimal CI example;
-- validate the onboarding path with at least one developer who did not implement BeeDrill;
-- record onboarding blockers and fix only material product friction.
+- make `README.md` the canonical product/judge entry point;
+- lead with the product value:
 
-The exact integration API is an output of this iteration.
+```text
+You regression-test your code.
+BeeDrill regression-tests your defenses.
+```
 
-Do not pre-commit to a generic DSL, plugin framework or arbitrary execution model before the smallest safe integration boundary is proven.
+- explain clearly that BeeDrill complements audits:
 
-#### Excluded
+```text
+Audit
+→ can this code be exploited?
 
-- generic scenario DSL;
-- arbitrary shell commands supplied by scenario configuration;
-- arbitrary executable or argv selection;
-- arbitrary RPC destinations;
-- production/mainnet mutation;
-- generic plugin marketplace/framework;
-- automatic protocol discovery;
-- automatic vulnerability discovery;
-- AI-generated attacks;
-- AI-generated verdicts;
-- new built-in attack classes;
-- multiple protocol integrations;
+BeeDrill
+→ after our changes, do the defenses still stop the attack?
+```
+
+- explain the distinction between:
+  - ordinary Rust/unit tests;
+  - BeeDrill security-control regression;
+- document the intended developer usage points:
+  - after security-sensitive local changes;
+  - PR/CI;
+  - nightly regression;
+  - release/deploy gate;
+  - exact replay after security remediation;
+- establish one canonical judge quickstart using the released BeeAgent path;
+- remove the normal-user requirement to manually create a sibling Bee workspace once the companion BeeAgent bootstrap iteration is delivered;
+- keep contributor/local multi-repository development instructions separate from user/judge quickstart;
+- reconcile stale BeeDrill/BeeAgent/BeeSDK version and setup documentation;
+- reconcile AI-assist documentation with delivered Iteration 16 behavior;
+- explain exactly what the current three regressions prove:
+  - reference vault containment;
+  - oracle manipulation containment;
+  - canonical SPL Token freeze containment;
+- document PASS / FAIL / INCOMPLETE and CI exit semantics;
+- document aggregate and per-scenario evidence locations;
+- provide one minimal CI/PR-gate example;
+- perform a clean-room reproduction through the judge quickstart;
+- record bounded reproduction evidence;
+- have at least one developer who did not implement BeeDrill attempt the documented flow without author assistance;
+- record time-to-first-result, blockers and confusing steps;
+- correct only material onboarding/documentation friction;
+- explicitly state the current MVP limitation:
+
+```text
+current executable corpus
+=
+approved built-in security regressions
+
+arbitrary developer-owned protocol onboarding
+=
+post-hackathon product milestone
+```
+
+- explain the next product direction without claiming it is already delivered:
+
+```text
+YOUR PROTOCOL
+→ project-owned BeeDrill integration
+→ same security-regression engine
+```
+
+### Excluded
+
+- arbitrary developer-owned protocol execution;
+- generic protocol adapter/plugin framework;
+- scenario DSL;
+- new attack scenario;
+- new BeeDrill evaluator;
+- new Solana capability;
+- arbitrary RPC/transaction execution;
 - VS Code extension;
+- interactive setup wizard;
 - Web UI;
 - hosted runner/SaaS;
 - multichain support;
-- broad BeeAgent architecture redesign;
-- BeeSDK changes unless real implementation proves the existing shared contracts insufficient.
+- production/mainnet mutation;
+- new runtime dependencies;
+- BeeSDK public-contract changes.
 
-#### Deliverable
+### Deliverable
 
-One protocol outside BeeDrill core can participate in the BeeDrill regression workflow without requiring a developer to patch BeeDrill or BeeAgent internals.
+A judge can understand BeeDrill in roughly one minute and independently verify that the product is real.
 
-Target developer experience:
+Expected flow:
 
 ```text
-install BeeAgent
-→ enable BeeDrill
-→ add one small project-owned protocol integration
-→ define one security regression
-→ ./start.sh beedrill check
-→ deterministic PASS / FAIL
+GitHub
+→ understand the security problem
+→ run one canonical BeeAgent/BeeDrill path
+→ see the real three-scenario regression suite
+→ inspect deterministic evidence
+→ understand how a failed defense would fail CI
 ```
 
-The developer should not need to understand BeeAgent process/RPC internals in order to add the protocol regression.
-
-#### Acceptance criteria
-
-- protocol-specific integration does not require modification of BeeDrill core;
-- protocol-specific integration does not require modification of BeeAgent core after the integration boundary exists;
-- protocol-specific code/config remains project-owned;
-- integration cannot grant itself execution authority;
-- integration cannot choose arbitrary executables, process arguments, credentials or production RPC targets;
-- execution remains restricted to the approved isolated environment;
-- one developer-owned protocol scenario executes end to end;
-- attack execution changes real isolated Solana state;
-- detection is machine-observed;
-- containment success/failure is proven by target behavior rather than a configured success value;
-- broken control can produce a completed deterministic security `FAIL`;
-- corrected control can produce deterministic `PASS` when the tested control actually prevents the repeated attack;
-- malformed/incomplete evidence cannot produce `PASS`;
-- existing BeeDrill deterministic evaluator remains authoritative;
-- AI remains outside execution and verdict authority;
-- the normal BeeDrill developer/CI command remains the primary execution surface;
-- a minimal CI example is documented;
-- at least one external developer attempts the onboarding flow without author assistance;
-- onboarding blockers are recorded and material friction is fixed or explicitly documented before submission;
-- existing built-in regressions remain compatible.
-
-#### Checks
+The repository also explains the intended user workflow:
 
 ```text
-clean install / enablement
-developer-owned protocol integration
-no protocol-specific BeeDrill core patch
-no protocol-specific BeeAgent core patch
-isolated build/deploy/run
-real attack execution
-machine-observed detection
-broken-control security FAIL
-corrected-control PASS
-same-attack replay
-bounded evidence validation
-malformed/incomplete evidence fail closed
-forbidden execution/RPC input refusal
-CI invocation
-existing three-scenario regression suite
+normal code
+→ normal tests
+
+security-sensitive change
+→ BeeDrill
+
+PR / release
+→ known attacks replayed
+→ defenses proven again
+```
+
+### Acceptance criteria
+
+- the first README screen explains the product without requiring architecture knowledge;
+- the core positioning is clear:
+  `BeeDrill turns protocol defenses into security regression tests`;
+- judges are not presented as the end user; judge instructions are explicitly a reproducibility/proof path;
+- the actual end user is described as a Solana protocol/security team;
+- the README explains why unit tests and audits do not prove that an end-to-end defensive control still stops a reproduced attack;
+- one canonical judge quickstart matches actual released BeeAgent behavior;
+- normal judge/user instructions do not require manually cloned BeeSDK or BeeDrill sibling repositories after the companion BeeAgent iteration;
+- contributor/local source-development instructions remain available but are clearly separate;
+- no conflicting BeeDrill/BeeAgent/BeeSDK versions or stale ROP requirements remain;
+- AI-assist documentation matches delivered behavior and states that AI does not determine verdicts;
+- `./start.sh beedrill check` executes all three approved regressions;
+- PASS, FAIL and INCOMPLETE are understandable;
+- CI exit semantics are documented;
+- aggregate and per-scenario evidence locations are documented and verified;
+- no production credential or AI provider is required for the deterministic core run;
+- the SPL Token scenario is clearly identified as a real external Solana control-surface validation rather than a synthetic reference program;
+- one clean-room reproduction succeeds from the documented starting point;
+- at least one external developer attempts the flow without author assistance;
+- external feedback records time-to-first-result and material friction;
+- unsupported arbitrary-protocol compatibility is not claimed;
+- current limitations are explicit;
+- the post-hackathon developer-owned protocol integration direction is stated as future work rather than current functionality;
+- BeeDrill domain/evaluator/public contracts remain unchanged;
+- package dependencies and version remain unchanged.
+
+### Checks
+
+```text
+README/product-story review
+documentation consistency review
+current-version reconciliation
+judge quickstart from clean checkout
+automatic BeeSDK/BeeDrill resolution through companion BeeAgent bootstrap
+full ./start.sh beedrill check smoke
+three completed scenario results
+exit-code verification
+aggregate artifact inspection
+per-scenario evidence inspection
+AI-disabled deterministic run
+no-production-credential run
+CI example review
 external developer dogfood
-full BeeDrill tests
-BeeDrill build/import smoke
-BeeAgent targeted/full tests when host code changes
-SAST
-SCA only if dependencies change
-secret/artifact inspection
+time-to-first-result record
+BeeDrill full tests
+package build
+package import smoke
+BeeAgent compatibility smoke
 git diff --check
 ```
 
-#### DoD
+### DoD
 
-A Solana developer can connect one project-owned protocol to BeeDrill through a small bounded integration surface, run a real security-control regression locally or in CI, and receive deterministic PASS / FAIL without forking or editing BeeDrill/BeeAgent core.
-
-If achieving this requires a generic execution framework, arbitrary shell/RPC configuration or a broad BeeAgent redesign, the iteration stops with NO-GO and the larger integration architecture moves post-hackathon.
+A Colosseum judge can independently prove that BeeDrill executes real Solana security regressions and produces deterministic machine-backed results, while a Solana developer can immediately understand the product value, the intended CI/release workflow and the current MVP boundary without being misled into believing arbitrary-protocol onboarding is already implemented.
 
 ---
 

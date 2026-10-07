@@ -21,7 +21,8 @@ document indexes them; it is neither a verdict engine nor an execution API.
 | BeeDrill is read-only; host and SDK ownership remain separate    | `docs/ARCHITECTURE.md`; `docs/SPEC.md` sections 6–10                                                                                                  |
 | No production/mainnet mutation                                   | `docs/SECURITY.md`; `docs/SPEC.md` sections 4–5                                                                                                       |
 
-Fresh final runs from the supported sibling workspace state:
+Recorded three-scenario host evidence from the supported source-development
+workspace state:
 
 | Replay                       | Host run ID        | Result                                               |
 | ---------------------------- | ------------------ | ---------------------------------------------------- |
