@@ -2121,11 +2121,11 @@ git diff --check
 
 BeeDrill behaves as a real security regression product: one host-owned command runs every approved drill, a genuine defense regression becomes a deterministic CI-visible failure, infrastructure problems fail closed as incomplete, and execution authority remains entirely BeeAgent-owned.
 
-## Iteration 16 — Evidence-grounded AI explanation and remediation assist
+### Iteration 16 — Evidence-grounded AI explanation and remediation assist
 
 **Status:** DONE
 
-### Goal
+#### Goal
 
 Add optional evidence-grounded AI assistance after deterministic BeeDrill evaluation so a developer can understand what the drill proved, why a security control failed and what bounded remediation should be investigated, while preserving deterministic BeeDrill verdicts as the sole security truth.
 
@@ -2136,7 +2136,7 @@ AI explains and proposes.
 BeeDrill verifies.
 ```
 
-### Scope
+#### Scope
 
 Included:
 
@@ -2225,7 +2225,7 @@ AI != verdict authority
 AI != execution authority
 ```
 
-### Excluded
+#### Excluded
 
 - `beedrill check --ai`;
 - CLI precedence rules for AI enable/disable;
@@ -2253,7 +2253,7 @@ AI != execution authority
 - Web UI;
 - production/mainnet mutation.
 
-### Deliverable
+#### Deliverable
 
 With:
 
@@ -2308,7 +2308,7 @@ replayed and deterministically passes.
 
 The process still exits according to the already finalized deterministic BeeDrill suite result.
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - AI assistance is disabled by default;
 - `beedrill.ai_assist.enabled=false` performs zero provider calls;
@@ -2338,7 +2338,7 @@ The process still exits according to the already finalized deterministic BeeDril
 - AI artifact contains provenance back to the deterministic suite/scenario runs;
 - BeeDrill remains usable when no AI provider is configured.
 
-### Checks
+#### Checks
 
 ```text
 AI config disabled -> zero provider calls
@@ -2372,15 +2372,15 @@ secret/artifact inspection
 git diff --check
 ```
 
-### DoD
+#### DoD
 
 BeeDrill remains the deterministic security-control authority while BeeAgent can optionally turn completed validated BeeDrill facts into developer-facing explanations and remediation hypotheses through the same `beedrill check` command; disabling AI produces zero provider calls, and AI availability or failure can never change security truth or execution authority.
 
 ### Iteration 17 — Judge-ready product proof and onboarding
 
-**Status:** PLANNED
+**Status:** DONE
 
-### Goal
+#### Goal
 
 Freeze the hackathon product around one independently reproducible story:
 
@@ -2420,7 +2420,7 @@ security-sensitive code/control change
 → block or allow PR/release
 ```
 
-### Scope
+#### Scope
 
 Included:
 
@@ -2488,7 +2488,7 @@ YOUR PROTOCOL
 → same security-regression engine
 ```
 
-### Excluded
+#### Excluded
 
 - arbitrary developer-owned protocol execution;
 - generic protocol adapter/plugin framework;
@@ -2506,7 +2506,7 @@ YOUR PROTOCOL
 - new runtime dependencies;
 - BeeSDK public-contract changes.
 
-### Deliverable
+#### Deliverable
 
 A judge can understand BeeDrill in roughly one minute and independently verify that the product is real.
 
@@ -2535,7 +2535,7 @@ PR / release
 → defenses proven again
 ```
 
-### Acceptance criteria
+#### Acceptance criteria
 
 - the first README screen explains the product without requiring architecture knowledge;
 - the core positioning is clear:
@@ -2563,7 +2563,7 @@ PR / release
 - BeeDrill domain/evaluator/public contracts remain unchanged;
 - package dependencies and version remain unchanged.
 
-### Checks
+#### Checks
 
 ```text
 README/product-story review
@@ -2588,7 +2588,7 @@ BeeAgent compatibility smoke
 git diff --check
 ```
 
-### DoD
+#### DoD
 
 A Colosseum judge can independently prove that BeeDrill executes real Solana security regressions and produces deterministic machine-backed results, while a Solana developer can immediately understand the product value, the intended CI/release workflow and the current MVP boundary without being misled into believing arbitrary-protocol onboarding is already implemented.
 
