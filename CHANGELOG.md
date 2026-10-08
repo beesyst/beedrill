@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.1](https://github.com/beesyst/beedrill/compare/beedrill-v0.14.0...beedrill-v0.14.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* restore BeeDrill MVP and bounded diagnostics ([#49](https://github.com/beesyst/beedrill/issues/49)) ([18c1e03](https://github.com/beesyst/beedrill/commit/18c1e030da26b94996cadc2d072d3766c19825aa))
+
 ## [0.14.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.13.0...beedrill-v0.14.0) (2026-10-02)
 
 
