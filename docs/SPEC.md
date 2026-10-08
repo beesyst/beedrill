@@ -509,6 +509,8 @@ The relevant iteration defines the exact required conditions.
 
 ## 26. Failure/incomplete semantics
 
+Non-successful host results may include additive `diagnostic_reason` in module results and scenario artifacts. Only exact allowlisted native-readiness, startup, RPC, build, timeout and cleanup codes or known aliases are exposed. Unknown or non-string diagnostics are omitted; raw host output is never copied. This field grants no authority and creates no security verdict, economic metric or explanation fact. Host CLI runtime failures remain INCOMPLETE / exit 3.
+
 A drill must explicitly represent non-success cases.
 
 Depending on the approved contract, these may include:
