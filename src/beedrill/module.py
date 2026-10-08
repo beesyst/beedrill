@@ -168,6 +168,57 @@ _LIFECYCLE_PROOF = {
     "rpc": "ok",
     "cleanup": "ok",
 }
+_HOST_DIAGNOSTIC_REASONS = {
+    "missing_surfpool",
+    "missing_solana_cli",
+    "missing_cargo",
+    "missing_sbf_builder",
+    "incompatible_toolchain",
+    "surfpool_startup_failed",
+    "rpc_unavailable",
+    "build_failed",
+    "timeout",
+    "cleanup_failed",
+}
+_HOST_DIAGNOSTIC_ALIASES = {
+    "executable_unavailable": "missing_surfpool",
+    "startup_failed": "surfpool_startup_failed",
+    "early_process_exit": "surfpool_startup_failed",
+    "rpc_error": "rpc_unavailable",
+    "rpc_failed": "rpc_unavailable",
+    "readiness_timeout": "timeout",
+    "rpc_timeout": "timeout",
+    "transaction_confirmation_timeout": "timeout",
+    "state_observation_timeout": "timeout",
+    "detector_observation_timeout": "timeout",
+    "containment_observation_timeout": "timeout",
+    "build_timeout": "timeout",
+    "deployment_timeout": "timeout",
+    "cleanup_forced": "cleanup_failed",
+    "cleanup_reap_failed": "cleanup_failed",
+}
+
+
+def _capability_evidence(result: CapabilityResult) -> dict[str, str]:
+    evidence = {
+        "capability_status": result.status.value,
+        "capability_authority": result.authority.value,
+    }
+    diagnostics = result.diagnostics
+    if result.status is not CapabilityStatus.OK and isinstance(diagnostics, dict):
+        reason = diagnostics.get("reason")
+        mapped = _bounded_diagnostic_reason(reason)
+        if mapped is not None:
+            evidence["diagnostic_reason"] = mapped
+    return evidence
+
+
+def _bounded_diagnostic_reason(reason: object) -> str | None:
+    if not isinstance(reason, str):
+        return None
+    if reason in _HOST_DIAGNOSTIC_REASONS:
+        return reason
+    return _HOST_DIAGNOSTIC_ALIASES.get(reason)
 
 
 class BeeDrillModule:
@@ -252,10 +303,7 @@ class BeeDrillModule:
                 "Host capability returned an invalid result",
                 {"capability_status": "invalid"},
             )
-        capability_evidence = {
-            "capability_status": result.status.value,
-            "capability_authority": result.authority.value,
-        }
+        capability_evidence = _capability_evidence(result)
         if result.capability_name != _ISOLATED_SOLANA_CAPABILITY:
             return self._capability_result(
                 context,
@@ -325,10 +373,7 @@ class BeeDrillModule:
                 "Host capability returned an invalid result",
                 {"capability_status": "invalid"},
             )
-        evidence = {
-            "capability_status": result.status.value,
-            "capability_authority": result.authority.value,
-        }
+        evidence = _capability_evidence(result)
         if result.capability_name != _REFERENCE_TARGET_CAPABILITY:
             return self._reference_target_result(
                 context,
@@ -401,10 +446,7 @@ class BeeDrillModule:
                 "Host capability returned an invalid result",
                 {"capability_status": "invalid"},
             )
-        capability_evidence = {
-            "capability_status": result.status.value,
-            "capability_authority": result.authority.value,
-        }
+        capability_evidence = _capability_evidence(result)
         if result.capability_name != _REFERENCE_TARGET_ATTACK_CAPABILITY:
             return self._reference_target_attack_result(
                 context,
@@ -481,10 +523,7 @@ class BeeDrillModule:
                 "Host capability returned an invalid result",
                 {"capability_status": "invalid"},
             )
-        capability_evidence = {
-            "capability_status": result.status.value,
-            "capability_authority": result.authority.value,
-        }
+        capability_evidence = _capability_evidence(result)
         if result.capability_name != _REFERENCE_TARGET_DETECTION_CAPABILITY:
             return self._reference_target_detection_result(
                 context,
@@ -646,10 +685,7 @@ class BeeDrillModule:
                 summary="Host capability returned an invalid result",
                 data={"capability_status": "invalid"},
             )
-        evidence = {
-            "capability_status": result.status.value,
-            "capability_authority": result.authority.value,
-        }
+        evidence = _capability_evidence(result)
         if result.capability_name != _REFERENCE_TARGET_CONTAINMENT_CAPABILITY:
             return ModuleResult(
                 self.module_id,
@@ -802,10 +838,7 @@ class BeeDrillModule:
                 "Host capability returned an invalid result",
                 {"capability_status": "invalid"},
             )
-        evidence = {
-            "capability_status": result.status.value,
-            "capability_authority": result.authority.value,
-        }
+        evidence = _capability_evidence(result)
         if result.capability_name != _REFERENCE_ORACLE_CAPABILITY:
             return ModuleResult(
                 self.module_id,
@@ -956,10 +989,7 @@ class BeeDrillModule:
                 "Host capability returned an invalid result",
                 {"capability_status": "invalid"},
             )
-        evidence = {
-            "capability_status": result.status.value,
-            "capability_authority": result.authority.value,
-        }
+        evidence = _capability_evidence(result)
         if result.capability_name != _SPL_TOKEN_FREEZE_CAPABILITY:
             return ModuleResult(
                 self.module_id,
@@ -1014,6 +1044,11 @@ class BeeDrillModule:
                     "status": status,
                     "capability_status": data["capability_status"],
                     **(
+                        {"diagnostic_reason": data["diagnostic_reason"]}
+                        if "diagnostic_reason" in data
+                        else {}
+                    ),
+                    **(
                         {"capability_authority": data["capability_authority"]}
                         if "capability_authority" in data
                         else {}
@@ -1045,6 +1080,11 @@ class BeeDrillModule:
                     "case_type": context.case_type,
                     "status": status,
                     "capability_status": data["capability_status"],
+                    **(
+                        {"diagnostic_reason": data["diagnostic_reason"]}
+                        if "diagnostic_reason" in data
+                        else {}
+                    ),
                     **(
                         {"capability_authority": data["capability_authority"]}
                         if "capability_authority" in data
@@ -1079,6 +1119,11 @@ class BeeDrillModule:
                     "status": status,
                     "capability_status": data["capability_status"],
                     **(
+                        {"diagnostic_reason": data["diagnostic_reason"]}
+                        if "diagnostic_reason" in data
+                        else {}
+                    ),
+                    **(
                         {"capability_authority": data["capability_authority"]}
                         if "capability_authority" in data
                         else {}
@@ -1112,6 +1157,11 @@ class BeeDrillModule:
                     "case_type": context.case_type,
                     "status": status,
                     "capability_status": data["capability_status"],
+                    **(
+                        {"diagnostic_reason": data["diagnostic_reason"]}
+                        if "diagnostic_reason" in data
+                        else {}
+                    ),
                     **(
                         {"capability_authority": data["capability_authority"]}
                         if "capability_authority" in data

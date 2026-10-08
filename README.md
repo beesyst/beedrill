@@ -61,21 +61,21 @@ BeeDrill runs as a module inside [BeeAgent](https://github.com/beesyst/beeagent)
 
 You need:
 
-- Linux
-- Git
-- Python 3.14+
-- Rust / Cargo
-- Solana CLI
-- `cargo-build-sbf`
-- Surfpool
+- Linux x86_64 with glibc 2.34+ and an existing working C linker / glibc development files
+- Git and Python 3.14+
+- Verified preinstalled `uv`
+- HTTPS access to official GitHub releases and Cargo's registry on first run
+- Approximately 4 GB free user-local disk space
 
-BeeAgent bootstraps `uv` automatically.
+The recovery host prepares pinned Rust/Cargo, Solana CLI, SBF builder and Surfpool automatically. Unsupported or incompatible environments remain INCOMPLETE / exit 3; no sudo or unverified native installer scripts are used. An unchanged main checkout still requires manually prepared native tooling.
 
 Detailed toolchain setup:
 
 [`docs/DEV_GUIDE.md`](docs/DEV_GUIDE.md)
 
 ### Run
+
+The uncommitted recovery host snapshot prepares checksum-verified pinned native tools automatically on supported Linux. An unchanged main clone does not include this correction yet; obtain the recovery snapshot or prepare the native prerequisites. See [`docs/DEV_GUIDE.md`](docs/DEV_GUIDE.md) for the short recovery recipe and failure diagnostics. The executable corpus remains the three built-in regressions; developer-owned protocol onboarding is not delivered.
 
 Clone BeeAgent:
 
@@ -154,9 +154,9 @@ Example:
 
 ```text
 BeeDrill Security Regression
-PASS: reference_target_containment_replay
-PASS: reference_oracle_manipulation_replay
-PASS: spl_token_freeze_containment_replay
+PASSED: reference_target_containment_replay
+PASSED: reference_oracle_manipulation_replay
+PASSED: spl_token_freeze_containment_replay
 Scenarios: passed=3 failed=0 incomplete=0
 Suite status: PASS
 ```

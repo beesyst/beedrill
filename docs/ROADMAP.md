@@ -2594,6 +2594,128 @@ A Colosseum judge can independently prove that BeeDrill executes real Solana sec
 
 ---
 
+## Stage 5 — MVP Recovery and Submission Gate
+
+### Iteration 18 — MVP Recovery and Bounded Diagnostics
+
+**Status:** DONE
+
+#### Goal
+
+Restore the existing real Solana security-regression MVP after the abandoned LobsterPay-specific integration, preserve deterministic security verdicts and provide actionable bounded diagnostics for independent reproduction.
+
+#### Scope
+
+- retain the existing three executable scenarios: reference vault containment, oracle manipulation containment and SPL Token freeze containment;
+- restore the verified main-based recovery source;
+- preserve existing domain models, evaluator, metrics, artifacts and READ_ONLY authority;
+- expose strictly allowlisted host diagnostic reasons for unsuccessful execution;
+- keep host failure separate from completed security FAIL;
+- remove LobsterPay-specific dispatch, evidence validators and evaluator wrappers;
+- preserve excluded protocol work and evidence in verified backups;
+- align README, SPEC, developer documentation and reproduction evidence with actual behavior;
+- verify the integrated runtime against corrected BeeAgent Iteration 44.11.
+
+#### Excluded
+
+- new external protocol integration;
+- arbitrary Solana contract auditing;
+- generic adapter or plugin framework;
+- transaction/account binding interpreter;
+- new attack category or scenario;
+- new BeeSDK contract;
+- autonomous production response;
+- mainnet execution;
+- new dependencies, version changes or Web UI.
+
+#### Deliverable
+
+The existing BeeDrill security-regression engine remains reproducible and CI-compatible:
+
+```text
+Approved Solana scenario
+→ BeeAgent isolated execution
+→ actual attack
+→ bounded state/balance detection
+→ containment
+→ attack replay
+→ observed economic impact
+→ BeeDrill deterministic verdict
+→ evidence + CI exit status
+```
+
+The executable corpus contains exactly three approved security regressions.
+
+#### Acceptance criteria
+
+- exact recovery implementation is present on the Iteration 18 feature branch;
+- LobsterPay-specific runtime integration is absent;
+- all three original scenarios remain executable and deterministic;
+- ineffective completed containment returns security FAIL;
+- incomplete execution and invalid evidence cannot PASS;
+- diagnostics are bounded and exclude secrets and raw host output;
+- existing evaluator, metrics, module authority and public contracts remain compatible;
+- corrected BeeAgent completes the real three-scenario suite;
+- package, integration and security checks pass;
+- clean-clone reproduction and native provisioning evidence are recorded separately;
+- independent Max reproduction remains pending until performed;
+- external developer-owned protocol onboarding is not claimed.
+
+#### Checks
+
+```text
+BeeDrill full pytest
+targeted verdict and malformed-evidence tests
+bounded diagnostic and secret-leak tests
+package build/import
+BeeSDK/module contract verification
+BeeAgent full pytest
+BeeAgent-ROP compatibility
+./start.sh beedrill check
+real 3/3 regression smoke
+effective / ineffective containment
+PASS / FAIL / INCOMPLETE / invalid CLI
+runtime artifact and provenance inspection
+clean-clone reproduction
+security-sensitive SAST review
+git diff --check
+```
+
+#### Evidence
+
+- BeeDrill: 586 passed.
+- BeeAgent: 2,225 passed.
+- BeeAgent-ROP: 483 passed.
+- Real Solana suite: 3/3 PASS.
+- Completed ineffective SPL containment: FAIL, exit 1.
+- Effective SPL containment: PASS, exit 0.
+- Incomplete runtime: exit 3.
+- Invalid CLI: exit 2.
+- Cold native preparation and cached reuse verified separately.
+- Independent Max reproduction: pending.
+
+Canonical implementation evidence:
+
+`/home/bee/Pro/beeagent/storage/mvp-correction-20261008/`
+
+These are recorded executor results, not proof of a completed independent developer test.
+
+#### DoD
+
+The existing BeeDrill MVP runs three real isolated Solana security regressions with reliable evidence, deterministic verdicts and bounded diagnostics, without LobsterPay-specific core integration or new runtime authority.
+
+Final closure requires completed review, adopted Issue scope and truthful handling of independent developer validation.
+
+#### Product decision
+
+The one-day generic external pause/freeze integration assessment returned NO-GO because the existing contracts do not support arbitrary developer-owned transaction/account mapping without new security-sensitive execution work.
+
+External protocol onboarding remains unimplemented.
+
+**Next product gate:** one independently owned Solana project must run a supported executable security check without editing BeeAgent/BeeDrill core or manually implementing BeeDrill's attack/evaluator. This requires a separately approved product Issue and feasibility gate. PR/CI integration is a delivery interface, not evidence of generic protocol compatibility.
+
+The Colosseum demonstration must show actual supported attacks, detection limits, containment, economic metrics and reproducible verdicts without claiming universal Solana coverage.
+
 ## Submission buffer — 2026-10-05..2026-10-12
 
 ### Purpose

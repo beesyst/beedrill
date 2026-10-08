@@ -34,12 +34,22 @@ Rule:
 
 ## Requirements
 
-- Python 3.14+
-- `uv`
-- Git
-- Surfpool CLI on `PATH`
-- Solana CLI tooling on `PATH`, including `solana` and `cargo-build-sbf`
-- Rust tooling required by the Solana build tools
+- Python 3.14+, Git and verified preinstalled `uv`.
+- Host execution: Linux x86_64, glibc 2.34+, approximately 4 GB free disk space, HTTPS access to official GitHub releases and Cargo's public registry.
+- Reference SBF scenarios: an existing working C linker and glibc development files.
+
+The uncommitted BeeAgent #292 recovery snapshot automatically prepares pinned native tools; unchanged main does not contain this correction yet. The host-owned `core/beedrill_toolchain.py` manifest is the source of truth. Verified user-local caches are reused without sudo or native remote installer scripts. SPL Token alone needs only Surfpool. Unsupported or incompatible hosts return INCOMPLETE / exit 3 before attack execution. Move only a diagnosed corrupt BeeDrill cache entry aside and retry; retain unrelated user tooling.
+
+For coordinated recovery snapshots, select the recovered BeeDrill without changing package metadata:
+
+```bash
+cd <workspace>/beeagent
+PYTHONPATH="<workspace>/beedrill/src" ./start.sh beedrill check
+```
+
+Expected result: three PASSED scenarios, `passed=3 failed=0 incomplete=0`, suite PASS, exit 0. The existing minimal CI step is `run: ./start.sh beedrill check`. Scenario evidence lives under `storage/runs/<run-id>/module-beedrill/`; the aggregate lives under `storage/runs/<suite-run-id>/module-beeagent/beedrill_security_regression.json`.
+
+Only allowlisted `diagnostic_reason` values are added for incomplete/error results; raw stderr, keys, credentials and host paths are omitted. Missing evidence never acquires a security verdict or explanation facts. Detection in the existing corpus means an observed bounded local state/balance monitor; it does not prove a protocol's production detector is integrated. Developer-owned pause/freeze onboarding is not delivered by this recovery.
 
 ## Repository
 
@@ -59,7 +69,7 @@ cd beeagent
 ./start.sh beedrill check
 ```
 
-It resolves the pinned BeeSDK and BeeDrill releases automatically. It does not require sibling repositories, ROP setup, production credentials, an AI provider, or manual BeeDrill installation. Rust, Solana CLI, `cargo-build-sbf`, and Surfpool remain required local prerequisites.
+It resolves the pinned BeeSDK and BeeDrill releases automatically. It does not require sibling repositories, ROP setup, production credentials, an AI provider, or manual BeeDrill installation. Native provisioning requires the recovery host snapshot described above; unchanged main still needs manually prepared native tooling.
 
 The local sibling layout below is contributor-only source development, not the normal product or judge setup. Create it under any `<workspace>` directory:
 
