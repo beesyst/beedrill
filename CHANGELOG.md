@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.14.1...beedrill-v0.15.0) (2026-10-10)
+
+
+### Features
+
+* add deterministic external test regression diff ([#52](https://github.com/beesyst/beedrill/issues/52)) ([be95796](https://github.com/beesyst/beedrill/commit/be9579645907fb197228be5014303c38620c778c))
+
 ## [0.14.1](https://github.com/beesyst/beedrill/compare/beedrill-v0.14.0...beedrill-v0.14.1) (2026-10-08)
 
 
