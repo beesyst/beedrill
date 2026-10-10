@@ -130,6 +130,19 @@ _SPL_TOKEN_FREEZE_CASE = "spl_token_freeze_containment_replay"
 _SPL_TOKEN_FREEZE_CAPABILITY = "solana.spl_token_freeze_containment"
 _EXTERNAL_TEST_DIFF_CASE = "external_test_regression_diff"
 _EXTERNAL_TEST_DIFF_CAPABILITY = "solana.isolated_litesvm_test_diff"
+_EXTERNAL_TEST_CHECK_CASE = "external_test_check"
+_EXTERNAL_TEST_CHECK_CAPABILITY = "solana.isolated_litesvm_test_check"
+_EXTERNAL_TEST_CHECK_REFUSAL_REASONS = frozenset(
+    {
+        "unsupported_layout",
+        "missing_test_dependencies",
+        "symlink_not_allowed",
+        "invalid_project_root",
+        "missing_node",
+        "sandbox_unavailable",
+        "unsafe_project_tree",
+    }
+)
 _SPL_TOKEN_FREEZE_PAYLOAD = {
     "target_profile": "surfpool_local",
     "target_id": "spl_token_freeze_containment",
@@ -241,6 +254,7 @@ class BeeDrillModule:
             _REFERENCE_ORACLE_CASE,
             _SPL_TOKEN_FREEZE_CASE,
             _EXTERNAL_TEST_DIFF_CASE,
+            _EXTERNAL_TEST_CHECK_CASE,
         ]
 
     def handle(self, context: ModuleContext) -> ModuleResult:
@@ -263,6 +277,8 @@ class BeeDrillModule:
             return self._handle_spl_token_freeze_containment(context)
         if context.case_type == _EXTERNAL_TEST_DIFF_CASE:
             return self._handle_external_test_diff(context)
+        if context.case_type == _EXTERNAL_TEST_CHECK_CASE:
+            return self._handle_external_test_check(context)
 
         artifact_api: ArtifactPort | None = context.artifact_api
         if artifact_api is not None:
@@ -1127,6 +1143,103 @@ class BeeDrillModule:
             self.module_id, context.case_type, self.authority, status, summary, data
         )
 
+    def _handle_external_test_check(self, context: ModuleContext) -> ModuleResult:
+        if not _is_valid_external_test_check_payload(context.payload):
+            return self._external_test_check_result(
+                context,
+                "incomplete",
+                "BeeDrill external test check evidence is incomplete",
+                {"classification": "incomplete"},
+            )
+        caller = context.capability_caller
+        if caller is None:
+            return self._external_test_check_result(
+                context,
+                "incomplete",
+                "Host capability caller is unavailable",
+                {"classification": "incomplete"},
+            )
+        result = _validated_capability_result(
+            caller.call(_EXTERNAL_TEST_CHECK_CAPABILITY, context.payload)
+        )
+        if result is None or result.capability_name != _EXTERNAL_TEST_CHECK_CAPABILITY:
+            return self._external_test_check_result(
+                context,
+                "incomplete",
+                "Host capability returned invalid evidence",
+                {"classification": "incomplete"},
+            )
+        if result.status is CapabilityStatus.REFUSED:
+            reason = result.diagnostics.get("reason")
+            diagnostic_reason = (
+                reason
+                if type(reason) is str and reason in _EXTERNAL_TEST_CHECK_REFUSAL_REASONS
+                else None
+            )
+            classification = (
+                "unsupported"
+                if diagnostic_reason is not None
+                else "incomplete"
+            )
+            data: dict[str, object] = {"classification": classification}
+            if diagnostic_reason is not None:
+                data["diagnostic_reason"] = diagnostic_reason
+            return self._external_test_check_result(
+                context,
+                classification,
+                "Host test runner refused execution",
+                data,
+            )
+        if result.status in {CapabilityStatus.TIMEOUT, CapabilityStatus.ERROR}:
+            return self._external_test_check_result(
+                context,
+                "incomplete",
+                "Host test runner did not complete",
+                {"classification": "incomplete"},
+            )
+        if (
+            result.status is not CapabilityStatus.OK
+            or result.authority is not AuthorityLevel.EXECUTION_CAPABLE
+        ):
+            return self._external_test_check_result(
+                context,
+                "incomplete",
+                "Host test runner returned invalid authority evidence",
+                {"classification": "incomplete"},
+            )
+        classification = _classify_external_test_check(result.data)
+        evidence = _external_test_check_report_evidence(result.data)
+        return self._external_test_check_result(
+            context,
+            classification,
+            "BeeDrill external test check completed",
+            {"classification": classification, **evidence},
+        )
+
+    def _external_test_check_result(
+        self,
+        context: ModuleContext,
+        status: str,
+        summary: str,
+        data: dict[str, object],
+    ) -> ModuleResult:
+        artifact_api: ArtifactPort | None = context.artifact_api
+        if artifact_api is not None:
+            artifact_api.write_json(
+                "external_test_check.json",
+                {
+                    "schema_version": 1,
+                    "module_id": self.module_id,
+                    "case_type": context.case_type,
+                    "run_id": context.run_id,
+                    "status": status,
+                    **data,
+                },
+            )
+        return ModuleResult(
+            self.module_id, context.case_type, self.authority, status, summary, data
+        )
+
     def _capability_result(
         self,
         context: ModuleContext,
@@ -1379,6 +1492,16 @@ def _is_valid_external_test_diff_payload(payload: object) -> bool:
     )
 
 
+def _is_valid_external_test_check_payload(payload: object) -> bool:
+    return (
+        type(payload) is dict
+        and set(payload) == {"project"}
+        and type(payload["project"]) is str
+        and bool(payload["project"])
+        and len(payload["project"]) <= 4096
+    )
+
+
 def _classify_external_test_diff(evidence: object) -> str:
     if type(evidence) is not dict or set(evidence) != {
         "schema_version",
@@ -1413,6 +1536,50 @@ def _classify_external_test_diff(evidence: object) -> str:
     if baseline["outcome"] == candidate["outcome"]:
         return "no_test_regression"
     return "test_outcome_changed"
+
+
+def _classify_external_test_check(evidence: object) -> str:
+    if type(evidence) is not dict or set(evidence) != {"schema_version", "project"}:
+        return "incomplete"
+    if type(evidence["schema_version"]) is not int or evidence["schema_version"] != 1:
+        return "incomplete"
+    project = evidence["project"]
+    if not _is_valid_external_test_check_run(project):
+        return "incomplete"
+    return "test_passed" if project["outcome"] == "passed" else "test_failed"
+
+
+def _is_valid_external_test_check_run(evidence: object) -> bool:
+    if type(evidence) is not dict or set(evidence) != {
+        "schema_version",
+        "side",
+        "runner_id",
+        "runner_version",
+        "isolation",
+        "isolation_result",
+        "project_fingerprint",
+        "test_path",
+        "test_fingerprint",
+        "dependency_fingerprint",
+        "exit_code",
+        "timed_out",
+        "execution_status",
+        "outcome",
+        "elapsed_seconds",
+        "cleanup",
+        "diagnostic_output_sha256",
+        "test_count",
+    }:
+        return False
+    test_count = evidence["test_count"]
+    base_evidence = {
+        key: value for key, value in evidence.items() if key != "test_count"
+    }
+    return (
+        type(test_count) is int
+        and 0 < test_count <= _MAX_EVIDENCE_INTEGER
+        and _is_valid_external_test_run(base_evidence, "project")
+    )
 
 
 def _is_valid_external_test_run(evidence: object, side: str) -> bool:
@@ -1515,6 +1682,34 @@ def _external_test_diff_report_evidence(evidence: object) -> dict[str, object]:
         side: {field: evidence[side][field] for field in fields}
         for side in ("baseline", "candidate")
     }
+
+
+def _external_test_check_report_evidence(evidence: object) -> dict[str, object]:
+    if (
+        _classify_external_test_check(evidence) == "incomplete"
+        or type(evidence) is not dict
+    ):
+        return {}
+    fields = (
+        "runner_id",
+        "runner_version",
+        "test_path",
+        "test_fingerprint",
+        "dependency_fingerprint",
+        "project_fingerprint",
+        "isolation",
+        "isolation_result",
+        "outcome",
+        "exit_code",
+        "execution_status",
+        "timed_out",
+        "cleanup",
+        "elapsed_seconds",
+        "diagnostic_output_sha256",
+        "test_count",
+    )
+    project = evidence["project"]
+    return {"project": {field: project[field] for field in fields}}
 
 
 def _validated_capability_result(result: object) -> CapabilityResult | None:

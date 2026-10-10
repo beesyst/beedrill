@@ -1,9 +1,15 @@
+from typing import Any
+
 import pytest
 from beesdk._authority import AuthorityLevel
 from beesdk.capabilities import CapabilityResult, CapabilityStatus
 from beesdk.modules import ModuleContext
 
-from beedrill.module import BeeDrillModule, _classify_external_test_diff
+from beedrill.module import (
+    BeeDrillModule,
+    _classify_external_test_check,
+    _classify_external_test_diff,
+)
 
 
 def _run(side: str, outcome: str) -> dict[str, object]:
@@ -156,6 +162,142 @@ def test_only_ok_execution_capable_evidence_can_be_classified(
 
     assert result.status == "incomplete"
     assert result.data == {"classification": "incomplete"}
+
+
+@pytest.mark.parametrize(
+    ("outcome", "classification"),
+    [("passed", "test_passed"), ("failed", "test_failed")],
+)
+def test_external_test_check_classifies_completed_nonempty_runs(
+    outcome: str, classification: str
+) -> None:
+    project = {**_run("project", outcome), "test_count": 1}
+    evidence = {"schema_version": 1, "project": project}
+
+    assert _classify_external_test_check(evidence) == classification
+
+
+def test_external_test_check_rejects_empty_or_malformed_evidence() -> None:
+    project = {**_run("project", "passed"), "test_count": 0}
+    evidence = {"schema_version": 1, "project": project}
+
+    assert _classify_external_test_check(evidence) == "incomplete"
+
+    project["test_count"] = 1_000_000_001
+    assert _classify_external_test_check(evidence) == "incomplete"
+
+
+def test_external_test_check_writes_bounded_artifact() -> None:
+    writes: list[tuple[str, dict[str, Any]]] = []
+
+    class Artifact:
+        def write_json(
+            self,
+            filename: str,
+            data: dict[str, Any] | list[Any],
+        ) -> None:
+            assert isinstance(data, dict)
+            writes.append((filename, data))
+
+    class Caller:
+        def call(self, capability_name: str, payload: object) -> CapabilityResult:
+            assert capability_name == "solana.isolated_litesvm_test_check"
+            assert payload == {"project": "/project"}
+            return CapabilityResult(
+                capability_name=capability_name,
+                status=CapabilityStatus.OK,
+                authority=AuthorityLevel.EXECUTION_CAPABLE,
+                summary="Host result",
+                data={
+                    "schema_version": 1,
+                    "project": {**_run("project", "passed"), "test_count": 1},
+                },
+            )
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-1",
+            case_type="external_test_check",
+            module_id="beedrill",
+            payload={"project": "/project"},
+            capability_caller=Caller(),
+            artifact_api=Artifact(),
+        )
+    )
+
+    assert result.status == "test_passed"
+    assert result.data["classification"] == "test_passed"
+    assert writes[0][0] == "external_test_check.json"
+    assert writes[0][1]["schema_version"] == 1
+    assert writes[0][1]["run_id"] == "run-1"
+    assert "project" in writes[0][1]
+
+
+@pytest.mark.parametrize(
+    ("reason", "classification", "diagnostic_reason"),
+    [
+        ([], "incomplete", None),
+        ({}, "incomplete", None),
+        ("unknown", "incomplete", None),
+        (None, "incomplete", None),
+        ("sandbox_unavailable", "unsupported", "sandbox_unavailable"),
+    ],
+)
+def test_external_test_check_refusal_reason_is_bounded(
+    reason: object,
+    classification: str,
+    diagnostic_reason: str | None,
+) -> None:
+    writes: list[tuple[str, dict[str, Any]]] = []
+
+    class Artifact:
+        def write_json(
+            self,
+            filename: str,
+            data: dict[str, Any] | list[Any],
+        ) -> None:
+            assert isinstance(data, dict)
+            writes.append((filename, data))
+
+    class Caller:
+        def call(self, capability_name: str, payload: object) -> CapabilityResult:
+            return CapabilityResult(
+                capability_name=capability_name,
+                status=CapabilityStatus.REFUSED,
+                authority=AuthorityLevel.READ_ONLY,
+                summary="Host refusal",
+                diagnostics={} if reason is None else {"reason": reason},
+            )
+
+    result = BeeDrillModule().handle(
+        ModuleContext(
+            run_id="run-refusal",
+            case_type="external_test_check",
+            module_id="beedrill",
+            payload={"project": "/project"},
+            capability_caller=Caller(),
+            artifact_api=Artifact(),
+        )
+    )
+
+    assert result.status == classification
+    expected_data: dict[str, object] = {"classification": classification}
+    if diagnostic_reason is not None:
+        expected_data["diagnostic_reason"] = diagnostic_reason
+    assert result.data == expected_data
+    assert writes == [
+        (
+            "external_test_check.json",
+            {
+                "schema_version": 1,
+                "module_id": "beedrill",
+                "case_type": "external_test_check",
+                "run_id": "run-refusal",
+                "status": classification,
+                **expected_data,
+            },
+        )
+    ]
 
 
 def _report(evidence: dict[str, object]) -> dict[str, object]:

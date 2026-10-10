@@ -11,6 +11,7 @@ BeeDrill provides two workflows:
 | Workflow                      | Purpose                                                       | Result                                                                                           |
 | ----------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Security Control Regression   | Replay supported attacks and verify detection and containment | `PASS` / `FAIL` / `INCOMPLETE`                                                                   |
+| External Security Check       | Run one supported LiteSVM test from a project checkout        | `test_passed` / `test_failed` / `incomplete` / `unsupported`                                     |
 | External Test Regression Diff | Compare equivalent LiteSVM tests across two project versions  | `test_regression` / `no_test_regression` / `test_outcome_changed` / `incomplete` / `unsupported` |
 
 ```text
@@ -19,6 +20,9 @@ Attack → Detection → Containment → Metrics → Security Verdict
 
 External Test Regression Diff
 Baseline + Candidate → Isolated Tests → Host Evidence → Test Classification
+
+External Security Check
+Project → Isolated Test → Host Evidence → Test Classification
 ```
 
 **Scope distinction:** External test failures are not independently verified exploits. BeeDrill does not manufacture security verdicts from project assertions, exit codes, or logs.
@@ -35,7 +39,7 @@ BeeDrill makes supported security checks repeatable:
 4. Produce deterministic results.
 5. Fail a CI gate when a supported regression is found.
 
-For developer-owned LiteSVM projects, BeeDrill also compares tests across two code versions without introducing protocol-specific logic into its core.
+For developer-owned LiteSVM projects, BeeDrill can run one supported test or compare tests across two code versions without introducing protocol-specific logic into its core.
 
 ## Quick start
 
@@ -56,13 +60,13 @@ For built-in security drills:
 
 BeeAgent's `start.sh` bootstraps `uv` when necessary and installs enabled module dependencies from its lockfile.
 
-For external LiteSVM comparisons, also provide:
+For external LiteSVM checks and comparisons, also provide:
 
 - Node.js (validated with v22.22.1)
 - Bubblewrap with working user/network namespaces
 - `systemd-run --user` with working cgroup-v2 memory controls
 - Compatible, preinstalled Mocha/TSX/LiteSVM dependencies
-- Prepared project snapshots meeting the supported layout
+- A project checkout meeting the supported layout; `diff` additionally requires two prepared snapshots
 
 The test runner does not execute package installers or download dependencies.
 
@@ -85,7 +89,7 @@ A normal user does not need:
 - An OpenAI API key
 - A Telegram or Bitrix account
 
-**Release compatibility:** BeeAgent's `uv.lock` must resolve BeeDrill `0.15.0` for the workflow described here. The BeeAgent maintainers must publish a synchronized lockfile before relying on fresh-clone installation.
+**Release compatibility:** BeeAgent's current lock resolves BeeDrill `0.15.0`, which does not yet include the external security check. The BeeAgent maintainers must publish the synchronized BeeDrill release and lockfile before relying on this workflow from a fresh release-backed clone.
 
 ### Expected output
 
@@ -132,6 +136,14 @@ Compare two compatible versions of an external project:
   --baseline /absolute/path/to/baseline \
   --candidate /absolute/path/to/candidate
 ```
+
+Run one supported external project test:
+
+```bash
+./start.sh beedrill check --project /absolute/path/to/project
+```
+
+The project must contain `package.json`, `pnpm-lock.yaml`, `tests/litesvm.test.ts`, and preinstalled `node_modules/mocha/bin/mocha.js` and `node_modules/tsx/dist/loader.mjs`. Checkout `.git` and `.env*` entries are excluded from staging. The fixed host-selected Node/Mocha/TSX runner does not execute project scripts, installers, RPC endpoints, signers, or arbitrary commands.
 
 All commands execute through the BeeAgent host. BeeDrill does not receive arbitrary shell, signing, RPC, or filesystem authority.
 
@@ -195,6 +207,16 @@ Suppose a program is supposed to reject a restricted transfer.
 - BeeDrill: validates comparable test-run evidence and reports `test_regression`.
 
 No Transfer Switch-specific ABI, Program ID, PDA, transaction builder, or security policy is embedded in BeeAgent or BeeDrill.
+
+## External Security Check
+
+Run one existing supported LiteSVM test directly from a normal checkout:
+
+```bash
+./start.sh beedrill check --project /absolute/path/to/project
+```
+
+`test_passed` requires verified isolation, successful cleanup, a completed fixed runner, and a nonempty Mocha JSON test report. `test_failed` means that the same bounded test runner completed with a failing test outcome; it is not a runner/bootstrap failure and it is not an independent security FAIL. Missing prerequisites, a timeout, malformed evidence, or failed cleanup produce `incomplete` or `unsupported`.
 
 ### Run a comparison
 
@@ -481,6 +503,16 @@ External diff evidence includes:
 
 Raw project stdout/stderr is not independent security proof.
 
+### External security check
+
+```text
+storage/runs/<check-run-id>/
+└── module-beedrill/
+    └── external_test_check.json
+```
+
+The bounded report contains the fixed runner identity, test/dependency/project fingerprints, isolation and cleanup results, outcome, elapsed time, diagnostic digest, and confirmed nonzero test count. It contains no project path or raw test output.
+
 ## CI integration
 
 ### Built-in security checks
@@ -502,11 +534,25 @@ Raw project stdout/stderr is not independent security proof.
 
 The CI environment must have the required Linux isolation facilities, and both project snapshots must already be prepared.
 
+### External security check
+
+```yaml
+- name: BeeDrill External Security Check
+  run: ./start.sh beedrill check --project "$PROJECT"
+```
+
 For `diff`:
 
 - Exit `0` means the comparison completed without `test_regression`.
 - Exit `1` fails the step for a detected test regression.
 - Exit `3` fails the step because the result is incomplete or unsupported.
+
+For `check --project`:
+
+- Exit `0` means the completed nonempty test suite passed.
+- Exit `1` means the completed test suite failed.
+- Exit `2` means invalid CLI usage.
+- Exit `3` means incomplete or unsupported execution.
 
 ## Architecture
 
@@ -560,17 +606,17 @@ No AI provider is required to run the deterministic workflows.
 
 ## Troubleshooting
 
-### The installed BeeDrill version is not 0.15.0
+### The installed BeeDrill release lacks external security check
 
-Check that BeeAgent's `pyproject.toml` and `uv.lock` both resolve the approved BeeDrill 0.15.0 revision. The source checkout's version does not override the host's pinned installed package automatically.
+Check that BeeAgent's `pyproject.toml` and `uv.lock` resolve a BeeDrill release containing `external_test_check`. The source checkout's version does not override the host's pinned installed package automatically; use the documented `PYTHONPATH` command for coordinated source development until the synchronized release is available.
 
 ### `unsupported`
 
 Check:
 
-- Both paths are absolute and canonical.
+- The project path is absolute and canonical.
 - Every staged file is regular and supported.
-- There are no symlinks or `.git` metadata.
+- There are no symlinks; checkout `.git` and `.env*` entries are excluded from staging.
 - `tests/litesvm.test.ts` exists.
 - Mocha, TSX, LiteSVM and transitive dependencies are present.
 - The snapshot fits the input bounds.
@@ -606,6 +652,7 @@ Verify that:
 BeeDrill currently supports:
 
 - Three built-in security-control drills.
+- One fixed external LiteSVM/Mocha/TSX single-project check workflow.
 - One fixed external LiteSVM/Mocha/TSX test-diff workflow.
 - Bounded evidence and deterministic reporting.
 - CLI and CI integration.
@@ -615,7 +662,7 @@ It does not yet support:
 - Automatic vulnerability discovery.
 - Universal auditing of arbitrary Solana protocols.
 - Arbitrary Anchor ABI interpretation.
-- Automatic project onboarding, compilation or dependency installation.
+- Automatic project compilation or dependency installation.
 - Project-selected executors.
 - Production/mainnet attack execution.
 - Independent security verdicts for arbitrary external contracts.
