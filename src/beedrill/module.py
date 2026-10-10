@@ -1,3 +1,5 @@
+import math
+import re
 from typing import cast
 
 from beesdk.artifacts import ArtifactPort
@@ -38,6 +40,7 @@ _REFERENCE_TARGET_PROOF = {
     "cleanup": "ok",
 }
 _MAX_EVIDENCE_INTEGER = 1_000_000_000
+_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _REFERENCE_TARGET_ATTACK_EVIDENCE_FIELDS = {
     "target_id",
     "initial_state_id",
@@ -125,6 +128,8 @@ _REFERENCE_ORACLE_SCENARIO = {
 }
 _SPL_TOKEN_FREEZE_CASE = "spl_token_freeze_containment_replay"
 _SPL_TOKEN_FREEZE_CAPABILITY = "solana.spl_token_freeze_containment"
+_EXTERNAL_TEST_DIFF_CASE = "external_test_regression_diff"
+_EXTERNAL_TEST_DIFF_CAPABILITY = "solana.isolated_litesvm_test_diff"
 _SPL_TOKEN_FREEZE_PAYLOAD = {
     "target_profile": "surfpool_local",
     "target_id": "spl_token_freeze_containment",
@@ -235,6 +240,7 @@ class BeeDrillModule:
             _REFERENCE_TARGET_CONTAINMENT_CASE,
             _REFERENCE_ORACLE_CASE,
             _SPL_TOKEN_FREEZE_CASE,
+            _EXTERNAL_TEST_DIFF_CASE,
         ]
 
     def handle(self, context: ModuleContext) -> ModuleResult:
@@ -255,6 +261,8 @@ class BeeDrillModule:
             return self._handle_reference_oracle_manipulation(context)
         if context.case_type == _SPL_TOKEN_FREEZE_CASE:
             return self._handle_spl_token_freeze_containment(context)
+        if context.case_type == _EXTERNAL_TEST_DIFF_CASE:
+            return self._handle_external_test_diff(context)
 
         artifact_api: ArtifactPort | None = context.artifact_api
         if artifact_api is not None:
@@ -1027,6 +1035,98 @@ class BeeDrillModule:
             )
         return result.data
 
+    def _handle_external_test_diff(self, context: ModuleContext) -> ModuleResult:
+        if not _is_valid_external_test_diff_payload(context.payload):
+            return self._external_test_diff_result(
+                context,
+                "incomplete",
+                "BeeDrill test regression evidence is incomplete",
+                {"classification": "incomplete"},
+            )
+        caller = context.capability_caller
+        if caller is None:
+            return self._external_test_diff_result(
+                context,
+                "incomplete",
+                "Host capability caller is unavailable",
+                {"classification": "incomplete"},
+            )
+        result = _validated_capability_result(
+            caller.call(_EXTERNAL_TEST_DIFF_CAPABILITY, context.payload)
+        )
+        if result is None or result.capability_name != _EXTERNAL_TEST_DIFF_CAPABILITY:
+            return self._external_test_diff_result(
+                context,
+                "incomplete",
+                "Host capability returned invalid evidence",
+                {"classification": "incomplete"},
+            )
+        if result.status is CapabilityStatus.REFUSED:
+            classification = (
+                "unsupported"
+                if result.diagnostics.get("reason")
+                in {
+                    "unsupported_layout",
+                    "missing_test_dependencies",
+                    "symlink_not_allowed",
+                    "invalid_project_root",
+                }
+                else "incomplete"
+            )
+            return self._external_test_diff_result(
+                context,
+                classification,
+                "Host test runner refused execution",
+                {"classification": classification},
+            )
+        if result.status in {CapabilityStatus.TIMEOUT, CapabilityStatus.ERROR}:
+            return self._external_test_diff_result(
+                context,
+                "incomplete",
+                "Host test runner did not complete",
+                {"classification": "incomplete"},
+            )
+        if (
+            result.status is not CapabilityStatus.OK
+            or result.authority is not AuthorityLevel.EXECUTION_CAPABLE
+        ):
+            return self._external_test_diff_result(
+                context,
+                "incomplete",
+                "Host test runner returned invalid authority evidence",
+                {"classification": "incomplete"},
+            )
+        classification = _classify_external_test_diff(result.data)
+        evidence = _external_test_diff_report_evidence(result.data)
+        return self._external_test_diff_result(
+            context,
+            classification,
+            "BeeDrill test regression diff completed",
+            {"classification": classification, **evidence},
+        )
+
+    def _external_test_diff_result(
+        self,
+        context: ModuleContext,
+        status: str,
+        summary: str,
+        data: dict[str, object],
+    ) -> ModuleResult:
+        artifact_api: ArtifactPort | None = context.artifact_api
+        if artifact_api is not None:
+            artifact_api.write_json(
+                "external_test_regression_diff.json",
+                {
+                    "module_id": self.module_id,
+                    "case_type": context.case_type,
+                    "status": status,
+                    **data,
+                },
+            )
+        return ModuleResult(
+            self.module_id, context.case_type, self.authority, status, summary, data
+        )
+
     def _capability_result(
         self,
         context: ModuleContext,
@@ -1264,6 +1364,157 @@ class BeeDrillModule:
 
 def _is_valid_isolated_solana_payload(payload: object) -> bool:
     return type(payload) is dict and payload == _ISOLATED_SOLANA_PAYLOAD
+
+
+def _is_valid_external_test_diff_payload(payload: object) -> bool:
+    return (
+        type(payload) is dict
+        and set(payload) == {"baseline", "candidate"}
+        and all(
+            type(payload[side]) is str
+            and bool(payload[side])
+            and len(payload[side]) <= 4096
+            for side in ("baseline", "candidate")
+        )
+    )
+
+
+def _classify_external_test_diff(evidence: object) -> str:
+    if type(evidence) is not dict or set(evidence) != {
+        "schema_version",
+        "baseline",
+        "candidate",
+    }:
+        return "incomplete"
+    if type(evidence["schema_version"]) is not int or evidence["schema_version"] != 1:
+        return "incomplete"
+    baseline = evidence["baseline"]
+    candidate = evidence["candidate"]
+    if not _is_valid_external_test_run(
+        baseline, "baseline"
+    ) or not _is_valid_external_test_run(candidate, "candidate"):
+        return "incomplete"
+    comparable = all(
+        baseline[key] == candidate[key]
+        for key in (
+            "runner_id",
+            "runner_version",
+            "isolation",
+            "isolation_result",
+            "test_path",
+            "test_fingerprint",
+            "dependency_fingerprint",
+        )
+    )
+    if not comparable:
+        return "incomplete"
+    if baseline["outcome"] == "passed" and candidate["outcome"] == "failed":
+        return "test_regression"
+    if baseline["outcome"] == candidate["outcome"]:
+        return "no_test_regression"
+    return "test_outcome_changed"
+
+
+def _is_valid_external_test_run(evidence: object, side: str) -> bool:
+    if type(evidence) is not dict or set(evidence) != {
+        "schema_version",
+        "side",
+        "runner_id",
+        "runner_version",
+        "isolation",
+        "isolation_result",
+        "project_fingerprint",
+        "test_path",
+        "test_fingerprint",
+        "dependency_fingerprint",
+        "exit_code",
+        "timed_out",
+        "execution_status",
+        "outcome",
+        "elapsed_seconds",
+        "cleanup",
+        "diagnostic_output_sha256",
+    }:
+        return False
+    text_fields = {
+        "side": side,
+        "runner_id": "litesvm_mocha_tsx_v1",
+        "isolation": "bubblewrap_unshare_all",
+        "isolation_result": "verified",
+        "test_path": "tests/litesvm.test.ts",
+        "cleanup": "ok",
+    }
+    if any(evidence[key] != value for key, value in text_fields.items()):
+        return False
+    if (
+        type(evidence["schema_version"]) is not int
+        or evidence["schema_version"] != 1
+        or evidence["outcome"]
+        not in {
+            "passed",
+            "failed",
+        }
+        or evidence["execution_status"] != "completed"
+        or evidence["timed_out"] is not False
+    ):
+        return False
+    if (
+        type(evidence["exit_code"]) is not int
+        or evidence["exit_code"] < 0
+        or not isinstance(evidence["timed_out"], bool)
+    ):
+        return False
+    if (
+        type(evidence["elapsed_seconds"]) not in {int, float}
+        or not math.isfinite(evidence["elapsed_seconds"])
+        or evidence["elapsed_seconds"] < 0
+        or (evidence["exit_code"] == 0) != (evidence["outcome"] == "passed")
+    ):
+        return False
+    return all(
+        type(evidence[key]) is str
+        and (
+            1 <= len(evidence[key]) <= 128
+            if key == "runner_version"
+            else _SHA256.fullmatch(evidence[key]) is not None
+        )
+        for key in (
+            "runner_version",
+            "project_fingerprint",
+            "test_fingerprint",
+            "dependency_fingerprint",
+            "diagnostic_output_sha256",
+        )
+    )
+
+
+def _external_test_diff_report_evidence(evidence: object) -> dict[str, object]:
+    if (
+        _classify_external_test_diff(evidence) == "incomplete"
+        or type(evidence) is not dict
+    ):
+        return {}
+    fields = (
+        "runner_id",
+        "runner_version",
+        "test_path",
+        "test_fingerprint",
+        "dependency_fingerprint",
+        "project_fingerprint",
+        "isolation",
+        "isolation_result",
+        "outcome",
+        "exit_code",
+        "execution_status",
+        "timed_out",
+        "cleanup",
+        "elapsed_seconds",
+        "diagnostic_output_sha256",
+    )
+    return {
+        side: {field: evidence[side][field] for field in fields}
+        for side in ("baseline", "candidate")
+    }
 
 
 def _validated_capability_result(result: object) -> CapabilityResult | None:
