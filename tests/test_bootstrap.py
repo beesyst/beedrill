@@ -48,6 +48,7 @@ def test_module_handles_only_the_bounded_integration_case() -> None:
         "reference_target_containment_replay",
         "reference_oracle_manipulation_replay",
         "spl_token_freeze_containment_replay",
+        "external_test_regression_diff",
     ]
     assert isinstance(result, ModuleResult)
     assert result == ModuleResult(

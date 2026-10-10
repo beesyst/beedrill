@@ -2716,6 +2716,77 @@ External protocol onboarding remains unimplemented.
 
 The Colosseum demonstration must show actual supported attacks, detection limits, containment, economic metrics and reproducible verdicts without claiming universal Solana coverage.
 
+### Iteration 19 — Security Regression Diff Evaluation
+
+**Status:** DONE
+
+#### Goal
+
+Implement deterministic test-regression evaluation for two versions of an external LiteSVM project, using bounded host evidence supplied through the existing BeeAgent/BeeSDK boundary.
+
+#### Scope
+
+- Accept bounded baseline/candidate execution evidence through the existing module contract.
+- Validate project and test identities, provenance and execution status.
+- Match equivalent tests and verify comparable runner, test and dependency provenance.
+- Distinguish test regression, no test regression, changed outcome, incomplete and unsupported.
+- Reuse existing BeeDrill domain and verdict contracts where their semantics apply.
+- Produce deterministic JSON reports with bounded host evidence and reproduction information.
+- Preserve all existing security scenarios, AI assist and CI compatibility.
+- Demonstrate original versus modified Transfer Switch with an identical corrected test and an amount of 5 raw units.
+
+#### Excluded
+
+- Standalone BeeDrill CLI or runtime.
+- Process execution, Surfpool lifecycle, transaction signing or RPC authority inside BeeDrill.
+- Third-party protocol-specific code or business logic in BeeAgent.
+- Generic ABI interpreters, scenario DSLs or plugin frameworks.
+- Automatic exploit discovery or universal contract auditing.
+- Treating exit status, test assertions, stdout or self-signed JSON as proof of a security vulnerability.
+- Synthetic economic loss, production detection or containment evidence.
+
+#### Deliverable
+
+One integrated command owned by BeeAgent:
+
+```bash
+./start.sh beedrill diff \
+  --baseline /absolute/path/original \
+  --candidate /absolute/path/modified
+```
+
+BeeDrill evaluates bounded host evidence and produces a structured test-regression report.
+
+#### Acceptance criteria
+
+- BeeDrill receives baseline/candidate evidence through an approved shared/module boundary.
+- Evidence validation is strict, bounded and fail-closed.
+- Matching tests use equivalent runner, test and dependency provenance.
+- A changed test result alone is classified only as a test regression, never as a verified security exploit.
+- Security PASS/FAIL requires a separately approved invariant and independently verifiable host observations.
+- Corrected Transfer Switch demonstrates a test regression under the same test.
+- Incomplete, unsupported and contradictory evidence cannot produce a security PASS/FAIL.
+- No third-party protocol-specific implementation exists in BeeAgent or BeeDrill core.
+- All existing BeeDrill scenarios, AI assist and CI contracts remain compatible.
+
+#### Checks
+
+- Baseline/candidate matching and mismatching tests.
+- Deterministic verdict and report serialization.
+- Missing, altered, forged and contradictory evidence.
+- Test regression versus unchanged or other changed outcomes.
+- Unsupported test frameworks and missing security coverage.
+- Real isolated Transfer Switch original/candidate test-regression E2E.
+- Full BeeDrill pytest, build, import and contract checks.
+- BeeAgent/BeeSDK compatibility and existing three-scenario regression suite.
+- Security review, secret-leak and `git diff --check`.
+
+#### DoD
+
+BeeDrill correctly classifies reproducible test outcomes in an independently maintained LiteSVM project using bounded host-collected evidence, without owning execution authority or requiring product code specific to that protocol.
+
+**DONE requires real E2E evidence, passing required checks and independent final review. Verified security PASS/FAIL remains out of scope without a separately approved invariant and host observer.**
+
 ## Submission buffer — 2026-10-05..2026-10-12
 
 ### Purpose

@@ -49,6 +49,8 @@ PYTHONPATH="<workspace>/beedrill/src" ./start.sh beedrill check
 
 Expected result: three PASSED scenarios, `passed=3 failed=0 incomplete=0`, suite PASS, exit 0. The existing minimal CI step is `run: ./start.sh beedrill check`. Scenario evidence lives under `storage/runs/<run-id>/module-beedrill/`; the aggregate lives under `storage/runs/<suite-run-id>/module-beeagent/beedrill_security_regression.json`.
 
+`./start.sh beedrill diff --baseline <absolute-path> --candidate <absolute-path>` delegates one fixed LiteSVM/Mocha/TSX test path to the BeeAgent-owned isolated runner. Each project must provide the same `tests/litesvm.test.ts` plus preinstalled regular-file Mocha/TSX/LiteSVM dependencies. The runner has no project-selected command, installer, network, host HOME or secret mount. A completed baseline PASS/candidate FAIL is `test_regression` and exits 1; unchanged or other completed outcomes exit 0; unsupported or incomplete execution exits 3. This classification is not a BeeDrill security verdict, and does not claim a verified exploit, detection or containment result. The per-run artifact is `external_test_regression_diff.json`.
+
 Only allowlisted `diagnostic_reason` values are added for incomplete/error results; raw stderr, keys, credentials and host paths are omitted. Missing evidence never acquires a security verdict or explanation facts. Detection in the existing corpus means an observed bounded local state/balance monitor; it does not prove a protocol's production detector is integrated. Developer-owned pause/freeze onboarding is not delivered by this recovery.
 
 ## Repository
