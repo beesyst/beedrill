@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.15.0...beedrill-v0.16.0) (2026-10-10)
+
+
+### Features
+
+* add external single-project test evaluation ([#55](https://github.com/beesyst/beedrill/issues/55)) ([ba570ff](https://github.com/beesyst/beedrill/commit/ba570ffead52aa6e5db8bc0188d8f49ef739bbc2))
+
 ## [0.15.0](https://github.com/beesyst/beedrill/compare/beedrill-v0.14.1...beedrill-v0.15.0) (2026-10-10)
 
 
