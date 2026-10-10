@@ -1,86 +1,72 @@
 # BeeDrill — Security Regression Testing for Solana
 
-**Audits find vulnerabilities. BeeDrill tests whether known security failures come back.**
+**Audits test your code. BeeDrill tests your defenses.**
 
-BeeDrill helps Solana developers validate security controls through reproducible attack replays, deterministic evidence, and automated regression checks.
+BeeDrill helps Solana developers catch security regressions before release through reproducible attack replays, bounded evidence, deterministic results, and CI integration.
 
-It supports two complementary workflows:
+**Current package version:** `0.15.0`
 
-- **Security Control Regression:** replay approved attacks and verify detection, containment, and loss metrics.
-- **External Test Regression Diff:** run equivalent LiteSVM tests against two versions of a developer's project and detect changed test outcomes.
+BeeDrill provides two workflows:
+
+| Workflow                      | Purpose                                                       | Result                                                                                           |
+| ----------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Security Control Regression   | Replay supported attacks and verify detection and containment | `PASS` / `FAIL` / `INCOMPLETE`                                                                   |
+| External Test Regression Diff | Compare equivalent LiteSVM tests across two project versions  | `test_regression` / `no_test_regression` / `test_outcome_changed` / `incomplete` / `unsupported` |
 
 ```text
 Security Control Regression
-Attack → Detection → Containment → Metrics → PASS / FAIL / INCOMPLETE
+Attack → Detection → Containment → Metrics → Security Verdict
 
 External Test Regression Diff
-Baseline + Candidate → Isolated tests → Comparable evidence → TEST_REGRESSION
+Baseline + Candidate → Isolated Tests → Host Evidence → Test Classification
 ```
 
-**Important:** an external test regression is not a verified security exploit. Security PASS/FAIL requires independently established security invariants and trusted observations.
+**Scope distinction:** External test failures are not independently verified exploits. BeeDrill does not manufacture security verdicts from project assertions, exit codes, or logs.
 
 ## Why BeeDrill?
 
-Smart contract audits, unit tests, and security regression testing answer different questions.
-
-| Approach                      | Question                                                      |
-| ----------------------------- | ------------------------------------------------------------- |
-| Security audit                | Can the code be exploited?                                    |
-| Unit and integration tests    | Does the code behave as expected?                             |
-| BeeDrill security drills      | Do approved defenses still detect and contain a known attack? |
-| BeeDrill Test Regression Diff | Did equivalent tests start failing after the project changed? |
-
-Security fixes should not be treated as permanent guarantees.
-
-A change to a contract, token program integration, oracle dependency, or defense mechanism may reintroduce a previously resolved failure.
+A security fix may stop working after a contract upgrade, dependency change, oracle update, or control modification.
 
 BeeDrill makes supported security checks repeatable:
 
-```text
-Change code
-    ↓
-Run regression
-    ↓
-Validate evidence
-    ↓
-Detect a failure
-    ↓
-Inspect the result
-    ↓
-Fix before release
-```
+1. Replay the same attack against controlled conditions.
+2. Observe detection and containment behavior.
+3. Validate bounded evidence.
+4. Produce deterministic results.
+5. Fail a CI gate when a supported regression is found.
 
-BeeDrill is designed for local development, CI pipelines, and pre-release validation.
+For developer-owned LiteSVM projects, BeeDrill also compares tests across two code versions without introducing protocol-specific logic into its core.
 
 ## Quick start
 
-BeeDrill runs as a module inside [BeeAgent](https://github.com/beesyst/beeagent).
+BeeDrill runs as a domain module inside [BeeAgent](https://github.com/beesyst/beeagent).
+
+You do not need to install a separate BeeDrill daemon or clone BeeSDK.
 
 ### Requirements
 
-For the built-in security regression suite:
+For built-in security drills:
 
 - Linux x86_64, glibc 2.34+
 - Python 3.14+
-- Git and `uv`
-- Working native Rust/Cargo, Solana and C-linker prerequisites
-- Sufficient local disk space for the native toolchain and isolated execution
+- Git
+- Working native C compiler/linker and development headers
+- Internet access for initial trusted dependency/toolchain preparation
+- Sufficient disk space for native Solana tooling
 
-Refer to [the development guide](docs/DEV_GUIDE.md) for native-toolchain preparation and supported environments.
+BeeAgent's `start.sh` bootstraps `uv` when necessary and installs enabled module dependencies from its lockfile.
 
-For external LiteSVM Test Regression Diff, additional requirements apply:
+For external LiteSVM comparisons, also provide:
 
-- Node.js — validated with v22.22.1
+- Node.js (validated with v22.22.1)
 - Bubblewrap with working user/network namespaces
-- `systemd-run --user` with functional cgroup-v2 memory limits
-- Preinstalled compatible Mocha, TSX, LiteSVM and transitive dependencies
-- A supported regular-file project layout without symlinks
+- `systemd-run --user` with working cgroup-v2 memory controls
+- Compatible, preinstalled Mocha/TSX/LiteSVM dependencies
+- Prepared project snapshots meeting the supported layout
 
-External tests run offline. BeeDrill does not download packages or run project installers inside the test sandbox.
+The test runner does not execute package installers or download dependencies.
 
-### Install and run
-
-Once matching BeeAgent and BeeDrill revisions are released:
+### Install
 
 ```bash
 git clone https://github.com/beesyst/beeagent.git
@@ -89,25 +75,19 @@ cd beeagent
 ./start.sh beedrill check
 ```
 
-BeeAgent's bootstrap resolves the configured BeeDrill module and pinned BeeSDK dependency.
+The configured BeeDrill module is enabled by default.
 
-No separate BeeDrill daemon, manual BeeSDK clone, ROP installation, or AI provider is required.
+A normal user does not need:
 
-The first run may require network access to prepare the Python environment and native development dependencies.
+- A sibling `beedrill/` checkout
+- A sibling `beesdk/` checkout
+- A sibling `beeagent-rop/` checkout
+- An OpenAI API key
+- A Telegram or Bitrix account
 
-**Release status:** Security Regression Diff is implemented in BeeDrill Issue #51 and BeeAgent Issue #295 feature branches. Until those changes are merged and BeeAgent's pinned BeeDrill revision is updated, the public `main` checkout is not guaranteed to provide the new `diff` command.
+**Release compatibility:** BeeAgent's `uv.lock` must resolve BeeDrill `0.15.0` for the workflow described here. The BeeAgent maintainers must publish a synchronized lockfile before relying on fresh-clone installation.
 
-## Commands
-
-### 1. Run all security controls
-
-```bash
-./start.sh beedrill check
-```
-
-This runs all three built-in security regression scenarios.
-
-Expected successful output:
+### Expected output
 
 ```text
 BeeDrill Security Regression
@@ -118,29 +98,34 @@ Scenarios: passed=3 failed=0 incomplete=0
 Suite status: PASS
 ```
 
-These are actual supported security-control checks, not arbitrary tests against an unknown external protocol.
+These results validate the three supported security-control scenarios, not every external Solana protocol.
 
-### 2. Run one security scenario
+## Commands
 
-Vault containment:
-
-```bash
-./start.sh beedrill run --scenario reference_target_containment_replay
-```
-
-Oracle manipulation:
+Run the complete security-control suite:
 
 ```bash
-./start.sh beedrill run --scenario reference_oracle_manipulation_replay
+./start.sh beedrill check
 ```
 
-SPL Token freeze containment:
+Run an individual scenario:
 
 ```bash
-./start.sh beedrill run --scenario spl_token_freeze_containment_replay
+./start.sh beedrill run \
+  --scenario reference_target_containment_replay
 ```
 
-### 3. Compare two versions of an external project
+```bash
+./start.sh beedrill run \
+  --scenario reference_oracle_manipulation_replay
+```
+
+```bash
+./start.sh beedrill run \
+  --scenario spl_token_freeze_containment_replay
+```
+
+Compare two compatible versions of an external project:
 
 ```bash
 ./start.sh beedrill diff \
@@ -148,409 +133,498 @@ SPL Token freeze containment:
   --candidate /absolute/path/to/candidate
 ```
 
-BeeAgent runs one fixed LiteSVM/Mocha/TSX workflow against both project snapshots.
+All commands execute through the BeeAgent host. BeeDrill does not receive arbitrary shell, signing, RPC, or filesystem authority.
 
-BeeDrill compares the host-generated evidence and reports whether their test outcomes changed.
+## Security Control Regression
 
-No third-party protocol-specific execution logic is added to BeeAgent or BeeDrill.
+BeeDrill currently includes three approved security drills.
+
+| Scenario                               | Attack                                          | Control              |
+| -------------------------------------- | ----------------------------------------------- | -------------------- |
+| `reference_target_containment_replay`  | Repeated unsafe vault withdrawal                | Vault containment    |
+| `reference_oracle_manipulation_replay` | Oracle price manipulation followed by borrowing | Oracle containment   |
+| `spl_token_freeze_containment_replay`  | Repeated SPL Token transfer                     | Token-account freeze |
+
+Each scenario uses bounded host evidence to evaluate the relevant control.
+
+```text
+Known attack
+    ↓
+Detection observation
+    ↓
+Containment action
+    ↓
+Post-containment observation
+    ↓
+Deterministic PASS / FAIL / INCOMPLETE
+```
+
+### Security metrics
+
+Supported scenario artifacts may include:
+
+- Detection status
+- Containment status
+- MTTD — detection latency measured in Solana slots
+- MTTC — containment latency measured in Solana slots
+- Gross loss
+- Residual loss
+- Capital saved
+- Security verdict
+
+These metrics describe the approved replay scenario. They are not estimates of production losses.
+
+### Verdict meanings
+
+| Verdict      | Meaning                                                                           |
+| ------------ | --------------------------------------------------------------------------------- |
+| `PASS`       | Trusted evidence shows that the required control worked in the supported scenario |
+| `FAIL`       | Completed trusted evidence shows that the required control failed                 |
+| `INCOMPLETE` | The host could not establish sufficient trusted evidence                          |
+
+Missing or contradictory evidence never becomes `PASS`.
 
 ## External Test Regression Diff
 
-This is the first external-project workflow.
+This workflow is intended for developers who already have a supported LiteSVM regression test.
 
-Consider a developer maintaining an Anchor program with a security-sensitive transfer restriction.
+Suppose a program is supposed to reject a restricted transfer.
 
-The developer has:
+- Baseline: the transfer is rejected; the test passes.
+- Candidate: the transfer succeeds unexpectedly; the same test fails.
+- BeeDrill: validates comparable test-run evidence and reports `test_regression`.
 
-- a baseline implementation;
-- a modified candidate implementation;
-- the same LiteSVM regression test in both versions.
+No Transfer Switch-specific ABI, Program ID, PDA, transaction builder, or security policy is embedded in BeeAgent or BeeDrill.
 
-The test expects an operation to be rejected.
+### Run a comparison
 
-After changing the contract, the operation is no longer rejected and the test fails.
-
-BeeDrill detects that regression.
-
-### Example
+Given two **prepared** project snapshots:
 
 ```bash
+cd /path/to/beeagent
+
 ./start.sh beedrill diff \
-  --baseline /projects/transfer-baseline \
-  --candidate /projects/transfer-candidate
+  --baseline /home/user/demo/baseline \
+  --candidate /home/user/demo/candidate
 ```
 
-Representative result:
+A representative result:
 
 ```json
 {
-  "classification": "test_regression",
-  "baseline": {
-    "outcome": "passed",
-    "exit_code": 0,
-    "execution_status": "completed",
-    "cleanup": "ok"
-  },
-  "candidate": {
-    "outcome": "failed",
-    "exit_code": 1,
-    "execution_status": "completed",
-    "cleanup": "ok"
-  }
+  "classification": "test_regression"
 }
 ```
 
-The actual artifact also records runner, test, dependency, project, and isolation provenance.
+The generated artifact includes both sides' runner, test, dependency, project and isolation provenance.
 
-**What BeeDrill established:**
-
-- the host ran both supported tests;
-- the baseline test passed;
-- the candidate test failed;
-- the runner and comparable test/dependency identities matched;
-- both runs completed in the approved isolated environment.
-
-**What BeeDrill did not establish:**
-
-- an independently verified on-chain exploit;
-- actual production loss;
-- a deployed security detector failure;
-- a verified containment failure in the developer's protocol.
-
-A test exit code is not independent security evidence.
-
-### Supported project layout
-
-The current runner accepts one reviewed, fixed layout, including:
+The required successful-baseline/failed-candidate evidence is:
 
 ```text
-project/
+BASELINE                        CANDIDATE
+completed                       completed
+test passed                     test failed
+exit code 0                     nonzero exit code
+cleanup ok                      cleanup ok
+
+Same test fingerprint
+Same dependency fingerprint
+Same runner identity/version
+Verified isolation
+```
+
+If the test or dependency fingerprints differ, BeeDrill cannot make a comparable regression claim.
+
+### Important: What this proves
+
+BeeDrill can establish:
+
+- That both supported tests were executed.
+- That the baseline test passed.
+- That the candidate test failed.
+- That runner, test, and dependency provenance matched.
+- That the runs completed through the approved isolated workflow.
+
+It does **not** independently establish:
+
+- A confirmed security exploit.
+- On-chain economic loss in a production protocol.
+- A deployed detector failure.
+- A production containment failure.
+
+For independent security PASS/FAIL on a new protocol, a separately approved invariant and trusted host observations are required.
+
+## Using an external GitHub project
+
+**Current support is intentionally limited.** You cannot point BeeDrill at an arbitrary Anchor repository and expect it to interpret the program, build everything, and create security tests automatically.
+
+BeeDrill expects two prepared snapshots. It does not take a GitHub URL as a CLI argument.
+
+### Step 1 — Obtain the source
+
+Clone the developer's project to a separate source directory:
+
+```bash
+git clone <reviewed-external-repository-url> external-source
+```
+
+Select two reviewed Git revisions:
+
+```text
+BASELINE_REF  — known baseline version
+CANDIDATE_REF — changed version
+```
+
+Create separate source exports:
+
+```bash
+mkdir -p source-baseline source-candidate
+
+git -C external-source archive BASELINE_REF |
+  tar -xf - -C source-baseline
+
+git -C external-source archive CANDIDATE_REF |
+  tar -xf - -C source-candidate
+```
+
+Replace `BASELINE_REF` and `CANDIDATE_REF` with actual reviewed Git commits or tags.
+
+These commands prepare source exports only. They do not create runner-ready snapshots automatically.
+
+### Step 2 — Prepare supported execution snapshots
+
+Create separate `baseline/` and `candidate/` directories from the reviewed source exports.
+
+Include only supported files. The current runner accepts a narrow allowlisted project layout:
+
+```text
+baseline/
 ├── package.json
 ├── pnpm-lock.yaml
+├── tsconfig.json                  # optional
+├── Anchor.toml                   # optional
+├── Cargo.toml                    # optional
+├── Cargo.lock                    # optional
 ├── tests/
 │   └── litesvm.test.ts
 ├── node_modules/
 │   ├── mocha/
 │   │   └── bin/mocha.js
-│   └── tsx/
-│       └── dist/loader.mjs
+│   ├── tsx/
+│   │   └── dist/loader.mjs
+│   └── ... compatible dependencies
 ├── programs/
-│   └── ... supported Rust/Cargo sources
+│   └── ... supported Rust/Cargo inputs
 └── target/
     ├── deploy/
+    │   └── ... program SBF artifacts
     ├── idl/
+    │   └── ... supported JSON
     └── types/
+        └── ... supported generated JS/TS
 ```
 
-Other project files are accepted only where the runner's allowlist permits them.
+The candidate has the corresponding layout.
 
-Rules:
+Requirements:
 
-- Both roots must be canonical absolute paths.
-- Symlinks and special files are rejected.
-- Test and dependency identities must match.
-- Supported target inputs may differ.
-- Dependencies must already be present as regular files.
-- Project-selected scripts, commands, installers, executable paths, and network destinations are not permitted.
-- Unsupported framework or layout results in `unsupported` or `incomplete`, not a fabricated regression.
+1. `tests/litesvm.test.ts` must be byte-identical.
+2. The runner and Node version must be compatible.
+3. Dependency and test-helper inputs must be identical.
+4. The program sources and compiled program artifacts may differ.
+5. The test must load the corresponding program artifact for each snapshot.
+6. Dependencies must already be present before running BeeDrill.
+7. Every staged input must be a supported regular file.
+8. No symlinks, special files, unsupported paths, or `.git` metadata.
 
-**This is not a generic "point BeeDrill at any Anchor repository" interface.** Developers currently need to prepare compatible project snapshots.
+**A normal Git checkout is not a runner-ready directory.**
 
-### Isolation and resource limits
+In particular:
 
-The external runner uses:
+- `.git/` is unsupported.
+- A standard pnpm `node_modules` tree usually contains symlinks and is therefore unsupported.
+- Unnecessary project files such as README files, workflow folders, and generated caches are not accepted.
+- A changed Rust source without a matching rebuilt SBF program artifact may not change test behavior.
 
-- Bubblewrap `--unshare-all`;
-- no external network namespace access;
-- no host HOME or production secret mounts;
-- an empty, host-controlled environment;
-- FD-pinned read-only source input;
-- bounded staging into a disposable private workspace;
-- a read-only staged project during test execution;
-- cgroup-v2 memory limits;
-- explicit timeout and process cleanup;
-- host-generated bounded evidence.
+Build/provision the required program binaries and JavaScript dependencies through a separate reviewed, isolated preparation process. Do not execute untrusted package installers or project scripts on the host merely to prepare a BeeDrill test.
 
-Current execution limits include:
+Do not include real production keys or secrets in an external test fixture. Use disposable test identities only.
 
-| Resource                    | Bound             |
-| --------------------------- | ----------------- |
-| Sandbox process-tree memory | 768 MiB           |
-| Swap                        | Disabled          |
-| Test timeout                | 90 seconds        |
-| Staging timeout             | 30 seconds        |
-| Input files                 | 10,000 maximum    |
-| Aggregate input bytes       | 256 MiB maximum   |
-| Individual input file       | 64 MiB maximum    |
-| Input directories           | 4,096 maximum     |
-| Input depth                 | 32 levels maximum |
+### Step 3 — Run BeeDrill
 
-If the required execution isolation cannot be established, the host fails closed.
+```bash
+cd /path/to/beeagent
 
-## Test Diff classifications
+./start.sh beedrill diff \
+  --baseline /absolute/path/to/prepared/baseline \
+  --candidate /absolute/path/to/prepared/candidate
+```
 
-| Classification         | Meaning                                                                  |
-| ---------------------- | ------------------------------------------------------------------------ |
-| `test_regression`      | Comparable baseline passed; candidate failed                             |
-| `no_test_regression`   | Comparable completed outcomes are identical                              |
-| `test_outcome_changed` | Other comparable completed outcome change                                |
-| `incomplete`           | Missing, inconsistent, noncomparable, or unsuccessful execution evidence |
-| `unsupported`          | Unsupported project input or layout                                      |
+Project preparation is currently a developer responsibility. BeeDrill supports the approved test execution and comparison, not automatic onboarding or compilation of arbitrary Solana projects.
 
-Only completed, validated host evidence can produce a completed comparison classification.
+### Recommended reproducible demo
 
-`no_test_regression` does not mean both projects passed: both may have failed the same test.
-
-### Diff command exit codes
-
-| Exit | Meaning                                                |
-| ---- | ------------------------------------------------------ |
-| `0`  | No test regression or another completed outcome change |
-| `1`  | `test_regression`                                      |
-| `2`  | Invalid CLI usage                                      |
-| `3`  | Incomplete or unsupported execution                    |
-
-Exit code `1` here means **test regression**, not a confirmed security vulnerability.
-
-Inspect the JSON classification when the distinction between unchanged and other changed outcomes matters.
-
-## Built-in security regression scenarios
-
-The supported security suite contains three approved drills.
-
-| Scenario                               | Attack                                   | Control                  |
-| -------------------------------------- | ---------------------------------------- | ------------------------ |
-| `reference_target_containment_replay`  | Repeated unsafe vault withdrawal         | Vault containment        |
-| `reference_oracle_manipulation_replay` | Manipulated oracle followed by borrowing | Oracle containment       |
-| `spl_token_freeze_containment_replay`  | Repeated token transfer                  | SPL Token account freeze |
-
-These drills compare equivalent attack conditions against different defensive states.
-
-### Broken control
+For reviewers and hackathon judges, use a separately published, reviewed Transfer Switch demonstration bundle containing:
 
 ```text
-Attack succeeds
-    ↓
-Detection evidence collected
-    ↓
-Containment ineffective
-    ↓
-Additional residual loss
-    ↓
-Security FAIL
+transfer-switch-demo/
+├── baseline/
+├── candidate/
+├── SHA256SUMS
+└── DEMO.md
 ```
 
-### Working control
+It should record:
+
+- Original external project and exact Git revision references.
+- The controlled program difference.
+- The identical corrected LiteSVM test.
+- Exact dependency and binary provenance.
+- The expected baseline/candidate outcomes.
+- Instructions for verifying checksums.
+
+**A bundle URL must be added here only after the asset is actually published and independently tested.**
+
+The demonstration data belongs outside BeeAgent/BeeDrill product code.
+
+## External diff classifications
+
+| Classification         | Meaning                                                                   |
+| ---------------------- | ------------------------------------------------------------------------- |
+| `test_regression`      | Comparable baseline passed, candidate failed                              |
+| `no_test_regression`   | Comparable completed test outcomes were identical                         |
+| `test_outcome_changed` | A different comparable outcome change occurred                            |
+| `incomplete`           | Missing, inconsistent, non-comparable, or unsuccessful execution evidence |
+| `unsupported`          | The project input or layout is unsupported                                |
+
+`no_test_regression` does not necessarily mean both sides passed. Both tests may have failed.
+
+### CLI exit codes
+
+| Exit code | Meaning                                        |
+| --------- | ---------------------------------------------- |
+| `0`       | Completed comparison without `test_regression` |
+| `1`       | `test_regression`                              |
+| `2`       | Invalid CLI usage                              |
+| `3`       | `incomplete` or `unsupported`                  |
+
+Exit code `1` is **not** an independently verified security-exploit verdict.
+
+## Execution isolation
+
+The external runner is owned by BeeAgent.
+
+It uses:
+
+- One fixed host-selected LiteSVM/Mocha/TSX workflow.
+- Bubblewrap `--unshare-all`.
+- No external network access inside the test sandbox.
+- No host HOME or environment secret mounts.
+- An empty host-controlled execution environment.
+- A pinned read-only source input.
+- Bounded copying into a private workspace.
+- A read-only staged project for test execution.
+- A verified cgroup-v2 memory scope.
+- Timeouts and fail-closed cleanup handling.
+
+### Current resource limits
+
+| Resource            | Limit      |
+| ------------------- | ---------- |
+| Process-tree memory | 768 MiB    |
+| Swap                | Disabled   |
+| Test timeout        | 90 seconds |
+| Staging timeout     | 30 seconds |
+| Total staged bytes  | 256 MiB    |
+| Single file         | 64 MiB     |
+| File count          | 10,000     |
+| Directory count     | 4,096      |
+| Directory depth     | 32         |
+
+If an isolation requirement cannot be established, the external project is not executed.
+
+The test runner does not accept project-supplied commands, executables, environment settings, network targets, signers, installers, or lifecycle scripts.
+
+## Evidence and reports
+
+BeeAgent stores structured artifacts under `storage/runs/`.
+
+### Security suite
 
 ```text
-Same attack
-    ↓
-Detection evidence collected
-    ↓
-Containment effective
-    ↓
-Reduced residual loss
-    ↓
-Security PASS
+storage/runs/<suite-run-id>/
+└── module-beeagent/
+    └── beedrill_security_regression.json
 ```
 
-The evaluator uses validated scenario evidence rather than AI confidence or free-form logs.
+Individual scenario evidence is stored in its own run directory under `module-beedrill/`.
 
-### Security verdicts
+### External comparison
 
-| Verdict      | Meaning                                                                          |
-| ------------ | -------------------------------------------------------------------------------- |
-| `PASS`       | Required security controls were validated as effective in the supported scenario |
-| `FAIL`       | Completed trusted evidence shows a required security control failed              |
-| `INCOMPLETE` | The check could not produce sufficient trustworthy evidence                      |
-
-Missing critical evidence never becomes PASS.
-
-## Security metrics
-
-The built-in drills compute supported metrics from validated evidence.
-
-| Metric           | Meaning                                                     |
-| ---------------- | ----------------------------------------------------------- |
-| Detection        | Whether the expected detector observed the attack           |
-| Containment      | Whether the defensive control stopped or limited the attack |
-| MTTD             | Solana slots from attack start to detection                 |
-| MTTC             | Solana slots from detection to containment                  |
-| Gross loss       | Damage caused by the attack in the scenario                 |
-| Residual loss    | Damage remaining after containment                          |
-| Capital saved    | Loss prevented by the effective control                     |
-| Security verdict | Deterministic PASS / FAIL / INCOMPLETE                      |
-
-These metrics belong to the approved security scenarios.
-
-The external Test Regression Diff does **not** generate synthetic detection, containment, or economic-loss metrics.
-
-## Architecture
-
-BeeDrill separates host execution from deterministic security evaluation.
-
-```mermaid
-flowchart TD
-    CLI["BeeAgent CLI"]
-
-    CLI --> CHECK["beedrill check / run"]
-    CLI --> DIFF["beedrill diff"]
-
-    CHECK --> SOL["BeeAgent: isolated Solana execution"]
-    SOL --> OBS["Host security observations"]
-    OBS --> EVAL["BeeDrill: security evaluation"]
-    EVAL --> VERDICT["PASS / FAIL / INCOMPLETE"]
-
-    DIFF --> RUNNER["BeeAgent: isolated LiteSVM runner"]
-    RUNNER --> BE["Baseline host evidence"]
-    RUNNER --> CE["Candidate host evidence"]
-    BE --> COMPARE["BeeDrill: evidence comparison"]
-    CE --> COMPARE
-    COMPARE --> CLASS["Test regression classification"]
-
-    VERDICT --> ARTIFACT["BeeAgent Artifact API"]
-    CLASS --> ARTIFACT
+```text
+storage/runs/<diff-run-id>/
+└── module-beedrill/
+    └── external_test_regression_diff.json
 ```
 
-### BeeAgent owns
+External diff evidence includes:
 
-- runtime and module loading;
-- execution authority;
-- Solana runtime and approved host capabilities;
-- isolated external test execution;
-- subprocesses, resource limits and cleanup;
-- artifact storage and CLI integration.
+- Runner ID and version.
+- Test and dependency fingerprints.
+- Project fingerprints.
+- Isolation status.
+- Process outcomes.
+- Exit codes and timeout status.
+- Cleanup results.
+- Elapsed execution time.
+- Bounded diagnostic output digest.
 
-### BeeDrill owns
-
-- security scenario semantics;
-- evidence validation;
-- detection and containment evaluation;
-- security metrics;
-- deterministic security verdicts;
-- external test-regression classification.
-
-### BeeSDK provides
-
-- module contracts;
-- capability result contracts;
-- shared artifact interfaces.
-
-BeeDrill remains a read-only domain module. It does not gain arbitrary shell, RPC, wallet or filesystem execution authority.
+Raw project stdout/stderr is not independent security proof.
 
 ## CI integration
 
-### Security-control regression gate
+### Built-in security checks
 
 ```yaml
-- name: BeeDrill security controls
+- name: BeeDrill Security Control Regression
   run: ./start.sh beedrill check
 ```
 
-For the built-in security suite:
-
-- `0` = PASS
-- `1` = security FAIL
-- `2` = invalid CLI usage
-- `3` = INCOMPLETE
-
-### External test regression gate
+### External test diff
 
 ```yaml
-- name: BeeDrill external test diff
+- name: BeeDrill External Test Regression Diff
   run: |
     ./start.sh beedrill diff \
       --baseline "$BASELINE_PROJECT" \
       --candidate "$CANDIDATE_PROJECT"
 ```
 
-Both environment variables must contain canonical absolute paths to prepared supported project snapshots.
+The CI environment must have the required Linux isolation facilities, and both project snapshots must already be prepared.
 
-The CI runner must provide approved Bubblewrap and cgroup isolation.
+For `diff`:
 
-`test_regression` exits with status `1` and fails the CI step.
+- Exit `0` means the comparison completed without `test_regression`.
+- Exit `1` fails the step for a detected test regression.
+- Exit `3` fails the step because the result is incomplete or unsupported.
 
-`incomplete` and `unsupported` also fail the step.
+## Architecture
 
-## Evidence and artifacts
+```mermaid
+flowchart TD
+    DEV["Developer / CI"]
+    HOST["BeeAgent Host"]
 
-BeeAgent persists structured machine-readable artifacts.
+    DEV --> HOST
+    HOST --> CHECK["Security Control Regression"]
+    HOST --> DIFF["External Test Regression Diff"]
 
-### Built-in security scenarios
+    CHECK --> SOL["Isolated Solana Replays"]
+    SOL --> OBS["Trusted Scenario Evidence"]
+    OBS --> EVAL["BeeDrill Security Evaluator"]
+    EVAL --> VERDICT["PASS / FAIL / INCOMPLETE"]
 
-```text
-storage/
-└── runs/
-    ├── <scenario-run-id>/
-    │   └── module-beedrill/
-    │       └── <scenario-name>.json
-    └── <suite-run-id>/
-        └── module-beeagent/
-            └── beedrill_security_regression.json
+    DIFF --> RUNNER["Isolated LiteSVM Runner"]
+    RUNNER --> BASE["Baseline Host Evidence"]
+    RUNNER --> CAND["Candidate Host Evidence"]
+    BASE --> CLASS["BeeDrill Diff Classifier"]
+    CAND --> CLASS
+    CLASS --> RESULT["Test Regression Classification"]
+
+    VERDICT --> ART["BeeAgent Artifact API"]
+    RESULT --> ART
 ```
 
-### External regression comparison
+**BeeAgent owns:** runtime, module loading, isolation, process execution, limits, cleanup, capabilities and artifacts.
 
-```text
-storage/
-└── runs/
-    └── <diff-run-id>/
-        └── module-beedrill/
-            └── external_test_regression_diff.json
-```
+**BeeDrill owns:** scenario definitions, evidence validation, security metrics, deterministic verdicts and external test-diff classification.
 
-Evidence includes bounded execution provenance and outcomes.
+**BeeSDK provides:** shared module and capability interfaces.
 
-Raw external project output is diagnostic-only and is not treated as independently verified security evidence.
+No third-party protocol business logic is required in BeeAgent or BeeDrill core.
 
-Recorded clean-room evidence for the built-in suite is described in [reproduction.md](docs/evidence/reproduction.md).
+## Optional AI assistance
 
-## Optional AI explanations
-
-BeeDrill security verdicts are deterministic.
-
-BeeAgent can optionally generate explanation and remediation text from bounded, validated facts.
+BeeAgent can optionally generate explanations and remediation guidance from bounded, validated BeeDrill security evidence.
 
 AI assistance is disabled by default.
 
-AI does not decide:
+AI does not determine:
 
-- detection;
-- containment;
-- MTTD or MTTC;
-- economic-loss metrics;
-- security PASS / FAIL;
-- external test-regression classifications.
+- Detection or containment results.
+- MTTD, MTTC or economic-loss metrics.
+- Security PASS/FAIL.
+- External test-regression classifications.
 
-The deterministic workflows work without an AI provider.
+No AI provider is required to run the deterministic workflows.
+
+## Troubleshooting
+
+### The installed BeeDrill version is not 0.15.0
+
+Check that BeeAgent's `pyproject.toml` and `uv.lock` both resolve the approved BeeDrill 0.15.0 revision. The source checkout's version does not override the host's pinned installed package automatically.
+
+### `unsupported`
+
+Check:
+
+- Both paths are absolute and canonical.
+- Every staged file is regular and supported.
+- There are no symlinks or `.git` metadata.
+- `tests/litesvm.test.ts` exists.
+- Mocha, TSX, LiteSVM and transitive dependencies are present.
+- The snapshot fits the input bounds.
+
+### `incomplete`
+
+Check:
+
+- The approved sandbox is available.
+- User/network namespaces work.
+- cgroup-v2 user scopes work.
+- Both executions completed.
+- Runner, test and dependency evidence is comparable.
+- Cleanup succeeded.
+
+Never treat `incomplete` as a passing security check.
+
+### Bubblewrap or cgroup unavailable
+
+The host must support the required namespace and user-scope isolation. BeeDrill deliberately refuses unisolated external code execution.
+
+### The candidate changed, but no regression was detected
+
+Verify that:
+
+- The test covers the changed behavior.
+- The candidate actually uses the modified compiled program artifact.
+- Both tests and dependencies are equivalent.
+- You inspect the JSON `classification`, not only the exit code.
 
 ## Current limitations
 
-BeeDrill currently provides:
+BeeDrill currently supports:
 
-- three built-in security-control scenarios;
-- one fixed external LiteSVM Test Regression Diff workflow;
-- bounded evidence and deterministic reporting;
+- Three built-in security-control drills.
+- One fixed external LiteSVM/Mocha/TSX test-diff workflow.
+- Bounded evidence and deterministic reporting.
 - CLI and CI integration.
 
-BeeDrill does not currently provide:
+It does not yet support:
 
-- automatic discovery of vulnerabilities;
-- universal auditing of arbitrary Solana protocols;
-- automatic interpretation of arbitrary Anchor ABIs;
-- arbitrary project-selected test executors;
-- unrestricted RPC execution;
-- production or mainnet attack execution;
-- independent security verdicts for arbitrary developer-owned projects;
-- automatic onboarding of every Solana framework.
+- Automatic vulnerability discovery.
+- Universal auditing of arbitrary Solana protocols.
+- Arbitrary Anchor ABI interpretation.
+- Automatic project onboarding, compilation or dependency installation.
+- Project-selected executors.
+- Production/mainnet attack execution.
+- Independent security verdicts for arbitrary external contracts.
 
-The supported external comparison workflow is a foundation for broader developer adoption, not a claim of universal protocol support.
+These limitations are intentional and must not be hidden when demonstrating the MVP.
 
 ## Contributor development
 
-BeeDrill is developed as an independent Python package.
-
-Source development:
+Develop BeeDrill as a separate Python package:
 
 ```bash
 git clone https://github.com/beesyst/beedrill.git
@@ -561,9 +635,9 @@ uv run pytest -q
 uv build
 ```
 
-No BeeDrill-local daemon or independent execution CLI is provided.
+The development environment uses the BeeSDK source specified by the repository. Contributors must follow the corresponding workspace requirements.
 
-For coordinated development of BeeDrill and BeeAgent feature branches, use their reviewed local worktrees. Before their releases are synchronized, BeeAgent can select the local BeeDrill source explicitly:
+To test a local BeeDrill checkout against a compatible BeeAgent host:
 
 ```bash
 cd /path/to/beeagent
@@ -572,23 +646,21 @@ PYTHONPATH=/path/to/beedrill/src \
   ./start.sh beedrill check
 ```
 
-The same local source selection applies to `beedrill diff`.
-
-Normal release-backed users should not need sibling repositories once compatible releases are pinned.
+A normal release-backed installation should not require local sibling source checkouts.
 
 ## Documentation
 
 - [Development guide](docs/DEV_GUIDE.md)
-- [Product and evidence specification](docs/SPEC.md)
+- [Specification](docs/SPEC.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security model](docs/SECURITY.md)
 - [Reproduction evidence](docs/evidence/reproduction.md)
 - [Roadmap](docs/ROADMAP.md)
 
-## Project
+## Repositories
 
 - [BeeDrill](https://github.com/beesyst/beedrill)
 - [BeeAgent](https://github.com/beesyst/beeagent)
 - [BeeSDK](https://github.com/beesyst/beesdk)
 
-**BeeDrill turns supported security failures into reproducible regression checks, so developers can catch regressions before release.**
+**BeeDrill turns known security failures into repeatable checks, helping developers catch regressions before release.**
