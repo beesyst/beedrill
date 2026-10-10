@@ -2787,6 +2787,76 @@ BeeDrill correctly classifies reproducible test outcomes in an independently mai
 
 **DONE requires real E2E evidence, passing required checks and independent final review. Verified security PASS/FAIL remains out of scope without a separately approved invariant and host observer.**
 
+### Iteration 20 — External Security Check and Minimal Developer Onboarding
+
+**Status:** DONE
+
+#### Goal
+
+Allow a developer to execute an existing security-sensitive test against one supported external Solana LiteSVM project, without a baseline version, manual snapshot preparation, protocol-specific core integration, or independent security verdict claims.
+
+#### Scope
+
+- Add the `external_test_check` BeeDrill module case.
+- Reuse existing BeeSDK module and capability contracts.
+- Consume bounded host-generated evidence from one isolated test execution.
+- Reuse existing external-run evidence validation where applicable.
+- Classify outcomes as `test_passed`, `test_failed`, `incomplete`, or `unsupported`.
+- Distinguish completed test outcomes from infrastructure and execution failures.
+- Produce a deterministic bounded report with execution provenance.
+- Preserve all existing security drills, regression diff, optional AI behavior and CI compatibility.
+- Coordinate with BeeAgent Iteration 44.13 for single-project execution.
+
+#### Excluded
+
+- Automatic exploit discovery or arbitrary Anchor-program auditing.
+- Independent security PASS/FAIL based on developer-owned assertions.
+- BeeDrill-owned process execution, sandbox, RPC, signing or runtime lifecycle.
+- Protocol-specific integration, transaction builders or custom security packs.
+- Arbitrary test commands, ABI interpreters, DSLs or plugin frameworks.
+- Additional test-runner families or a standalone BeeDrill runtime.
+- Production/mainnet mutation and production credentials.
+
+#### Deliverable
+
+BeeAgent exposes:
+
+`./start.sh beedrill check --project <absolute-path>`
+
+BeeDrill evaluates the resulting host evidence and persists `external_test_check.json` through the existing artifact port.
+
+The existing `check`, `run` and `diff` behaviors remain unchanged.
+
+#### Acceptance criteria
+
+- One supported external project can be tested without a baseline or candidate.
+- The test executes against a real program in verified isolation.
+- Completed positive and negative test outcomes are classified deterministically.
+- Test execution and test evidence are distinguishable from infrastructure failures.
+- Unsupported projects, missing dependencies and invalid evidence cannot produce `test_passed`.
+- Reports contain bounded provenance without raw logs, secrets or host-private data.
+- No developer-owned test result is represented as an independent security verdict.
+- The existing regression diff and three security drills retain their semantics.
+- No BeeSDK modification is necessary.
+- One independently maintained project provides reproducible E2E evidence.
+
+#### Checks
+
+- Positive, negative, missing, malformed and contradictory evidence fixtures.
+- Capability identity, authority, runner identity and provenance validation.
+- Unsupported, refused, timeout and cleanup-failure behavior.
+- Deterministic classification and JSON serialization.
+- Existing security-verdict and regression-diff tests.
+- Full BeeDrill tests, build, import and module-contract checks.
+- BeeAgent cross-repository integration and real isolated E2E.
+- Security review, secret-leak checks and `git diff --check`.
+
+#### DoD
+
+BeeDrill correctly evaluates one independently executed external security-sensitive test, writes truthful bounded evidence, and preserves the existing security-control-validation product without acquiring execution authority.
+
+The new capability requires successful real E2E and independent review before release.
+
 ## Submission buffer — 2026-10-05..2026-10-12
 
 ### Purpose
